@@ -46,7 +46,7 @@ import JsonSection from
   "./sections/JsonSection.vue";
 
 import SchemaFormSection from
-  "./components/SchemaFormSection.vue";
+  "./sections/SchemaFormSection.vue";
 
 const props = withDefaults(
   defineProps<{
