@@ -45,6 +45,16 @@ def expand_composite_error(
     whichever candidate schema came closest to matching, instead
     of the single generic "is not valid under any of the given
     schemas" message that hides all of them.
+
+    A branch that fails on the discriminator itself (e.g. CVE's
+    cveMetadata.state enum picking between the published/rejected
+    variants) failed for the trivial reason that the document
+    wasn't attempting to satisfy that branch at all — such a
+    branch can look "closest" by raw error count purely because it
+    happens to be a smaller/more permissive schema, hiding the
+    real errors from the branch the document actually matches.
+    Branches without such a mismatch are preferred; only if every
+    branch has one do we fall back to raw error count.
     """
 
     if not error.context:
@@ -56,8 +66,17 @@ def expand_composite_error(
         branch_key = tuple(sub_error.absolute_schema_path)[:2]
         branches.setdefault(branch_key, []).append(sub_error)
 
+    candidates = [
+        branch_errors
+        for branch_errors in branches.values()
+        if not any(
+            sub_error.validator in ("enum", "const")
+            for sub_error in branch_errors
+        )
+    ] or list(branches.values())
+
     closest_branch = min(
-        branches.values(),
+        candidates,
         key=len,
     )
 
