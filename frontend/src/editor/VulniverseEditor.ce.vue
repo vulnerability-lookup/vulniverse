@@ -36,12 +36,6 @@ import EditorHeader from
 import EditorNavigation from
   "./components/EditorNavigation.vue";
 
-import MetadataSection from
-  "./sections/MetadataSection.vue";
-
-import DescriptionsSection from
-  "./sections/DescriptionsSection.vue";
-
 import JsonSection from
   "./sections/JsonSection.vue";
 
@@ -79,17 +73,9 @@ provide(
   state,
 );
 
-const activeSection = ref("metadata");
+const activeSection = ref("editor");
 
 const navigationItems = [
-  {
-    id: "metadata",
-    label: "Metadata",
-  },
-  {
-    id: "descriptions",
-    label: "Descriptions",
-  },
   {
     id: "editor",
     label: "Editor",
@@ -102,8 +88,6 @@ const navigationItems = [
 
 const sectionComponents:
   Record<string, Component> = {
-    metadata: MetadataSection,
-    descriptions: DescriptionsSection,
     json: JsonSection,
     editor: SchemaFormSection,
   };
@@ -111,7 +95,7 @@ const sectionComponents:
 const currentSection = computed(() => {
   return (
     sectionComponents[activeSection.value] ??
-    MetadataSection
+    SchemaFormSection
   );
 });
 
