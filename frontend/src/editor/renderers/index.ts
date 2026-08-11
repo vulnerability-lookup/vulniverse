@@ -11,6 +11,7 @@ import type {
 import AffectedRenderer from "./AffectedRenderer.vue";
 import MetricsRenderer from "./MetricsRenderer.vue";
 import ReferencesRenderer from "./ReferencesRenderer.vue";
+import AdpRenderer from "./AdpRenderer.vue";
 import ArrayCardRenderer from "./ArrayCardRenderer.vue";
 
 /*
@@ -47,6 +48,10 @@ export const customRenderers: JsonFormsRendererRegistryEntry[] = [
   {
     renderer: ReferencesRenderer,
     tester: rendererOptionIs("vulniverse-references"),
+  },
+  {
+    renderer: AdpRenderer,
+    tester: rendererOptionIs("vulniverse-adp"),
   },
   /*
    * Default styling for every other array field — object items

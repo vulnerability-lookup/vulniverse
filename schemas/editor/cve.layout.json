@@ -68,11 +68,16 @@
         "containers.cna.datePublic",
         "containers.cna.source"
       ]
+    },
+    {
+      "id": "adp",
+      "label": "ADP",
+      "paths": [
+        "containers.adp"
+      ]
     }
   ],
-  "hiddenPaths": [
-    "containers.adp"
-  ],
+  "hiddenPaths": [],
   "controlOptions": {
     "dataType": {
       "readonly": true
@@ -98,6 +103,9 @@
       "detail": "GENERATED",
       "showSortButtons": true,
       "elementLabelProp": "url"
+    },
+    "containers.adp": {
+      "renderer": "vulniverse-adp"
     }
   }
 }
