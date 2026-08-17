@@ -5,7 +5,6 @@ from typing import Any
 
 import pytest
 
-from vulniverse_api import create_app
 from vulniverse_api.services.record_validation import validate_record
 
 
@@ -151,17 +150,14 @@ def test_x_gcve_is_validated_at_nested_locations_too() -> None:
     assert ["containers", "cna", "x_gcve", 0, "vulnId"] in error_paths(errors)
 
 
-def test_unknown_profile_is_rejected_by_the_api() -> None:
-    app = create_app({"TESTING": True})
-
-    with app.test_client() as client:
-        response = client.post(
-            "/api/v1/validate",
-            json={
-                "record": minimal_cve_record(),
-                "profile": "not-a-real-profile",
-            },
-        )
+def test_unknown_profile_is_rejected_by_the_api(client) -> None:
+    response = client.post(
+        "/api/v1/validate",
+        json={
+            "record": minimal_cve_record(),
+            "profile": "not-a-real-profile",
+        },
+    )
 
     assert response.status_code == 400
 

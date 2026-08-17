@@ -33,6 +33,29 @@ def extract_identifier(
     return identifier if isinstance(identifier, str) else None
 
 
+@api_bp.get("/records")
+def list_records() -> tuple[dict, int]:
+    # id DESC as a tiebreak: sqlite's CURRENT_TIMESTAMP only has
+    # second-level precision, so two records created within the
+    # same second would otherwise sort ambiguously.
+    records = VulnerabilityRecord.query.order_by(
+        VulnerabilityRecord.updated_at.desc(),
+        VulnerabilityRecord.id.desc(),
+    ).all()
+
+    return {
+        "records": [
+            {
+                "identifier": record.identifier,
+                "profile": record.profile,
+                "isDraft": record.is_draft,
+                "updatedAt": record.updated_at.isoformat(),
+            }
+            for record in records
+        ],
+    }, 200
+
+
 @api_bp.get("/records/<string:identifier>")
 def get_record(identifier: str) -> tuple[dict, int]:
     record = VulnerabilityRecord.query.filter_by(
