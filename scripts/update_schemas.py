@@ -18,6 +18,14 @@ Example:
         --cve-version 5.2.0 \
         --gcve-ref main \
         --gcve-version 1.7
+
+Older CVE format versions publish the bundled schema at a different
+path than the current default (schema/docs/CVE_Record_Format_bundled.json)
+— override it with --cve-source-path, e.g. for 5.0.x:
+    python scripts/update_schemas.py \
+        --cve-ref v5.0.0 \
+        --cve-version 5.0.0 \
+        --cve-source-path schema/v5.0/docs/CVE_JSON_5.0_bundled.json
 """
 
 from __future__ import annotations
@@ -190,12 +198,24 @@ def validate_cve_schema(
             "The CVE schema has no definitions.dataVersion object."
         )
 
-    upstream_default = data_version.get("default")
-    if upstream_default != expected_version:
+    # Newer schemas (5.1.x, 5.2.x) declare their self-identifying
+    # version as a "default"; 5.0.x instead pins it via a single-
+    # value "enum" (e.g. ["5.0"]) with no "default" key at all.
+    # Accept either so older versions vendor without loosening the
+    # identity check.
+    declared_version = data_version.get("default")
+
+    if declared_version is None:
+        enum_values = data_version.get("enum")
+
+        if isinstance(enum_values, list) and len(enum_values) == 1:
+            declared_version = enum_values[0]
+
+    if declared_version != expected_version:
         raise UpdateError(
             "CVE version mismatch: "
             f"--cve-version={expected_version!r}, but the selected schema "
-            f"declares default={upstream_default!r}."
+            f"declares dataVersion={declared_version!r}."
         )
 
 
@@ -442,6 +462,17 @@ def parse_arguments() -> argparse.Namespace:
         default=CVE_REPOSITORY,
         help="Override the CVE schema Git repository.",
     )
+    parser.add_argument(
+        "--cve-source-path",
+        default=CVE_SCHEMA_SOURCE.as_posix(),
+        help=(
+            "Path to the bundled CVE schema file within the checked-out "
+            "repository, relative to its root. Older format versions use "
+            "a different layout than the current default "
+            f"({CVE_SCHEMA_SOURCE.as_posix()}) — e.g. 5.0.x publishes it at "
+            "schema/v5.0/docs/CVE_JSON_5.0_bundled.json."
+        ),
+    )
 
     parser.add_argument(
         "--gcve-ref",
@@ -484,11 +515,24 @@ def ensure_safe_version_label(value: str, option: str) -> None:
         )
 
 
+def ensure_relative_source_path(value: str, option: str) -> None:
+    path = Path(value)
+
+    if path.is_absolute():
+        raise UpdateError(f"{option} must be a relative path: {value!r}")
+
+    if ".." in path.parts:
+        raise UpdateError(f"{option} must not contain '..': {value!r}")
+
+
 def main() -> int:
     args = parse_arguments()
 
     ensure_safe_version_label(args.cve_version, "--cve-version")
     ensure_safe_version_label(args.gcve_version, "--gcve-version")
+    ensure_relative_source_path(args.cve_source_path, "--cve-source-path")
+
+    cve_schema_source = Path(args.cve_source_path)
 
     project_root = args.project_root.expanduser().resolve()
     schema_root = project_root / "schemas"
@@ -529,7 +573,7 @@ def main() -> int:
             gcve_checkout,
         )
 
-        cve_source = cve_checkout / CVE_SCHEMA_SOURCE
+        cve_source = cve_checkout / cve_schema_source
         gcve_source = gcve_checkout / GCVE_SCHEMA_SOURCE
 
         cve_schema = load_json(cve_source)
@@ -554,7 +598,7 @@ def main() -> int:
 
         stage_schema_version(
             checkout=cve_checkout,
-            source_relative_path=CVE_SCHEMA_SOURCE,
+            source_relative_path=cve_schema_source,
             destination=cve_destination,
             output_filename="CVE_Record_Format_bundled.json",
             source_metadata={
@@ -563,7 +607,7 @@ def main() -> int:
                 "requestedRef": args.cve_ref,
                 "resolvedCommit": cve_commit,
                 "version": args.cve_version,
-                "sourcePath": CVE_SCHEMA_SOURCE.as_posix(),
+                "sourcePath": cve_schema_source.as_posix(),
                 "retrievedAt": retrieved_at,
             },
             dry_run=args.dry_run,

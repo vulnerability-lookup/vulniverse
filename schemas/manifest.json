@@ -3,8 +3,20 @@
     "cve": "cve-5.2.0",
     "gcve": "gcve-bcp-05-1.7"
   },
-  "generatedAt": "2026-08-04T09:25:10Z",
+  "generatedAt": "2026-08-17T09:51:25Z",
   "profiles": {
+    "cve-5.0": {
+      "baseSchema": "upstream/cve/5.0/CVE_Record_Format_bundled.json",
+      "kind": "cve",
+      "sourceMetadata": "upstream/cve/5.0/SOURCE.json",
+      "version": "5.0"
+    },
+    "cve-5.1.1": {
+      "baseSchema": "upstream/cve/5.1.1/CVE_Record_Format_bundled.json",
+      "kind": "cve",
+      "sourceMetadata": "upstream/cve/5.1.1/SOURCE.json",
+      "version": "5.1.1"
+    },
     "cve-5.2.0": {
       "baseSchema": "upstream/cve/5.2.0/CVE_Record_Format_bundled.json",
       "kind": "cve",

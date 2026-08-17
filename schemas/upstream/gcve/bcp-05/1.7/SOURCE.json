@@ -3,7 +3,7 @@
   "repository": "https://github.com/gcve-eu/bcp-validator.git",
   "requestedRef": "main",
   "resolvedCommit": "e863d1ced94d5382254be2a51cc0e181cf3df31c",
-  "retrievedAt": "2026-08-04T09:25:10Z",
+  "retrievedAt": "2026-08-17T09:51:25Z",
   "scope": "Validates the GCVE x_gcve extension and related BCP-05 structure; full records must also be validated against the selected CVE base schema.",
   "sha256": "6dcd0d84615d802ac43cd17bf458c45bb542c5e1bcaeb02aae5db671f873f4ca",
   "sourcePath": "bcp-05/schema/gcve-bcp-05.schema.json",

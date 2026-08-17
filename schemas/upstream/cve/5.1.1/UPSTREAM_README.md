@@ -1,0 +1,43 @@
+# Current Version of CVE Record Format
+
+Update to cve-schema to provide better support for CPE!! if you have integrations that rely on the cve-schema repo structure, please review the changes here. The latest version of the CVE JSON Record Format is 5.1.1. A single schema file with bundled dependencies is available [here](https://github.com/CVEProject/cve-schema/blob/master/schema/docs/CVE_Record_Format_bundled.json).
+
+Note: The CVE Record Format now supports Authorized Data Publisher (ADP) containers there is one active ADP currently.  The CVE Program uses a separate ADP container to provide additional CVE information (e.g., references) for some records. Access this README.md page [here](
+https://github.com/CVEProject/cvelistV5/blob/main/README.md)
+for more information about the CVE Program Container.
+
+Note: Please refer to the CVE Services page [here](https://www.cve.org/AllResources/CveServices) for known issues with the schema. 
+
+# CVE Record Format Overview
+
+cve-schema specifies the CVE Record Format. This is the blueprint for a rich set of JSON data that can be submitted by CVE Numbering Authorities (CNAs) and Authorized Data Publishers (ADPs) to describe a CVE Record. Some examples of CVE Record data include CVE ID number, affected product(s), affected version(s), and public references. While those specific items are required when assigning a CVE, there are many other optional data in the schema that can be used to enrich CVE Records for community benefit.
+
+### Learn
+
+Learn more about the CVE program at: https://www.cve.org/
+
+This CVE Record Format is defined using JSON Schema. Learn more about JSON Schema at: https://json-schema.org/ .
+
+### Latest
+
+The latest version of the CVE Record Format is 5.1.1. It is specified in the JSON schema at https://github.com/CVEProject/cve-schema/blob/master/schema/CVE_Record_Format.json
+
+A single schema file with bundled dependencies is at https://github.com/CVEProject/cve-schema/blob/master/schema/docs/CVE_Record_Format_bundled.json
+
+### Documentation and Guidance
+
+Documentation about this format is available at https://cveproject.github.io/cve-schema/schema/docs/
+
+A mindmap version of the CVE Record structure is at https://cveproject.github.io/cve-schema/schema/docs/mindmap.html
+
+More details about Product and Version Encodings in the CVE Record Format are at https://github.com/CVEProject/cve-schema/blob/master/schema/docs/versions.md
+
+### Examples
+
+A basic example of a full record in the 5.1.1 format with minimally required fields is available at https://github.com/cveproject/cve-schema/blob/master/schema/docs/full-record-basic-example.json
+
+An advanced example of a full record in the 5.1.1 format is available at https://github.com/cveproject/cve-schema/blob/master/schema/docs/full-record-advanced-example.json
+
+A basic example of a cnaContainer, to be used with CVE Services, is available at https://github.com/cveproject/cve-schema/blob/master/schema/docs/cnaContainer-basic-example.json
+
+An advanced example of a cnaContainer, to be used with CVE Services, is available at https://github.com/cveproject/cve-schema/blob/master/schema/docs/cnaContainer-advanced-example.json

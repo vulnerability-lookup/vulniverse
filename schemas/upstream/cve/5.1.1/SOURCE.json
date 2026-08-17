@@ -1,10 +1,10 @@
 {
   "project": "CVEProject/cve-schema",
   "repository": "https://github.com/CVEProject/cve-schema.git",
-  "requestedRef": "v5.2.0",
-  "resolvedCommit": "5533f6038cc0434e544e69240c704906d591de46",
-  "retrievedAt": "2026-08-17T09:51:25Z",
-  "sha256": "44c703322b1fcc532bc1c93f3993a0ba042c1a2831aae8cf39c4fbb707d03c8f",
+  "requestedRef": "v5.1.1",
+  "resolvedCommit": "cc1c0214befc0e2ccfb98c8f4306ec116f65fd34",
+  "retrievedAt": "2026-08-17T09:50:16Z",
+  "sha256": "c5f31c951a2934858e0925d40eec81006c9daad554cad133e00bc181ca578c74",
   "sourcePath": "schema/docs/CVE_Record_Format_bundled.json",
   "supportingFiles": [
     {
@@ -13,10 +13,10 @@
       "vendoredPath": "UPSTREAM_LICENSE.txt"
     },
     {
-      "sha256": "2f11af44ae75a14f0b44e25118f2162c6e917af783bde4550d5ce18ca85ef1e5",
+      "sha256": "7eeec693d1053babcec232252fc8d1c330c0e0deb85b79a052dcb4c429cbb580",
       "sourcePath": "README.md",
       "vendoredPath": "UPSTREAM_README.md"
     }
   ],
-  "version": "5.2.0"
+  "version": "5.1.1"
 }
