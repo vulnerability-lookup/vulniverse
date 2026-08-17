@@ -39,6 +39,9 @@ import EditorNavigation from
 import JsonSection from
   "./sections/JsonSection.vue";
 
+import PreviewSection from
+  "./sections/PreviewSection.vue";
+
 import SchemaFormSection from
   "./sections/SchemaFormSection.vue";
 
@@ -81,6 +84,10 @@ const navigationItems = [
     label: "Editor",
   },
   {
+    id: "preview",
+    label: "Preview",
+  },
+  {
     id: "json",
     label: "Advanced JSON",
   },
@@ -90,6 +97,7 @@ const sectionComponents:
   Record<string, Component> = {
     json: JsonSection,
     editor: SchemaFormSection,
+    preview: PreviewSection,
   };
 
 const currentSection = computed(() => {
