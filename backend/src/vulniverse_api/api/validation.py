@@ -1,7 +1,7 @@
 from flask import request
 
 from . import api_bp
-from ..services.record_validation import validate_record
+from ..services.record_validation import known_profiles, validate_record
 
 
 @api_bp.post("/validate")
@@ -19,10 +19,18 @@ def validate() -> tuple[dict, int]:
             "message": "The 'record' property must be an object."
         }, 400
 
+    if profile not in known_profiles():
+        return {"message": f"Unknown profile: {profile!r}"}, 400
+
     errors = validate_record(record, profile)
 
+    valid = not any(
+        error.get("severity", "error") == "error"
+        for error in errors
+    )
+
     return {
-        "valid": not errors,
+        "valid": valid,
         "profile": profile,
         "errors": errors,
     }, 200

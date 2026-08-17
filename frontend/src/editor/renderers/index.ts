@@ -12,6 +12,7 @@ import AffectedRenderer from "./AffectedRenderer.vue";
 import MetricsRenderer from "./MetricsRenderer.vue";
 import ReferencesRenderer from "./ReferencesRenderer.vue";
 import AdpRenderer from "./AdpRenderer.vue";
+import GcveExtensionRenderer from "./GcveExtensionRenderer.vue";
 import ArrayCardRenderer from "./ArrayCardRenderer.vue";
 
 /*
@@ -52,6 +53,10 @@ export const customRenderers: JsonFormsRendererRegistryEntry[] = [
   {
     renderer: AdpRenderer,
     tester: rendererOptionIs("vulniverse-adp"),
+  },
+  {
+    renderer: GcveExtensionRenderer,
+    tester: rendererOptionIs("vulniverse-gcve-extension"),
   },
   /*
    * Default styling for every other array field — object items

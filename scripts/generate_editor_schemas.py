@@ -467,11 +467,35 @@ def generate(
 
     official_path = schemas_root / base_schema_value
 
-    layout_path = schemas_root / "editor" / "cve.layout.json"
-
     official_schema = load_json(official_path)
 
-    layout_config = load_json(layout_path)
+    kind = profile.get("kind", "cve")
+
+    layout_config = load_json(
+        schemas_root / "editor" / "cve.layout.json",
+    )
+
+    if kind == "gcve":
+        # Every gcve-kind profile builds on the same CVE container
+        # shape, so it reuses cve.layout.json as a base and only adds
+        # the handful of extra sections/controlOptions it needs — not
+        # a full duplicate copy that would silently drift from the
+        # base layout whenever that one changes.
+        extra_layout = load_json(
+            schemas_root / "editor" / "gcve.layout-extra.json",
+        )
+
+        layout_config = {
+            **layout_config,
+            "sections": [
+                *layout_config.get("sections", []),
+                *extra_layout.get("sections", []),
+            ],
+            "controlOptions": {
+                **layout_config.get("controlOptions", {}),
+                **extra_layout.get("controlOptions", {}),
+            },
+        }
 
     variant = layout_config.get(
         "variant",
@@ -488,15 +512,50 @@ def generate(
 
     strip_nested_ids(authoring_schema)
 
+    overlay_path = schemas_root / "overlays" / f"{profile_id}.json"
+
+    if overlay_path.exists():
+        # File-presence-driven, not an if-profile-equals special
+        # case: cve-5.2.0 has no overlay file, so its output is
+        # byte-for-byte unaffected. The overlay's only job is to
+        # legalize extension properties (e.g. x_gcve) that the base
+        # official schema doesn't define — it must stay permissive;
+        # real strictness belongs in the extension schema itself
+        # (see backend/.../record_validation.py's get_gcve_validator,
+        # which is the actual authority validating x_gcve content).
+        overlay = load_json(overlay_path)
+
+        authoring_schema.setdefault("properties", {}).update(
+            copy.deepcopy(overlay.get("properties", {})),
+        )
+
     authoring_schema["$schema"] = official_schema.get("$schema")
 
+    if kind == "gcve":
+        base_profile_id = profile.get("baseProfile")
+        base_version = None
+
+        if isinstance(base_profile_id, str):
+            base_profile = profiles.get(base_profile_id)
+
+            if isinstance(base_profile, dict):
+                base_version = base_profile.get("version")
+
+        schema_label = f"{profile.get('bcp', 'GCVE')}/{version}"
+
+        if base_version:
+            schema_label += f" (CVE {base_version})"
+    else:
+        schema_label = f"CVE {version}"
+
     authoring_schema["$id"] = (
-        f"https://vulniverse.invalid/schemas/cve/{
-            version}/authoring.schema.json"
+        f"https://vulniverse.invalid/schemas/{
+            profile_id}/authoring.schema.json"
     )
 
-    authoring_schema["title"] = f"Vulniverse CVE {
-        version} {variant} authoring schema"
+    authoring_schema["title"] = (
+        f"Vulniverse {schema_label} {variant} authoring schema"
+    )
 
     authoring_schema["x-vulniverse-source"] = {
         "profile": profile_id,
@@ -615,11 +674,16 @@ def generate(
         "elements": categories,
     }
 
-    output_directory = schemas_root / "generated" / "cve" / version
+    # Keyed by profile_id, not "cve"/version: a gcve-kind profile's
+    # `version` is its BCP spec version (e.g. "1.7"), not a CVE
+    # version, and would otherwise collide with CVE-version-numbered
+    # output paths. profile_id already equals f"cve-{version}" for
+    # every cve-kind profile, so this is a no-op rename for those.
+    output_directory = schemas_root / "generated" / profile_id
 
     frontend_directory = (
         project_root / "frontend" / "src" /
-        "generated" / "schemas" / f"cve-{version}"
+        "generated" / "schemas" / profile_id
     )
 
     write_json(

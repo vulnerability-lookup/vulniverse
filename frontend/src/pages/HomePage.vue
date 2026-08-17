@@ -1,9 +1,18 @@
 <template>
-  <main>
+  <main class="container py-5">
     <h1>Vulniverse</h1>
 
     <p>
-      Open a vulnerability record by navigating to:
+      <RouterLink
+        to="/editor/new"
+        class="btn btn-primary"
+      >
+        Create new record
+      </RouterLink>
+    </p>
+
+    <p>
+      Or open an existing vulnerability record by navigating to:
     </p>
 
     <code>

@@ -50,9 +50,11 @@ const props = withDefaults(
     repository?: EditorRepository;
     mode?: "create" | "edit";
     recordId?: string;
+    profile?: string;
   }>(),
   {
     mode: "create",
+    profile: "cve-5.2.0",
   },
 );
 
@@ -107,6 +109,24 @@ const currentSection = computed(() => {
   );
 });
 
+/*
+ * Warnings (e.g. an unrecognized GCVE relationship type) never
+ * block saving — only entries with severity "error" (the default,
+ * for validators that predate the concept) do. Splitting them keeps
+ * a warning-only result from reading as "you can't save this."
+ */
+const blockingErrors = computed(() => {
+  return state.validationErrors.value.filter(
+    (error) => (error.severity ?? "error") === "error",
+  );
+});
+
+const validationWarnings = computed(() => {
+  return state.validationErrors.value.filter(
+    (error) => error.severity === "warning",
+  );
+});
+
 function normalizeError(
   error: unknown,
   fallbackMessage: string,
@@ -120,9 +140,12 @@ async function loadRecord(): Promise<void> {
   if (props.mode !== "edit") {
     state.clear();
 
+    // dataVersion is the CVE Record Format version — GCVE is an
+    // extension bolted onto that same format, not a different one,
+    // so it stays "5.2.0" regardless of props.profile.
     state.replaceRecord({
       identifier: "",
-      profile: "cve-5.2.0",
+      profile: props.profile,
       isDraft: true,
       record: {
         dataType: "CVE_RECORD",
@@ -135,6 +158,9 @@ async function loadRecord(): Promise<void> {
             references: [],
           },
         },
+        ...(props.profile.startsWith("gcve-")
+          ? { x_gcve: [] }
+          : {}),
       },
     });
 
@@ -314,16 +340,16 @@ onMounted(loadRecord);
     </div>
 
     <div
-      v-if="state.validationErrors.value.length"
+      v-if="blockingErrors.length"
       class="alert alert-warning m-3"
       role="alert"
     >
       <p class="mb-2">
         The record has
-        {{ state.validationErrors.value.length }}
+        {{ blockingErrors.length }}
         validation
         {{
-          state.validationErrors.value.length === 1
+          blockingErrors.length === 1
             ? "error"
             : "errors"
         }}.
@@ -331,11 +357,38 @@ onMounted(loadRecord);
 
       <ul class="mb-0">
         <li
-          v-for="(error, index) in state.validationErrors.value"
+          v-for="(error, index) in blockingErrors"
           :key="index"
         >
           <code>{{ error.path.join(".") || "record" }}</code>
           — {{ error.message }}
+        </li>
+      </ul>
+    </div>
+
+    <div
+      v-if="validationWarnings.length"
+      class="alert alert-info m-3"
+      role="alert"
+    >
+      <p class="mb-2">
+        {{ validationWarnings.length }}
+        validation
+        {{
+          validationWarnings.length === 1
+            ? "warning"
+            : "warnings"
+        }}
+        (won't block saving).
+      </p>
+
+      <ul class="mb-0">
+        <li
+          v-for="(warning, index) in validationWarnings"
+          :key="index"
+        >
+          <code>{{ warning.path.join(".") || "record" }}</code>
+          — {{ warning.message }}
         </li>
       </ul>
     </div>

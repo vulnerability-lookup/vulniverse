@@ -7,7 +7,14 @@ from flask import request
 from . import api_bp
 from ..extensions import db
 from ..models import VulnerabilityRecord
-from ..services.record_validation import validate_record
+from ..services.record_validation import known_profiles, validate_record
+
+
+def has_blocking_errors(errors: list[dict[str, Any]]) -> bool:
+    return any(
+        error.get("severity", "error") == "error"
+        for error in errors
+    )
 
 
 def extract_identifier(
@@ -57,6 +64,9 @@ def create_record() -> tuple[dict, int]:
     if not isinstance(document, dict):
         return {"message": "A record object is required."}, 400
 
+    if profile not in known_profiles():
+        return {"message": f"Unknown profile: {profile!r}"}, 400
+
     identifier = extract_identifier(document)
 
     if not identifier:
@@ -73,7 +83,7 @@ def create_record() -> tuple[dict, int]:
     if not is_draft:
         errors = validate_record(document, profile)
 
-        if errors:
+        if has_blocking_errors(errors):
             return {
                 "message": "The record is not publishable.",
                 "errors": errors,
@@ -118,6 +128,9 @@ def update_record(identifier: str) -> tuple[dict, int]:
     if not isinstance(document, dict):
         return {"message": "A record object is required."}, 400
 
+    if profile not in known_profiles():
+        return {"message": f"Unknown profile: {profile!r}"}, 400
+
     document_identifier = extract_identifier(document)
 
     if (
@@ -131,7 +144,7 @@ def update_record(identifier: str) -> tuple[dict, int]:
     if not is_draft:
         errors = validate_record(document, profile)
 
-        if errors:
+        if has_blocking_errors(errors):
             return {
                 "message": "The record is not publishable.",
                 "errors": errors,

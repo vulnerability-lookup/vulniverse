@@ -4,6 +4,21 @@ export interface Description {
   supportingMedia?: unknown[];
 }
 
+export interface GcveRelationship {
+  destId: string;
+  type: string;
+  srcId?: string;
+}
+
+export interface GcveExtension {
+  vulnId: string;
+  recordType: string;
+  relationships?: GcveRelationship[];
+  language?: string;
+
+  [key: string]: unknown;
+}
+
 export interface CveMetadata {
   cveId?: string;
   vulnId?: string;
@@ -35,7 +50,7 @@ export interface VulnerabilityRecord {
   dataVersion?: string;
   cveMetadata?: CveMetadata;
   containers?: RecordContainers;
-  x_gcve?: Record<string, unknown>;
+  x_gcve?: GcveExtension[];
 
   /*
    * Records may contain extensions that Vulniverse does not
@@ -56,6 +71,7 @@ export interface ValidationError {
   schemaPath: Array<string | number>;
   message: string;
   validator?: string;
+  severity?: "error" | "warning";
 }
 
 export interface ValidationResult {
