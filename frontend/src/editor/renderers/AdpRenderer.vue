@@ -150,30 +150,35 @@ function fieldsFor(
 }
 
 /*
- * containers.cna's equivalent affected/metrics/references fields
- * get their named renderer through cve.layout.json's controlOptions,
- * keyed by the cna-specific path. ADP entries have the same fields
- * but no matching controlOptions entry, so without this map they'd
- * fall through to the generic ArrayCardRenderer — which flattens
- * each metric format object (e.g. cvssV4_0's 21 properties) into a
- * plain object Control, reproducing the same Generate.uiSchema crash
- * the named renderers exist to avoid.
+ * containers.cna's equivalent affected/metrics/references/source/
+ * tags fields get their named renderer through cve.layout.json's
+ * controlOptions, keyed by the cna-specific path. ADP entries have
+ * the same fields but no matching controlOptions entry, so without
+ * this map they'd fall through to the generic ArrayCardRenderer —
+ * which flattens each metric format object (e.g. cvssV4_0's 21
+ * properties) into a plain object Control, reproducing the same
+ * Generate.uiSchema crash the named renderers exist to avoid.
+ * (tags needs no knownTags override here — TagsRenderer derives
+ * its known values straight from the schema, and ADP's own "tags"
+ * field (adpTags) has a different, smaller enum than CNA's anyway.)
  */
-const FIELD_RENDERERS: Record<string, string> = {
-  affected: "vulniverse-affected",
-  metrics: "vulniverse-metrics",
-  references: "vulniverse-references",
+const FIELD_OPTIONS: Record<string, Record<string, unknown>> = {
+  affected: { renderer: "vulniverse-affected" },
+  metrics: { renderer: "vulniverse-metrics" },
+  references: { renderer: "vulniverse-references" },
+  source: { renderer: "vulniverse-source" },
+  tags: { renderer: "vulniverse-tags" },
 };
 
 function controlFor(
   key: string,
 ): ControlElement {
-  const renderer = FIELD_RENDERERS[key];
+  const options = FIELD_OPTIONS[key];
 
   return {
     type: "Control",
     scope: `#/properties/${key}`,
-    ...(renderer ? { options: { renderer } } : {}),
+    ...(options ? { options } : {}),
   };
 }
 
