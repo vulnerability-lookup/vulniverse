@@ -185,3 +185,18 @@ def update_record(identifier: str) -> tuple[dict, int]:
         "record": document,
         "isDraft": is_draft,
     }, 200
+
+
+@api_bp.delete("/records/<string:identifier>")
+def delete_record(identifier: str) -> tuple[dict, int]:
+    record = VulnerabilityRecord.query.filter_by(
+        identifier=identifier,
+    ).first()
+
+    if record is None:
+        return {"message": "Record not found."}, 404
+
+    db.session.delete(record)
+    db.session.commit()
+
+    return {"identifier": identifier}, 200

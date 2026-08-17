@@ -120,4 +120,8 @@ export interface EditorRepository {
     record: VulnerabilityRecord,
     profile: string,
   ): Promise<ValidationResult>;
+
+  deleteRecord(
+    identifier: string,
+  ): Promise<void>;
 }

@@ -63,6 +63,9 @@ const emit = defineEmits<{
   loaded: [
     identifier: string,
   ];
+  deleted: [
+    identifier: string,
+  ];
   error: [
     error: Error,
   ];
@@ -247,7 +250,9 @@ async function handleValidate(): Promise<void> {
   }
 }
 
-async function handleSave(): Promise<void> {
+async function handleSave(
+  isDraft: boolean = state.isDraft.value,
+): Promise<void> {
   if (!props.repository || !state.record.value) {
     return;
   }
@@ -263,12 +268,12 @@ async function handleSave(): Promise<void> {
           state.identifier.value,
           state.record.value,
           profile,
-          state.isDraft.value,
+          isDraft,
         )
       : await props.repository.createRecord(
           state.record.value,
           profile,
-          state.isDraft.value,
+          isDraft,
         );
 
     state.replaceRecord(saved);
@@ -284,6 +289,42 @@ async function handleSave(): Promise<void> {
     const normalized = normalizeError(
       error,
       "Unable to save the record.",
+    );
+
+    state.saveError.value = normalized;
+    emit("error", normalized);
+  } finally {
+    state.saving.value = false;
+  }
+}
+
+async function handleDelete(): Promise<void> {
+  if (!props.repository || !state.identifier.value) {
+    return;
+  }
+
+  if (
+    !window.confirm(
+      `Delete ${state.identifier.value}? This cannot be undone.`,
+    )
+  ) {
+    return;
+  }
+
+  const identifier = state.identifier.value;
+
+  state.saving.value = true;
+  state.saveError.value = null;
+
+  try {
+    await props.repository.deleteRecord(identifier);
+
+    state.clear();
+    emit("deleted", identifier);
+  } catch (error) {
+    const normalized = normalizeError(
+      error,
+      "Unable to delete the record.",
     );
 
     state.saveError.value = normalized;
@@ -328,7 +369,9 @@ onMounted(loadRecord);
       :loading="state.loading.value || state.saving.value"
       @reload="loadRecord"
       @validate="handleValidate"
-      @save="handleSave"
+      @save="handleSave()"
+      @publish="handleSave(false)"
+      @delete="handleDelete"
     />
 
     <div

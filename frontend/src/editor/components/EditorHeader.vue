@@ -11,6 +11,8 @@ defineEmits<{
   reload: [];
   validate: [];
   save: [];
+  publish: [];
+  delete: [];
 }>();
 </script>
 
@@ -85,7 +87,27 @@ defineEmits<{
           :disabled="loading"
           @click="$emit('save')"
         >
-          Save draft
+          Save
+        </button>
+
+        <button
+          v-if="isDraft"
+          type="button"
+          class="btn btn-success"
+          :disabled="loading"
+          @click="$emit('publish')"
+        >
+          Publish
+        </button>
+
+        <button
+          v-if="identifier"
+          type="button"
+          class="btn btn-outline-danger"
+          :disabled="loading"
+          @click="$emit('delete')"
+        >
+          Delete
         </button>
       </div>
     </div>

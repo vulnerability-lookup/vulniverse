@@ -85,3 +85,21 @@ def test_list_records_orders_most_recently_updated_first(client) -> None:
     ]
 
     assert identifiers == ["CVE-2026-00002", "CVE-2026-00001"]
+
+
+def test_delete_record_removes_it(client) -> None:
+    create_draft(client, "CVE-2026-00001")
+
+    response = client.delete("/api/v1/records/CVE-2026-00001")
+
+    assert response.status_code == 200
+
+    remaining = client.get("/api/v1/records").get_json()["records"]
+
+    assert remaining == []
+
+
+def test_delete_unknown_record_returns_404(client) -> None:
+    response = client.delete("/api/v1/records/CVE-2026-00001")
+
+    assert response.status_code == 404

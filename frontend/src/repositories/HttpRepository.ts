@@ -101,6 +101,15 @@ export class HttpRepository
     );
   }
 
+  async deleteRecord(
+    identifier: string,
+  ): Promise<void> {
+    await this.request<unknown>(
+      `/records/${encodeURIComponent(identifier)}`,
+      { method: "DELETE" },
+    );
+  }
+
   private async request<T>(
     path: string,
     init: RequestInit = {},
