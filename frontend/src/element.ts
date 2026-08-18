@@ -31,6 +31,12 @@ if (!customElements.get("vulniverse-editor")) {
 }
 
 export type {
+  EditorModule,
+  EditorPanel,
   EditorRepository,
   VulnerabilityRecord,
 } from "./editor/contracts";
+
+export {
+  gcveIdentifierPanel,
+} from "./editor/panels";
