@@ -12,6 +12,11 @@ frontend/node_modules/
 frontend/dist/
 frontend/coverage/
 
+# Docs
+docs/.venv/
+docs/.cache/
+docs/site/
+
 # Environment
 .env
 .env.*

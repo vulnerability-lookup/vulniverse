@@ -48,5 +48,7 @@ export default defineConfig({
     outDir: "dist/element",
     emptyOutDir: true,
     sourcemap: true,
+
+    assetsInlineLimit: 1_000_000,
   },
 });

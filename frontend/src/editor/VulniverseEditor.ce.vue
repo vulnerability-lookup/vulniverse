@@ -12,6 +12,9 @@ import type {
 } from "vue";
 
 import type {
+  EditorModule,
+  EditorModuleContext,
+  EditorPanel,
   EditorRepository,
 } from "./contracts";
 
@@ -36,11 +39,17 @@ import EditorHeader from
 import EditorNavigation from
   "./components/EditorNavigation.vue";
 
+import RejectDialog from
+  "./components/RejectDialog.vue";
+
 import JsonSection from
   "./sections/JsonSection.vue";
 
 import PreviewSection from
   "./sections/PreviewSection.vue";
+
+import RejectedRecordSection from
+  "./sections/RejectedRecordSection.vue";
 
 import SchemaFormSection from
   "./sections/SchemaFormSection.vue";
@@ -51,10 +60,14 @@ const props = withDefaults(
     mode?: "create" | "edit";
     recordId?: string;
     profile?: string;
+    modules?: EditorModule[];
+    panels?: EditorPanel[];
   }>(),
   {
     mode: "create",
     profile: "cve-5.2.0",
+    modules: () => [],
+    panels: () => [],
   },
 );
 
@@ -83,7 +96,7 @@ provide(
 
 const activeSection = ref("editor");
 
-const navigationItems = [
+const BUILTIN_NAVIGATION_ITEMS = [
   {
     id: "editor",
     label: "Editor",
@@ -98,19 +111,12 @@ const navigationItems = [
   },
 ];
 
-const sectionComponents:
+const BUILTIN_SECTION_COMPONENTS:
   Record<string, Component> = {
     json: JsonSection,
     editor: SchemaFormSection,
     preview: PreviewSection,
   };
-
-const currentSection = computed(() => {
-  return (
-    sectionComponents[activeSection.value] ??
-    SchemaFormSection
-  );
-});
 
 /*
  * Warnings (e.g. an unrecognized GCVE relationship type) never
@@ -128,6 +134,10 @@ const validationWarnings = computed(() => {
   return state.validationErrors.value.filter(
     (error) => error.severity === "warning",
   );
+});
+
+const isRejected = computed(() => {
+  return state.record.value?.cveMetadata?.state === "REJECTED";
 });
 
 function normalizeError(
@@ -334,6 +344,151 @@ async function handleDelete(): Promise<void> {
   }
 }
 
+const rejectDialogRef = ref<InstanceType<typeof RejectDialog> | null>(null);
+
+function handleRejectClick(): void {
+  rejectDialogRef.value?.open();
+}
+
+/*
+ * A rejected CNA container is a different, minimal shape from a
+ * normal one (schemas/upstream/cve/5.2.0's cnaRejectedContainer:
+ * additionalProperties false, only providerMetadata/rejectedReasons/
+ * replacedBy) — so this replaces containers.cna outright rather than
+ * just flipping cveMetadata.state, which alone wouldn't produce a
+ * schema-valid record. Saved through the same repository.updateRecord
+ * used everywhere else: hosts don't need a dedicated "reject" method,
+ * since a rejected record is still just a record to save.
+ */
+async function handleRejectConfirm(
+  reason: string,
+): Promise<void> {
+  if (!props.repository || !state.record.value) {
+    return;
+  }
+
+  const record = state.record.value;
+  const now = new Date().toISOString();
+  const previousProviderMetadata = record.containers?.cna?.providerMetadata;
+
+  record.cveMetadata ??= {};
+  record.cveMetadata.state = "REJECTED";
+  record.cveMetadata.dateRejected = now;
+  record.cveMetadata.dateUpdated = now;
+
+  record.containers ??= {};
+  record.containers.cna = {
+    providerMetadata: {
+      ...previousProviderMetadata,
+      dateUpdated: now,
+    },
+    rejectedReasons: [
+      {
+        lang: "en",
+        value: reason,
+      },
+    ],
+  };
+
+  await handleSave(false);
+}
+
+const moduleContext = computed<EditorModuleContext>(() => {
+  return {
+    identifier: state.identifier.value,
+    profile: state.profile.value ?? "cve-5.2.0",
+    record: state.record.value ?? {},
+    isDraft: state.isDraft.value,
+  };
+});
+
+const visiblePanels = computed(() => {
+  return props.panels.filter(
+    (panel) => panel.isVisible?.(moduleContext.value) ?? true,
+  );
+});
+
+const panelNavigationItems = computed(() => {
+  return visiblePanels.value.map((panel) => ({
+    id: panel.id,
+    label: panel.label,
+  }));
+});
+
+const sectionComponents = computed<Record<string, Component>>(() => {
+  return {
+    ...BUILTIN_SECTION_COMPONENTS,
+    editor: isRejected.value
+      ? RejectedRecordSection
+      : SchemaFormSection,
+    ...Object.fromEntries(
+      visiblePanels.value.map((panel) => [panel.id, panel.component]),
+    ),
+  };
+});
+
+const currentSection = computed(() => {
+  return (
+    sectionComponents.value[activeSection.value] ??
+    SchemaFormSection
+  );
+});
+
+/*
+ * Panel components receive `context` as a prop; built-in sections
+ * (JsonSection/SchemaFormSection/PreviewSection) don't declare it and
+ * read shared state via useEditorContext() instead — binding it
+ * unconditionally would leak as a stringified fallthrough attribute
+ * onto their root element, so it's only passed for panel-sourced
+ * sections.
+ */
+const sectionProps = computed(() => {
+  const isPanel = visiblePanels.value.some(
+    (panel) => panel.id === activeSection.value,
+  );
+
+  return isPanel ? { context: moduleContext.value } : {};
+});
+
+const visibleModules = computed(() => {
+  return props.modules
+    .filter((module) => module.isVisible?.(moduleContext.value) ?? true)
+    .map((module) => ({
+      id: module.id,
+      label: module.label,
+      enabled: module.isEnabled?.(moduleContext.value) ?? true,
+    }));
+});
+
+async function handleRunModule(
+  moduleId: string,
+): Promise<void> {
+  const module = props.modules.find(
+    (candidate) => candidate.id === moduleId,
+  );
+
+  if (!module || !state.record.value) {
+    return;
+  }
+
+  state.saving.value = true;
+  state.saveError.value = null;
+
+  try {
+    await module.run(moduleContext.value);
+  } catch (error) {
+    const normalized = normalizeError(
+      error,
+      `Unable to run "${module.label}".`,
+    );
+
+    state.saveError.value = normalized;
+    emit("error", normalized);
+  } finally {
+    state.saving.value = false;
+  }
+}
+
 watch(
   () => props.recordId,
   async (
@@ -365,13 +520,23 @@ onMounted(loadRecord);
       :identifier="state.identifier.value"
       :profile="state.profile.value"
       :is-draft="state.isDraft.value"
+      :is-rejected="isRejected"
       :dirty="state.dirty.value"
       :loading="state.loading.value || state.saving.value"
+      :modules="visibleModules"
       @reload="loadRecord"
       @validate="handleValidate"
       @save="handleSave()"
       @publish="handleSave(false)"
+      @unpublish="handleSave(true)"
+      @reject="handleRejectClick"
       @delete="handleDelete"
+      @run-module="handleRunModule"
+    />
+
+    <RejectDialog
+      ref="rejectDialogRef"
+      @submit="handleRejectConfirm"
     />
 
     <div
@@ -455,12 +620,14 @@ onMounted(loadRecord);
     >
       <EditorNavigation
         v-model="activeSection"
-        :items="navigationItems"
+        :items="BUILTIN_NAVIGATION_ITEMS"
+        :panel-items="panelNavigationItems"
       />
 
       <main class="editor-content">
         <component
           :is="currentSection"
+          v-bind="sectionProps"
         />
       </main>
     </div>

@@ -78,7 +78,7 @@ included `HttpRepository` and the `/api/v1` endpoints.
 - [Node.js](https://nodejs.org/) 22.18 or newer (Node 24.12+ is also
   supported) and npm
 - Python 3.12
-- [Poetry](https://python-poetry.org/)
+- [uv](https://docs.astral.sh/uv/)
 
 ## Run locally
 
@@ -86,9 +86,9 @@ included `HttpRepository` and the `/api/v1` endpoints.
 
 ```bash
 cd backend
-poetry install
-poetry run flask --app vulniverse_api db upgrade
-poetry run flask --app vulniverse_api run --debug
+uv sync
+uv run flask --app vulniverse_api db upgrade
+uv run flask --app vulniverse_api run --debug
 ```
 
 The API listens on `http://127.0.0.1:5000` by default. The development database
@@ -215,9 +215,9 @@ npm run build
 # Frontend lint (the configured command applies safe fixes)
 npm run lint
 
-# Backend tests, when present
+# Backend tests
 cd ../backend
-poetry run pytest
+uv run pytest
 ```
 
 ## Project direction

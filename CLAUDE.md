@@ -23,20 +23,18 @@ Vulniverse
 
 ## Commands
 
-### Backend (`backend/`, Poetry + Flask)
+### Backend (`backend/`, uv + Flask)
 
 ```bash
-poetry install                 # install deps
-poetry run flask --app vulniverse_api run --debug   # run dev server (port 5000)
-poetry run pytest                                    # run all tests
-poetry run pytest tests/path_to_test.py::test_name   # run a single test
-poetry run ruff check .        # lint
-poetry run mypy .              # type-check
-poetry run flask --app vulniverse_api db migrate -m "message"  # generate an Alembic migration
-poetry run flask --app vulniverse_api db upgrade               # apply migrations
+uv sync                        # install deps
+uv run flask --app vulniverse_api run --debug   # run dev server (port 5000)
+uv run pytest                                    # run all tests
+uv run pytest tests/path_to_test.py::test_name   # run a single test
+uv run ruff check .        # lint
+uv run mypy .              # type-check
+uv run flask --app vulniverse_api db migrate -m "message"  # generate an Alembic migration
+uv run flask --app vulniverse_api db upgrade               # apply migrations
 ```
-
-Note: `backend/tests/` currently has no test files yet.
 
 ### Frontend (`frontend/`, Vite + Vue 3 + TypeScript)
 

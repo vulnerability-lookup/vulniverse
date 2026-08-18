@@ -1,3 +1,7 @@
+import type {
+  Component,
+} from "vue";
+
 export interface Description {
   lang: string;
   value: string;
@@ -30,10 +34,28 @@ export interface CveMetadata {
   [key: string]: unknown;
 }
 
+export interface ProviderMetadata {
+  orgId?: string;
+  shortName?: string;
+  dateUpdated?: string;
+
+  [key: string]: unknown;
+}
+
 export interface CnaContainer {
   descriptions?: Description[];
   affected?: unknown[];
   references?: unknown[];
+
+  /*
+   * A rejected CNA container is a different, minimal shape from the
+   * one above (schemas/upstream/cve/5.2.0's cnaRejectedContainer:
+   * additionalProperties false, only these three) — descriptions/
+   * affected/references above don't apply to it at all.
+   */
+  providerMetadata?: ProviderMetadata;
+  rejectedReasons?: Description[];
+  replacedBy?: string[];
 
   [key: string]: unknown;
 }
@@ -124,4 +146,52 @@ export interface EditorRepository {
   deleteRecord(
     identifier: string,
   ): Promise<void>;
+}
+
+export interface EditorModuleContext {
+  identifier: string | null;
+  profile: string;
+  record: VulnerabilityRecord;
+  isDraft: boolean;
+}
+
+/**
+ * An optional, host-supplied action shown as an extra button in the
+ * editor header (e.g. "Publish to CVE Project"). Modules are entirely
+ * host-configured, the same way an EditorRepository is: Vulniverse
+ * ships a few built-ins under editor/modules/, but a host decides
+ * which (if any) to pass in via VulniverseEditor's `modules` prop.
+ */
+export interface EditorModule {
+  id: string;
+  label: string;
+
+  /**
+   * Hide the button entirely for the current context. Defaults to
+   * always visible.
+   */
+  isVisible?(context: EditorModuleContext): boolean;
+
+  /**
+   * Show the button but disable it for the current context. Defaults
+   * to always enabled.
+   */
+  isEnabled?(context: EditorModuleContext): boolean;
+
+  run(context: EditorModuleContext): Promise<void>;
+}
+
+/**
+ * An optional, host-supplied navigation tab + the component rendered
+ * for it (e.g. a "CVE Project" panel showing publish status). Like
+ * EditorModule, entirely host-configured via VulniverseEditor's
+ * `panels` prop. The component receives the same EditorModuleContext
+ * as a single `context` prop — not via provide/inject — so it works
+ * regardless of which bundle built it, exactly like EditorModule.run().
+ */
+export interface EditorPanel {
+  id: string;
+  label: string;
+  component: Component;
+  isVisible?(context: EditorModuleContext): boolean;
 }

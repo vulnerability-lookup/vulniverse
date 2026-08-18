@@ -1,4 +1,11 @@
-import { defineCustomElement } from "vue";
+import {
+  defineComponent,
+  defineCustomElement,
+  h,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 
 import VulniverseEditor from
   "./editor/VulniverseEditor.ce.vue";
@@ -31,6 +38,24 @@ if (!customElements.get("vulniverse-editor")) {
 }
 
 export type {
+  EditorModule,
+  EditorPanel,
   EditorRepository,
   VulnerabilityRecord,
 } from "./editor/contracts";
+
+export {
+  gcveIdentifierPanel,
+} from "./editor/panels";
+
+/*
+ * A minimal slice of Vue's runtime, re-exported so a host that has no
+ * build step of its own
+*/
+export {
+  defineComponent,
+  h,
+  onMounted,
+  ref,
+  watch,
+};

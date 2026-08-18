@@ -15,6 +15,14 @@ import {
   HttpRepository,
 } from "@/repositories/HttpRepository";
 
+import {
+  BUILTIN_MODULES,
+} from "@/editor/modules";
+
+import {
+  BUILTIN_PANELS,
+} from "@/editor/panels";
+
 const route = useRoute();
 const router = useRouter();
 
@@ -67,6 +75,8 @@ function handleDeleted(
     :repository="repository"
     mode="edit"
     :record-id="recordId"
+    :modules="BUILTIN_MODULES"
+    :panels="BUILTIN_PANELS"
     @loaded="handleLoaded"
     @error="handleError"
     @deleted="handleDeleted"
