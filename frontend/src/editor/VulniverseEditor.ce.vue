@@ -130,6 +130,10 @@ const validationWarnings = computed(() => {
   );
 });
 
+const isRejected = computed(() => {
+  return state.record.value?.cveMetadata?.state === "REJECTED";
+});
+
 function normalizeError(
   error: unknown,
   fallbackMessage: string,
@@ -334,6 +338,60 @@ async function handleDelete(): Promise<void> {
   }
 }
 
+/*
+ * A rejected CNA container is a different, minimal shape from a
+ * normal one (schemas/upstream/cve/5.2.0's cnaRejectedContainer:
+ * additionalProperties false, only providerMetadata/rejectedReasons/
+ * replacedBy) — so this replaces containers.cna outright rather than
+ * just flipping cveMetadata.state, which alone wouldn't produce a
+ * schema-valid record. Saved through the same repository.updateRecord
+ * used everywhere else: hosts don't need a dedicated "reject" method,
+ * since a rejected record is still just a record to save.
+ */
+async function handleReject(): Promise<void> {
+  if (!props.repository || !state.record.value) {
+    return;
+  }
+
+  const reason = window.prompt(
+    "Reason for rejecting this record:",
+  );
+
+  if (!reason?.trim()) {
+    return;
+  }
+
+  const record = state.record.value;
+  const now = new Date().toISOString();
+
+  const previousProviderMetadata = (
+    record.containers?.cna as
+      | { providerMetadata?: Record<string, unknown> }
+      | undefined
+  )?.providerMetadata;
+
+  record.cveMetadata ??= {};
+  record.cveMetadata.state = "REJECTED";
+  record.cveMetadata.dateRejected = now;
+  record.cveMetadata.dateUpdated = now;
+
+  record.containers ??= {};
+  record.containers.cna = {
+    providerMetadata: {
+      ...previousProviderMetadata,
+      dateUpdated: now,
+    },
+    rejectedReasons: [
+      {
+        lang: "en",
+        value: reason.trim(),
+      },
+    ],
+  };
+
+  await handleSave(false);
+}
+
 const moduleContext = computed<EditorModuleContext>(() => {
   return {
     identifier: state.identifier.value,
@@ -458,6 +516,7 @@ onMounted(loadRecord);
       :identifier="state.identifier.value"
       :profile="state.profile.value"
       :is-draft="state.isDraft.value"
+      :is-rejected="isRejected"
       :dirty="state.dirty.value"
       :loading="state.loading.value || state.saving.value"
       :modules="visibleModules"
@@ -466,6 +525,7 @@ onMounted(loadRecord);
       @save="handleSave()"
       @publish="handleSave(false)"
       @unpublish="handleSave(true)"
+      @reject="handleReject"
       @delete="handleDelete"
       @run-module="handleRunModule"
     />

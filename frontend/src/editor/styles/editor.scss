@@ -28,6 +28,25 @@
   --bs-primary-rgb:
     var(--vulniverse-primary-rgb, 65, 84, 216);
 
+  /*
+   * Same --bs-border-width problem, for the rest of Bootstrap's core
+   * theme colors: nothing here re-themes them (unlike the
+   * --vulniverse-* mappings above), they just need to resolve to
+   * their normal Bootstrap defaults instead of nothing — components
+   * without their own literal fallback (e.g. .badge.text-bg-warning)
+   * render with a fully transparent background otherwise.
+   */
+  --bs-secondary: #6c757d;
+  --bs-secondary-rgb: 108, 117, 125;
+  --bs-success: #198754;
+  --bs-success-rgb: 25, 135, 84;
+  --bs-info: #0dcaf0;
+  --bs-info-rgb: 13, 202, 240;
+  --bs-warning: #ffc107;
+  --bs-warning-rgb: 255, 193, 7;
+  --bs-danger: #dc3545;
+  --bs-danger-rgb: 220, 53, 69;
+
   color: var(--bs-body-color);
   background: var(--bs-body-bg);
   border: 1px solid var(--bs-border-color);
@@ -37,7 +56,23 @@
 
 .editor-header {
   padding: 1.5rem 2rem;
+  background: var(--bs-tertiary-bg, #f8f9fa);
   border-bottom: 1px solid var(--bs-border-color);
+}
+
+.editor-header-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.35rem;
+  vertical-align: -0.1em;
+}
+
+.editor-header .vr {
+  align-self: stretch;
+  opacity: 1;
+  background-color: var(--bs-border-color);
 }
 
 .editor-layout {

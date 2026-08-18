@@ -3,6 +3,7 @@ defineProps<{
   identifier: string | null;
   profile: string | null;
   isDraft: boolean;
+  isRejected: boolean;
   dirty: boolean;
   loading: boolean;
   modules: Array<{
@@ -18,6 +19,7 @@ defineEmits<{
   save: [];
   publish: [];
   unpublish: [];
+  reject: [];
   delete: [];
   runModule: [
     id: string,
@@ -63,6 +65,13 @@ defineEmits<{
           </span>
 
           <span
+            v-if="isRejected"
+            class="badge text-bg-danger"
+          >
+            Rejected
+          </span>
+
+          <span
             v-if="dirty"
             class="badge text-bg-info"
           >
@@ -71,24 +80,53 @@ defineEmits<{
         </div>
       </div>
 
-      <div class="d-flex flex-wrap gap-2">
-        <button
-          type="button"
-          class="btn btn-outline-secondary"
-          :disabled="loading"
-          @click="$emit('reload')"
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <div
+          class="btn-group"
+          role="group"
+          aria-label="Editor actions"
         >
-          Reload
-        </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            :disabled="loading"
+            @click="$emit('reload')"
+          >
+            <svg
+              class="editor-header-icon"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9" /><path d="M13.5 2.5v3h-3" /></svg>
+            Reload
+          </button>
 
-        <button
-          type="button"
-          class="btn btn-outline-primary"
-          :disabled="loading"
-          @click="$emit('validate')"
-        >
-          Validate
-        </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary"
+            :disabled="loading"
+            @click="$emit('validate')"
+          >
+            <svg
+              class="editor-header-icon"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ><polyline points="3 8 6.5 11.5 13 4.5" /></svg>
+            Validate
+          </button>
+        </div>
+
+        <div
+          class="vr d-none d-md-block"
+          aria-hidden="true"
+        />
 
         <button
           type="button"
@@ -96,6 +134,15 @@ defineEmits<{
           :disabled="loading"
           @click="$emit('save')"
         >
+          <svg
+            class="editor-header-icon"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ><path d="M2.5 2.5h8l3 3v8h-11z" /><path d="M5 2.5v3h4v-3M5 13.5v-4h6v4" /></svg>
           Save
         </button>
 
@@ -119,26 +166,78 @@ defineEmits<{
           Revert to draft
         </button>
 
-        <button
-          v-for="module in modules"
-          :key="module.id"
-          type="button"
-          class="btn btn-outline-primary"
-          :disabled="loading || !module.enabled"
-          @click="$emit('runModule', module.id)"
-        >
-          {{ module.label }}
-        </button>
+        <template v-if="modules.length">
+          <div
+            class="vr d-none d-md-block"
+            aria-hidden="true"
+          />
 
-        <button
-          v-if="identifier"
-          type="button"
-          class="btn btn-outline-danger"
-          :disabled="loading"
-          @click="$emit('delete')"
-        >
-          Delete
-        </button>
+          <button
+            v-for="module in modules"
+            :key="module.id"
+            type="button"
+            class="btn btn-outline-primary"
+            :disabled="loading || !module.enabled"
+            @click="$emit('runModule', module.id)"
+          >
+            {{ module.label }}
+          </button>
+        </template>
+
+        <template v-if="identifier && !isRejected">
+          <div
+            class="vr d-none d-md-block"
+            aria-hidden="true"
+          />
+
+          <button
+            type="button"
+            class="btn btn-outline-danger"
+            :disabled="loading"
+            @click="$emit('reject')"
+          >
+            <svg
+              class="editor-header-icon"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ><circle cx="8" cy="8" r="6" /><line
+              x1="4"
+              y1="4"
+              x2="12"
+              y2="12"
+            /></svg>
+            Reject
+          </button>
+        </template>
+
+        <template v-if="identifier">
+          <div
+            class="vr d-none d-md-block"
+            aria-hidden="true"
+          />
+
+          <button
+            type="button"
+            class="btn btn-outline-danger"
+            :disabled="loading"
+            @click="$emit('delete')"
+          >
+            <svg
+              class="editor-header-icon"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ><path d="M3 4h10M6 4V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V4M4.5 4l.5 9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1l.5-9" /></svg>
+            Delete
+          </button>
+        </template>
       </div>
     </div>
   </header>
