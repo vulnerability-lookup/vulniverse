@@ -5,6 +5,11 @@ defineProps<{
   isDraft: boolean;
   dirty: boolean;
   loading: boolean;
+  modules: Array<{
+    id: string;
+    label: string;
+    enabled: boolean;
+  }>;
 }>();
 
 defineEmits<{
@@ -14,6 +19,9 @@ defineEmits<{
   publish: [];
   unpublish: [];
   delete: [];
+  runModule: [
+    id: string,
+  ];
 }>();
 </script>
 
@@ -109,6 +117,17 @@ defineEmits<{
           @click="$emit('unpublish')"
         >
           Revert to draft
+        </button>
+
+        <button
+          v-for="module in modules"
+          :key="module.id"
+          type="button"
+          class="btn btn-outline-primary"
+          :disabled="loading || !module.enabled"
+          @click="$emit('runModule', module.id)"
+        >
+          {{ module.label }}
         </button>
 
         <button

@@ -12,6 +12,9 @@ import type {
 } from "vue";
 
 import type {
+  EditorModule,
+  EditorModuleContext,
+  EditorPanel,
   EditorRepository,
 } from "./contracts";
 
@@ -51,10 +54,14 @@ const props = withDefaults(
     mode?: "create" | "edit";
     recordId?: string;
     profile?: string;
+    modules?: EditorModule[];
+    panels?: EditorPanel[];
   }>(),
   {
     mode: "create",
     profile: "cve-5.2.0",
+    modules: () => [],
+    panels: () => [],
   },
 );
 
@@ -83,7 +90,7 @@ provide(
 
 const activeSection = ref("editor");
 
-const navigationItems = [
+const BUILTIN_NAVIGATION_ITEMS = [
   {
     id: "editor",
     label: "Editor",
@@ -98,19 +105,12 @@ const navigationItems = [
   },
 ];
 
-const sectionComponents:
+const BUILTIN_SECTION_COMPONENTS:
   Record<string, Component> = {
     json: JsonSection,
     editor: SchemaFormSection,
     preview: PreviewSection,
   };
-
-const currentSection = computed(() => {
-  return (
-    sectionComponents[activeSection.value] ??
-    SchemaFormSection
-  );
-});
 
 /*
  * Warnings (e.g. an unrecognized GCVE relationship type) never
@@ -334,6 +334,102 @@ async function handleDelete(): Promise<void> {
   }
 }
 
+const moduleContext = computed<EditorModuleContext>(() => {
+  return {
+    identifier: state.identifier.value,
+    profile: state.profile.value ?? "cve-5.2.0",
+    record: state.record.value ?? {},
+    isDraft: state.isDraft.value,
+  };
+});
+
+const visiblePanels = computed(() => {
+  return props.panels.filter(
+    (panel) => panel.isVisible?.(moduleContext.value) ?? true,
+  );
+});
+
+const navigationItems = computed(() => {
+  return [
+    ...BUILTIN_NAVIGATION_ITEMS,
+    ...visiblePanels.value.map((panel) => ({
+      id: panel.id,
+      label: panel.label,
+    })),
+  ];
+});
+
+const sectionComponents = computed<Record<string, Component>>(() => {
+  return {
+    ...BUILTIN_SECTION_COMPONENTS,
+    ...Object.fromEntries(
+      visiblePanels.value.map((panel) => [panel.id, panel.component]),
+    ),
+  };
+});
+
+const currentSection = computed(() => {
+  return (
+    sectionComponents.value[activeSection.value] ??
+    SchemaFormSection
+  );
+});
+
+/*
+ * Panel components receive `context` as a prop; built-in sections
+ * (JsonSection/SchemaFormSection/PreviewSection) don't declare it and
+ * read shared state via useEditorContext() instead — binding it
+ * unconditionally would leak as a stringified fallthrough attribute
+ * onto their root element, so it's only passed for panel-sourced
+ * sections.
+ */
+const sectionProps = computed(() => {
+  const isPanel = visiblePanels.value.some(
+    (panel) => panel.id === activeSection.value,
+  );
+
+  return isPanel ? { context: moduleContext.value } : {};
+});
+
+const visibleModules = computed(() => {
+  return props.modules
+    .filter((module) => module.isVisible?.(moduleContext.value) ?? true)
+    .map((module) => ({
+      id: module.id,
+      label: module.label,
+      enabled: module.isEnabled?.(moduleContext.value) ?? true,
+    }));
+});
+
+async function handleRunModule(
+  moduleId: string,
+): Promise<void> {
+  const module = props.modules.find(
+    (candidate) => candidate.id === moduleId,
+  );
+
+  if (!module || !state.record.value) {
+    return;
+  }
+
+  state.saving.value = true;
+  state.saveError.value = null;
+
+  try {
+    await module.run(moduleContext.value);
+  } catch (error) {
+    const normalized = normalizeError(
+      error,
+      `Unable to run "${module.label}".`,
+    );
+
+    state.saveError.value = normalized;
+    emit("error", normalized);
+  } finally {
+    state.saving.value = false;
+  }
+}
+
 watch(
   () => props.recordId,
   async (
@@ -367,12 +463,14 @@ onMounted(loadRecord);
       :is-draft="state.isDraft.value"
       :dirty="state.dirty.value"
       :loading="state.loading.value || state.saving.value"
+      :modules="visibleModules"
       @reload="loadRecord"
       @validate="handleValidate"
       @save="handleSave()"
       @publish="handleSave(false)"
       @unpublish="handleSave(true)"
       @delete="handleDelete"
+      @run-module="handleRunModule"
     />
 
     <div
@@ -462,6 +560,7 @@ onMounted(loadRecord);
       <main class="editor-content">
         <component
           :is="currentSection"
+          v-bind="sectionProps"
         />
       </main>
     </div>

@@ -18,6 +18,14 @@ import {
   SUPPORTED_PROFILES,
 } from "@/editor/profiles";
 
+import {
+  BUILTIN_MODULES,
+} from "@/editor/modules";
+
+import {
+  BUILTIN_PANELS,
+} from "@/editor/panels";
+
 const router = useRouter();
 
 const repository = new HttpRepository("/api/v1");
@@ -88,6 +96,8 @@ function handleError(
     :repository="repository"
     mode="create"
     :profile="selectedProfile"
+    :modules="BUILTIN_MODULES"
+    :panels="BUILTIN_PANELS"
     @loaded="handleLoaded"
     @error="handleError"
   />
