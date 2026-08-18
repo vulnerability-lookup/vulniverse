@@ -58,6 +58,19 @@
   border-right: 1px solid var(--bs-border-color);
 }
 
+.editor-sidebar-divider {
+  margin: 0.75rem 0;
+  border-top: 1px solid var(--bs-border-color);
+  opacity: 1;
+}
+
+.editor-sidebar-heading {
+  padding: 0 0.75rem 0.375rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
 .editor-content {
   min-width: 0;
   padding: 2rem;

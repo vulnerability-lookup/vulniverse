@@ -349,14 +349,11 @@ const visiblePanels = computed(() => {
   );
 });
 
-const navigationItems = computed(() => {
-  return [
-    ...BUILTIN_NAVIGATION_ITEMS,
-    ...visiblePanels.value.map((panel) => ({
-      id: panel.id,
-      label: panel.label,
-    })),
-  ];
+const panelNavigationItems = computed(() => {
+  return visiblePanels.value.map((panel) => ({
+    id: panel.id,
+    label: panel.label,
+  }));
 });
 
 const sectionComponents = computed<Record<string, Component>>(() => {
@@ -554,7 +551,8 @@ onMounted(loadRecord);
     >
       <EditorNavigation
         v-model="activeSection"
-        :items="navigationItems"
+        :items="BUILTIN_NAVIGATION_ITEMS"
+        :panel-items="panelNavigationItems"
       />
 
       <main class="editor-content">
