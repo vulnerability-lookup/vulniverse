@@ -5,6 +5,7 @@ import {
 
 import {
   useRoute,
+  useRouter,
 } from "vue-router";
 
 import VulniverseEditor from
@@ -15,6 +16,7 @@ import {
 } from "@/repositories/HttpRepository";
 
 const route = useRoute();
+const router = useRouter();
 
 const repository =
   new HttpRepository("/api/v1");
@@ -47,6 +49,17 @@ function handleError(
     error,
   );
 }
+
+function handleDeleted(
+  identifier: string,
+): void {
+  console.info(
+    "Deleted vulnerability record:",
+    identifier,
+  );
+
+  router.push("/");
+}
 </script>
 
 <template>
@@ -56,5 +69,6 @@ function handleError(
     :record-id="recordId"
     @loaded="handleLoaded"
     @error="handleError"
+    @deleted="handleDeleted"
   />
 </template>

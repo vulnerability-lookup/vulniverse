@@ -1,0 +1,16 @@
+{
+  "sections": [
+    {
+      "id": "gcve-extension",
+      "label": "GCVE extension",
+      "paths": ["x_gcve"]
+    }
+  ],
+  "controlOptions": {
+    "x_gcve": {
+      "renderer": "vulniverse-gcve-extension",
+      "detail": "GENERATED",
+      "showSortButtons": true
+    }
+  }
+}

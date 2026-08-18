@@ -106,6 +106,12 @@
     },
     "containers.adp": {
       "renderer": "vulniverse-adp"
+    },
+    "containers.cna.source": {
+      "renderer": "vulniverse-source"
+    },
+    "containers.cna.tags": {
+      "renderer": "vulniverse-tags"
     }
   }
 }

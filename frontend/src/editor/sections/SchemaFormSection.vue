@@ -22,11 +22,21 @@ import type {
   UISchemaElement,
 } from "@jsonforms/core";
 
-import authoringSchema from
+import cveAuthoringSchema from
   "@/generated/schemas/cve-5.2.0/authoring.schema.json";
 
-import editorUiSchema from
+import cveUiSchema from
   "@/generated/schemas/cve-5.2.0/ui.schema.json";
+
+import gcveAuthoringSchema from
+  "@/generated/schemas/gcve-bcp-05-1.7/authoring.schema.json";
+
+import gcveUiSchema from
+  "@/generated/schemas/gcve-bcp-05-1.7/ui.schema.json";
+
+import {
+  DEFAULT_PROFILE_ID,
+} from "../profiles";
 
 import {
   useEditorContext,
@@ -38,8 +48,36 @@ import type {
 
 const editor = useEditorContext();
 
-const schema = authoringSchema as JsonSchema;
-const uiSchema = editorUiSchema as UISchemaElement;
+/*
+ * Vite needs statically-resolvable import paths, so this is a
+ * two-entry literal map rather than a profile-keyed dynamic import —
+ * appropriate for exactly the two profiles Vulniverse generates
+ * schemas for today. Add an entry here (and a matching generated
+ * schema pair) if a third profile is ever wired up.
+ */
+const SCHEMA_PAIRS: Record<
+  string,
+  { schema: JsonSchema; uiSchema: UISchemaElement }
+> = {
+  "cve-5.2.0": {
+    schema: cveAuthoringSchema as JsonSchema,
+    uiSchema: cveUiSchema as UISchemaElement,
+  },
+  "gcve-bcp-05-1.7": {
+    schema: gcveAuthoringSchema as JsonSchema,
+    uiSchema: gcveUiSchema as UISchemaElement,
+  },
+};
+
+const activePair = computed(() => {
+  return (
+    SCHEMA_PAIRS[editor.profile.value ?? DEFAULT_PROFILE_ID]
+    ?? SCHEMA_PAIRS[DEFAULT_PROFILE_ID]!
+  );
+});
+
+const schema = computed(() => activePair.value.schema);
+const uiSchema = computed(() => activePair.value.uiSchema);
 
 const renderers = shallowRef(
   Object.freeze([

@@ -13,12 +13,32 @@ import {
   RepositoryError,
 } from "./RepositoryError";
 
+/*
+ * Not part of EditorRepository: listing records is a standalone-app
+ * concern (the home page), not something the embeddable
+ * <vulniverse-editor> element itself ever needs.
+ */
+export interface RecordSummary {
+  identifier: string;
+  profile: string;
+  isDraft: boolean;
+  updatedAt: string;
+}
+
 export class HttpRepository
   implements EditorRepository
 {
   constructor(
     private readonly apiRoot = "/api/v1",
   ) {}
+
+  async listRecords(): Promise<RecordSummary[]> {
+    const result = await this.request<{ records: RecordSummary[] }>(
+      "/records",
+    );
+
+    return result.records;
+  }
 
   async loadRecord(
     identifier: string,
@@ -78,6 +98,15 @@ export class HttpRepository
           profile,
         }),
       },
+    );
+  }
+
+  async deleteRecord(
+    identifier: string,
+  ): Promise<void> {
+    await this.request<unknown>(
+      `/records/${encodeURIComponent(identifier)}`,
+      { method: "DELETE" },
     );
   }
 

@@ -1,0 +1,85 @@
+name: Build embeddable editor
+
+# Builds the standalone <vulniverse-editor> custom element bundle
+# (frontend/dist/element/vulniverse-editor.js — see
+# frontend/vite.element.config.ts and CLAUDE.md's "Frontend
+# architecture" section) and publishes it as a downloadable GitHub
+# release asset:
+#
+#   - Every push to main updates a rolling "nightly" pre-release
+#     with the freshest build:
+#     https://github.com/<owner>/<repo>/releases/download/nightly/vulniverse-editor.js
+#   - Pushing a version tag (v*.*.*) publishes a proper, permanent
+#     release for that version, which GitHub's own "latest release"
+#     alias also resolves to:
+#     https://github.com/<owner>/<repo>/releases/latest/download/vulniverse-editor.js
+#
+# Pull requests and other branches only build, to catch breakage
+# before merge, without publishing anything.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/build-element.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/build-element.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build the embeddable element
+        working-directory: frontend
+        run: npm run build:element
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulniverse-editor
+          path: |
+            frontend/dist/element/vulniverse-editor.js
+            frontend/dist/element/vulniverse-editor.js.map
+          if-no-files-found: error
+
+      - name: Publish rolling nightly release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: Nightly build
+          prerelease: true
+          target_commitish: ${{ github.sha }}
+          body: >-
+            Automatically rebuilt from the latest commit on `main`
+            (${{ github.sha }}). Not a versioned release — for a
+            stable, pinned version, use a tagged release instead.
+          files: frontend/dist/element/vulniverse-editor.js
+
+      - name: Publish versioned release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: frontend/dist/element/vulniverse-editor.js
