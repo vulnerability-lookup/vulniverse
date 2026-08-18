@@ -371,6 +371,7 @@ onMounted(loadRecord);
       @validate="handleValidate"
       @save="handleSave()"
       @publish="handleSave(false)"
+      @unpublish="handleSave(true)"
       @delete="handleDelete"
     />
 

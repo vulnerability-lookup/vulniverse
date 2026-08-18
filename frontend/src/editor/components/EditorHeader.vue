@@ -12,6 +12,7 @@ defineEmits<{
   validate: [];
   save: [];
   publish: [];
+  unpublish: [];
   delete: [];
 }>();
 </script>
@@ -98,6 +99,16 @@ defineEmits<{
           @click="$emit('publish')"
         >
           Publish
+        </button>
+
+        <button
+          v-if="!isDraft"
+          type="button"
+          class="btn btn-outline-warning"
+          :disabled="loading"
+          @click="$emit('unpublish')"
+        >
+          Revert to draft
         </button>
 
         <button
