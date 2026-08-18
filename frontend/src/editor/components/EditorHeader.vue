@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import vulniverseLogo from "../../assets/vulniverse-logo.png";
+
 defineProps<{
   identifier: string | null;
   profile: string | null;
@@ -31,52 +33,53 @@ defineEmits<{
   <header class="editor-header">
     <div
       class="d-flex flex-column flex-lg-row
-             align-items-lg-start
+             align-items-lg-center
              justify-content-between gap-3"
     >
-      <div>
-        <div
-          class="text-primary fw-semibold
-                 text-uppercase small mb-1"
+      <div class="d-flex align-items-center gap-3">
+        <img
+          :src="vulniverseLogo"
+          alt="Vulniverse"
+          class="editor-header-logo"
         >
-          Vulniverse
-        </div>
 
-        <h1 class="h3 mb-2">
-          {{ identifier ?? "New vulnerability record" }}
-        </h1>
+        <div>
+          <h1 class="h5 mb-1">
+            {{ identifier ?? "New vulnerability record" }}
+          </h1>
 
-        <div
-          class="d-flex flex-wrap
-                 align-items-center gap-2"
-        >
-          <span
-            v-if="profile"
-            class="badge text-bg-secondary"
+          <div
+            class="d-flex flex-wrap
+                   align-items-center gap-2"
           >
-            {{ profile }}
-          </span>
+            <span
+              v-if="profile"
+              class="badge text-bg-secondary"
+            >
+              {{ profile }}
+            </span>
 
-          <span
-            v-if="isDraft"
-            class="badge text-bg-warning"
-          >
-            Draft
-          </span>
+            <span
+              v-if="isDraft"
+              class="badge text-bg-warning"
+            >
+              Draft
+            </span>
 
-          <span
-            v-if="isRejected"
-            class="badge text-bg-danger"
-          >
-            Rejected
-          </span>
+            <span
+              v-if="isRejected"
+              class="badge text-bg-danger"
+            >
+              Rejected
+            </span>
 
-          <span
-            v-if="dirty"
-            class="badge text-bg-info"
-          >
-            Unsaved changes
-          </span>
+            <span
+              v-if="dirty"
+              class="badge text-bg-info"
+            >
+              Unsaved changes
+            </span>
+          </div>
         </div>
       </div>
 
@@ -88,7 +91,7 @@ defineEmits<{
         >
           <button
             type="button"
-            class="btn btn-outline-secondary"
+            class="btn btn-sm btn-outline-secondary"
             :disabled="loading"
             @click="$emit('reload')"
           >
@@ -106,7 +109,7 @@ defineEmits<{
 
           <button
             type="button"
-            class="btn btn-outline-primary"
+            class="btn btn-sm btn-outline-primary"
             :disabled="loading"
             @click="$emit('validate')"
           >
@@ -130,7 +133,7 @@ defineEmits<{
 
         <button
           type="button"
-          class="btn btn-primary"
+          class="btn btn-sm btn-primary"
           :disabled="loading"
           @click="$emit('save')"
         >
@@ -149,7 +152,7 @@ defineEmits<{
         <button
           v-if="isDraft"
           type="button"
-          class="btn btn-success"
+          class="btn btn-sm btn-success"
           :disabled="loading"
           @click="$emit('publish')"
         >
@@ -159,7 +162,7 @@ defineEmits<{
         <button
           v-if="!isDraft"
           type="button"
-          class="btn btn-outline-warning"
+          class="btn btn-sm btn-outline-warning"
           :disabled="loading"
           @click="$emit('unpublish')"
         >
@@ -176,7 +179,7 @@ defineEmits<{
             v-for="module in modules"
             :key="module.id"
             type="button"
-            class="btn btn-outline-primary"
+            class="btn btn-sm btn-outline-primary"
             :disabled="loading || !module.enabled"
             @click="$emit('runModule', module.id)"
           >
@@ -192,7 +195,7 @@ defineEmits<{
 
           <button
             type="button"
-            class="btn btn-outline-danger"
+            class="btn btn-sm btn-outline-danger"
             :disabled="loading"
             @click="$emit('reject')"
           >
@@ -222,7 +225,7 @@ defineEmits<{
 
           <button
             type="button"
-            class="btn btn-outline-danger"
+            class="btn btn-sm btn-outline-danger"
             :disabled="loading"
             @click="$emit('delete')"
           >

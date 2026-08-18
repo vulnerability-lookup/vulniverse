@@ -20,7 +20,7 @@ dev_addr = "localhost:8008"
 [project.theme]
 # variant = "classic"
 # custom_dir = "overrides"
-# favicon = "images/favicon.png"
+# favicon = "images/icon.png"
 language = "en"
 features = [
   "announce.dismiss",
@@ -51,7 +51,7 @@ features = [
   # "toc.integrate",
 ]
 
-# logo = "assets/logo.png"
+logo = "images/icon.png"
 
 # [project.theme.icon]
 # logo = "lucide/smile"
