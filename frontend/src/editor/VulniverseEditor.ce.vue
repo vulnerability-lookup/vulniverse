@@ -39,11 +39,17 @@ import EditorHeader from
 import EditorNavigation from
   "./components/EditorNavigation.vue";
 
+import RejectDialog from
+  "./components/RejectDialog.vue";
+
 import JsonSection from
   "./sections/JsonSection.vue";
 
 import PreviewSection from
   "./sections/PreviewSection.vue";
+
+import RejectedRecordSection from
+  "./sections/RejectedRecordSection.vue";
 
 import SchemaFormSection from
   "./sections/SchemaFormSection.vue";
@@ -338,6 +344,12 @@ async function handleDelete(): Promise<void> {
   }
 }
 
+const rejectDialogRef = ref<InstanceType<typeof RejectDialog> | null>(null);
+
+function handleRejectClick(): void {
+  rejectDialogRef.value?.open();
+}
+
 /*
  * A rejected CNA container is a different, minimal shape from a
  * normal one (schemas/upstream/cve/5.2.0's cnaRejectedContainer:
@@ -348,27 +360,16 @@ async function handleDelete(): Promise<void> {
  * used everywhere else: hosts don't need a dedicated "reject" method,
  * since a rejected record is still just a record to save.
  */
-async function handleReject(): Promise<void> {
+async function handleRejectConfirm(
+  reason: string,
+): Promise<void> {
   if (!props.repository || !state.record.value) {
-    return;
-  }
-
-  const reason = window.prompt(
-    "Reason for rejecting this record:",
-  );
-
-  if (!reason?.trim()) {
     return;
   }
 
   const record = state.record.value;
   const now = new Date().toISOString();
-
-  const previousProviderMetadata = (
-    record.containers?.cna as
-      | { providerMetadata?: Record<string, unknown> }
-      | undefined
-  )?.providerMetadata;
+  const previousProviderMetadata = record.containers?.cna?.providerMetadata;
 
   record.cveMetadata ??= {};
   record.cveMetadata.state = "REJECTED";
@@ -384,7 +385,7 @@ async function handleReject(): Promise<void> {
     rejectedReasons: [
       {
         lang: "en",
-        value: reason.trim(),
+        value: reason,
       },
     ],
   };
@@ -417,6 +418,9 @@ const panelNavigationItems = computed(() => {
 const sectionComponents = computed<Record<string, Component>>(() => {
   return {
     ...BUILTIN_SECTION_COMPONENTS,
+    editor: isRejected.value
+      ? RejectedRecordSection
+      : SchemaFormSection,
     ...Object.fromEntries(
       visiblePanels.value.map((panel) => [panel.id, panel.component]),
     ),
@@ -525,9 +529,14 @@ onMounted(loadRecord);
       @save="handleSave()"
       @publish="handleSave(false)"
       @unpublish="handleSave(true)"
-      @reject="handleReject"
+      @reject="handleRejectClick"
       @delete="handleDelete"
       @run-module="handleRunModule"
+    />
+
+    <RejectDialog
+      ref="rejectDialogRef"
+      @submit="handleRejectConfirm"
     />
 
     <div

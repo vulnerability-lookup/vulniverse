@@ -34,10 +34,28 @@ export interface CveMetadata {
   [key: string]: unknown;
 }
 
+export interface ProviderMetadata {
+  orgId?: string;
+  shortName?: string;
+  dateUpdated?: string;
+
+  [key: string]: unknown;
+}
+
 export interface CnaContainer {
   descriptions?: Description[];
   affected?: unknown[];
   references?: unknown[];
+
+  /*
+   * A rejected CNA container is a different, minimal shape from the
+   * one above (schemas/upstream/cve/5.2.0's cnaRejectedContainer:
+   * additionalProperties false, only these three) — descriptions/
+   * affected/references above don't apply to it at all.
+   */
+  providerMetadata?: ProviderMetadata;
+  rejectedReasons?: Description[];
+  replacedBy?: string[];
 
   [key: string]: unknown;
 }
