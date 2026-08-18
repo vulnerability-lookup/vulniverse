@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/docs/images/logo.png" alt="Vulniverse logo" width="400">
+</p>
+
 # Vulniverse
 
 Vulniverse is a web-based editor for authoring, reviewing, validating, and
