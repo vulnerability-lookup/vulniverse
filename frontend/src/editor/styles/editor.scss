@@ -8,10 +8,8 @@
   width: 100%;
   min-width: 0;
 
-  /*
-   * Map host-provided Vulniverse variables to the
-   * Bootstrap variables used inside the editor.
-   */
+  --bs-border-width: 1px;
+
   --bs-body-color:
     var(--vulniverse-text, #212529);
 
