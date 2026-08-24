@@ -9,6 +9,8 @@
   min-width: 0;
 
   --bs-border-width: 1px;
+  --bs-border-style: solid;
+  --bs-border-radius: 0.5rem;
 
   --bs-body-color:
     var(--vulniverse-text, #212529);
@@ -187,10 +189,25 @@
   padding: 2rem;
 }
 
+/*
+ * .editor-layout has no rule tying its height to the browser
+ * viewport (deliberately — this component is also the embeddable
+ * <vulniverse-editor>, which shouldn't assume it owns the whole
+ * window). Editor/Preview tabs still end up viewport-filling in
+ * practice because their own content (many form fields, a full
+ * record dump) is naturally taller than the layout's 40rem floor.
+ * This tab's only real content was a fixed 32rem box, so the whole
+ * card fell back to that floor — visibly shorter than the window,
+ * leaving the page background exposed below it. calc(100vh - 24rem)
+ * is a rough estimate of the surrounding chrome (header, tab title,
+ * button row, card padding) so the box grows with the window in the
+ * standalone app; clamped so it neither disappears nor becomes
+ * absurdly tall if actually embedded somewhere height-constrained.
+ */
 .json-editor {
   display: flex;
   align-items: stretch;
-  height: 32rem;
+  height: clamp(20rem, calc(100vh - 24rem), 50rem);
 }
 
 .json-gutter,
@@ -304,6 +321,15 @@
     font-weight: 400;
   }
 
+  // A bare <textarea> defaults to ~2 rows — too short to show it's
+  // meant for multi-line prose rather than a stretched single-line
+  // input. min-height (not rows, which the renderer doesn't set)
+  // gives it real room while resize lets the user grow it further.
+  .control > .wrapper > .text-area {
+    min-height: 6rem;
+    resize: vertical;
+  }
+
   .control > .wrapper > .input:focus,
   .control > .wrapper > .select:focus,
   .control > .wrapper > .text-area:focus {
@@ -412,5 +438,25 @@
 
   .editor-content {
     padding: 1rem;
+  }
+}
+
+/*
+ * Rendered supportingMedia (markdown/HTML, sanitized before this
+ * point — see supporting-media.ts) is otherwise-unstyled third-party
+ * content, so it needs just enough containment to not break the
+ * surrounding preview layout: images can't overflow their column,
+ * and code blocks/tables scroll horizontally instead of forcing the
+ * whole page wider.
+ */
+.supporting-media-html {
+  img {
+    max-width: 100%;
+  }
+
+  pre,
+  table {
+    max-width: 100%;
+    overflow-x: auto;
   }
 }

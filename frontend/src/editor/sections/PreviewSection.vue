@@ -7,6 +7,8 @@ import {
   useEditorContext,
 } from "../use-editor-context";
 
+import SupportingMediaPreview from "./SupportingMediaPreview.vue";
+
 type AnyRecord = Record<string, unknown>;
 
 const editor = useEditorContext();
@@ -158,6 +160,12 @@ function textEntriesOf(
   key: string,
 ): AnyRecord[] {
   return (source[key] as AnyRecord[] | undefined) ?? [];
+}
+
+function supportingMediaOf(
+  entry: AnyRecord,
+): AnyRecord[] {
+  return (entry.supportingMedia as AnyRecord[] | undefined) ?? [];
 }
 
 function affectedOf(
@@ -480,6 +488,12 @@ function isEmptySource(
                   {{ entry.lang }}
                 </span>
                 {{ entry.value }}
+
+                <SupportingMediaPreview
+                  v-for="(media, mediaIndex) in supportingMediaOf(entry)"
+                  :key="mediaIndex"
+                  :media="media"
+                />
               </div>
             </div>
           </template>
