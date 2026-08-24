@@ -1,6 +1,7 @@
 import type {
   EditorRepository,
   LoadedRecord,
+  ReferenceListItem,
   ValidationResult,
   VulnerabilityRecord,
 } from "@/editor/contracts";
@@ -108,6 +109,16 @@ export class HttpRepository
       `/records/${encodeURIComponent(identifier)}`,
       { method: "DELETE" },
     );
+  }
+
+  async getReferenceList(
+    kind: "cwe" | "capec",
+  ): Promise<ReferenceListItem[]> {
+    const result = await this.request<{ items: ReferenceListItem[] }>(
+      `/references/${kind}`,
+    );
+
+    return result.items;
   }
 
   private async request<T>(

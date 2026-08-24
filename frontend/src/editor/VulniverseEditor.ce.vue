@@ -4,6 +4,7 @@ import {
   onMounted,
   provide,
   ref,
+  toRef,
   watch,
 } from "vue";
 
@@ -23,6 +24,7 @@ import {
 } from "./contracts";
 
 import {
+  editorRepositoryKey,
   editorStateKey,
 } from "./editor-context";
 
@@ -92,6 +94,11 @@ const state = useEditorState();
 provide(
   editorStateKey,
   state,
+);
+
+provide(
+  editorRepositoryKey,
+  toRef(props, "repository"),
 );
 
 const activeSection = ref("editor");

@@ -1,6 +1,5 @@
 from flask import Blueprint
 
-
 api_bp = Blueprint("api_v1", __name__)
 
 
@@ -27,4 +26,4 @@ def capabilities() -> dict:
     }
 
 
-from . import records, validation  # noqa: E402, F401
+from . import records, reference_data, validation  # noqa: F401

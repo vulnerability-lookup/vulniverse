@@ -24,6 +24,11 @@ import SourceRenderer from "./SourceRenderer.vue";
 import TagsRenderer from "./TagsRenderer.vue";
 import ArrayCardRenderer from "./ArrayCardRenderer.vue";
 import BooleanSelectRenderer from "./BooleanSelectRenderer.vue";
+import ReferenceIdRenderer from "./ReferenceIdRenderer.vue";
+
+import {
+  referenceKindForPattern,
+} from "./reference-lookup";
 
 /*
  * Any string property whose schema allows at least this many
@@ -50,6 +55,20 @@ const isLongTextControl = and(
   (uischema: UISchemaElement) => (uischema as ControlElement).scope !== "#",
   schemaMatches(
     (schema) => typeof schema.maxLength === "number" && schema.maxLength >= LONG_TEXT_MIN_LENGTH,
+  ),
+);
+
+/*
+ * cweId (problemTypes[].descriptions[]) and capecId (impacts[]) are
+ * detected by their exact schema pattern — the same one the CVE
+ * schema uses in both the CNA and ADP copies of these fields — so a
+ * combobox with a suggestion list swaps in automatically wherever
+ * that pattern appears, with no per-path uischema configuration.
+ */
+const isReferenceIdControl = and(
+  isStringControl,
+  schemaMatches(
+    (schema) => referenceKindForPattern(schema.pattern) !== null,
   ),
 );
 
@@ -103,6 +122,10 @@ export const customRenderers: JsonFormsRendererRegistryEntry[] = [
   {
     renderer: TagsRenderer,
     tester: rendererOptionIs("vulniverse-tags"),
+  },
+  {
+    renderer: ReferenceIdRenderer,
+    tester: rankWith(4, isReferenceIdControl),
   },
   /*
    * Rank 2 beats vanilla's own checkbox-based BooleanControlRenderer

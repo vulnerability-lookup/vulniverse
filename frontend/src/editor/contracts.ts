@@ -120,6 +120,11 @@ export class RecordValidationError extends Error {
   }
 }
 
+export interface ReferenceListItem {
+  id: string;
+  name: string;
+}
+
 export interface EditorRepository {
   loadRecord(
     identifier: string,
@@ -146,6 +151,17 @@ export interface EditorRepository {
   deleteRecord(
     identifier: string,
   ): Promise<void>;
+
+  /**
+   * Optional: a host may not have this data available (e.g. no
+   * outbound access to MITRE from wherever it runs), in which case
+   * cweId/capecId fields fall back to plain free-text entry — the
+   * schema only ever required a pattern-matching string, never a
+   * value drawn from this list, so nothing breaks by omitting it.
+   */
+  getReferenceList?(
+    kind: "cwe" | "capec",
+  ): Promise<ReferenceListItem[]>;
 }
 
 export interface EditorModuleContext {
