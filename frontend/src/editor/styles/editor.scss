@@ -79,9 +79,26 @@
 }
 
 .editor-header {
-  padding: 1rem 1.5rem;
   background: var(--bs-tertiary-bg, #f8f9fa);
   border-bottom: 1px solid var(--bs-border-color);
+}
+
+.editor-header-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(13rem, 17rem)
+    minmax(0, 1fr);
+  align-items: center;
+}
+
+.editor-header-logo-slot {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+}
+
+.editor-header-main {
+  padding: 1rem 1.5rem 1rem 2rem;
 }
 
 .editor-header-logo {
@@ -376,8 +393,12 @@
 }
 
 @media (max-width: 768px) {
-  .editor-header {
-    padding: 1rem;
+  .editor-header-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-header-main {
+    padding: 0 1rem 1rem;
   }
 
   .editor-layout {

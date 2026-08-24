@@ -136,6 +136,16 @@ const validationWarnings = computed(() => {
   );
 });
 
+const blockingErrorsDismissed = ref(false);
+const validationWarningsDismissed = ref(false);
+
+watch(state.validationErrors, () => {
+  blockingErrorsDismissed.value = false;
+  validationWarningsDismissed.value = false;
+});
+
+const validationSucceeded = ref(false);
+
 const isRejected = computed(() => {
   return state.record.value?.cveMetadata?.state === "REJECTED";
 });
@@ -238,6 +248,7 @@ async function handleValidate(): Promise<void> {
 
   state.saving.value = true;
   state.saveError.value = null;
+  validationSucceeded.value = false;
 
   try {
     const result =
@@ -247,6 +258,7 @@ async function handleValidate(): Promise<void> {
       );
 
     state.validationErrors.value = result.errors;
+    validationSucceeded.value = result.errors.length === 0;
   } catch (error) {
     const normalized = normalizeError(
       error,
@@ -504,6 +516,10 @@ watch(
 watch(
   state.dirty,
   (dirty) => {
+    if (dirty) {
+      validationSucceeded.value = false;
+    }
+
     emit(
       "dirtyChange",
       dirty,
@@ -540,68 +556,6 @@ onMounted(loadRecord);
     />
 
     <div
-      v-if="state.saveError.value"
-      class="alert alert-danger m-3"
-      role="alert"
-    >
-      {{ state.saveError.value.message }}
-    </div>
-
-    <div
-      v-if="blockingErrors.length"
-      class="alert alert-warning m-3"
-      role="alert"
-    >
-      <p class="mb-2">
-        The record has
-        {{ blockingErrors.length }}
-        validation
-        {{
-          blockingErrors.length === 1
-            ? "error"
-            : "errors"
-        }}.
-      </p>
-
-      <ul class="mb-0">
-        <li
-          v-for="(error, index) in blockingErrors"
-          :key="index"
-        >
-          <code>{{ error.path.join(".") || "record" }}</code>
-          — {{ error.message }}
-        </li>
-      </ul>
-    </div>
-
-    <div
-      v-if="validationWarnings.length"
-      class="alert alert-info m-3"
-      role="alert"
-    >
-      <p class="mb-2">
-        {{ validationWarnings.length }}
-        validation
-        {{
-          validationWarnings.length === 1
-            ? "warning"
-            : "warnings"
-        }}
-        (won't block saving).
-      </p>
-
-      <ul class="mb-0">
-        <li
-          v-for="(warning, index) in validationWarnings"
-          :key="index"
-        >
-          <code>{{ warning.path.join(".") || "record" }}</code>
-          — {{ warning.message }}
-        </li>
-      </ul>
-    </div>
-
-    <div
       v-if="state.loading.value"
       class="editor-status text-center text-secondary p-5"
     >
@@ -625,6 +579,104 @@ onMounted(loadRecord);
       />
 
       <main class="editor-content">
+        <div
+          v-if="state.saveError.value"
+          class="alert alert-danger alert-dismissible mb-3"
+          role="alert"
+        >
+          {{ state.saveError.value.message }}
+
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Close"
+            @click="state.saveError.value = null"
+          />
+        </div>
+
+        <div
+          v-if="validationSucceeded"
+          class="alert alert-success alert-dismissible mb-3"
+          role="status"
+        >
+          The record is valid.
+
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Close"
+            @click="validationSucceeded = false"
+          />
+        </div>
+
+        <div
+          v-if="blockingErrors.length && !blockingErrorsDismissed"
+          class="alert alert-warning alert-dismissible mb-3"
+          role="alert"
+        >
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Close"
+            @click="blockingErrorsDismissed = true"
+          />
+
+          <p class="mb-2">
+            The record has
+            {{ blockingErrors.length }}
+            validation
+            {{
+              blockingErrors.length === 1
+                ? "error"
+                : "errors"
+            }}.
+          </p>
+
+          <ul class="mb-0">
+            <li
+              v-for="(error, index) in blockingErrors"
+              :key="index"
+            >
+              <code>{{ error.path.join(".") || "record" }}</code>
+              — {{ error.message }}
+            </li>
+          </ul>
+        </div>
+
+        <div
+          v-if="validationWarnings.length && !validationWarningsDismissed"
+          class="alert alert-info alert-dismissible mb-3"
+          role="alert"
+        >
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Close"
+            @click="validationWarningsDismissed = true"
+          />
+
+          <p class="mb-2">
+            {{ validationWarnings.length }}
+            validation
+            {{
+              validationWarnings.length === 1
+                ? "warning"
+                : "warnings"
+            }}
+            (won't block saving).
+          </p>
+
+          <ul class="mb-0">
+            <li
+              v-for="(warning, index) in validationWarnings"
+              :key="index"
+            >
+              <code>{{ warning.path.join(".") || "record" }}</code>
+              — {{ warning.message }}
+            </li>
+          </ul>
+        </div>
+
         <component
           :is="currentSection"
           v-bind="sectionProps"

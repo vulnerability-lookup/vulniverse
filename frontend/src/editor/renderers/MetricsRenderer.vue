@@ -23,6 +23,8 @@ import {
   useCollapsibleItems,
 } from "./use-collapsible-items";
 
+import CvssCalculatorDialog from "./CvssCalculatorDialog.vue";
+
 const props = defineProps({
   ...rendererProps<ControlElement>(),
 });
@@ -184,6 +186,62 @@ function addMetric(): void {
     },
   )?.();
 }
+
+const calculatorRef = ref<InstanceType<typeof CvssCalculatorDialog> | null>(null);
+const calculatorIndex = ref<number | null>(null);
+
+function openCalculator(
+  index: number,
+): void {
+  const format = formatOf(index);
+
+  if (!format?.version) {
+    return;
+  }
+
+  calculatorIndex.value = index;
+
+  calculatorRef.value?.open(
+    format.version as "2.0" | "3.0" | "3.1" | "4.0",
+    items.value[index]?.[format.key]?.vectorString || undefined,
+  );
+}
+
+function applyCalculatorResult(
+  result: {
+    vectorString: string;
+    baseScore?: number;
+    baseSeverity?: string;
+  },
+): void {
+  const index = calculatorIndex.value;
+  const format = index === null ? null : formatOf(index);
+
+  if (index === null || !format) {
+    return;
+  }
+
+  const path = itemPath(index);
+
+  handleChange(
+    composePaths(path, `${format.key}.vectorString`),
+    result.vectorString,
+  );
+
+  if (result.baseScore !== undefined) {
+    handleChange(
+      composePaths(path, `${format.key}.baseScore`),
+      result.baseScore,
+    );
+  }
+
+  if (result.baseSeverity !== undefined && format.hasSeverity) {
+    handleChange(
+      composePaths(path, `${format.key}.baseSeverity`),
+      result.baseSeverity,
+    );
+  }
+}
 </script>
 
 <template>
@@ -280,6 +338,15 @@ function addMetric(): void {
                 :renderers="control.renderers"
                 :cells="control.cells"
               />
+
+              <button
+                type="button"
+                class="btn btn-outline-primary btn-sm mt-1"
+                :disabled="!control.enabled"
+                @click="openCalculator(index)"
+              >
+                Calculate
+              </button>
             </div>
 
             <div class="col-md-6">
@@ -342,5 +409,10 @@ function addMetric(): void {
         </template>
       </div>
     </div>
+
+    <CvssCalculatorDialog
+      ref="calculatorRef"
+      @apply="applyCalculatorResult"
+    />
   </fieldset>
 </template>

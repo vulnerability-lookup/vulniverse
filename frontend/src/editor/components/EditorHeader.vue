@@ -31,18 +31,21 @@ defineEmits<{
 
 <template>
   <header class="editor-header">
-    <div
-      class="d-flex flex-column flex-lg-row
-             align-items-lg-center
-             justify-content-between gap-3"
-    >
-      <div class="d-flex align-items-center gap-3">
+    <div class="editor-header-grid">
+      <div class="editor-header-logo-slot">
         <img
           :src="vulniverseLogo"
           alt="Vulniverse"
           class="editor-header-logo"
         >
+      </div>
 
+      <div
+        class="editor-header-main
+               d-flex flex-column flex-lg-row
+               align-items-lg-center
+               justify-content-between gap-3"
+      >
         <div>
           <h1 class="h5 mb-1">
             {{ identifier ?? "New vulnerability record" }}
@@ -81,7 +84,6 @@ defineEmits<{
             </span>
           </div>
         </div>
-      </div>
 
       <div class="d-flex flex-wrap align-items-center gap-2">
         <div
@@ -242,6 +244,7 @@ defineEmits<{
           </button>
         </template>
       </div>
+    </div>
     </div>
   </header>
 </template>
