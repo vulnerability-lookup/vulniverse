@@ -125,6 +125,17 @@ export interface ReferenceListItem {
   name: string;
 }
 
+export interface TemplateField {
+  path: string;
+  value: unknown;
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  fields: TemplateField[];
+}
+
 export interface EditorRepository {
   loadRecord(
     identifier: string,
@@ -162,6 +173,29 @@ export interface EditorRepository {
   getReferenceList?(
     kind: "cwe" | "capec",
   ): Promise<ReferenceListItem[]>;
+
+  /**
+   * Optional: a host may have no place to persist templates (e.g.
+   * no per-user storage at all), in which case the Templates
+   * section shows a "not supported here" message instead of the
+   * create/apply UI — nothing else in the editor depends on this.
+   */
+  listTemplates?(): Promise<Template[]>;
+
+  saveTemplate?(
+    name: string,
+    fields: TemplateField[],
+  ): Promise<Template>;
+
+  updateTemplate?(
+    id: string,
+    name: string,
+    fields: TemplateField[],
+  ): Promise<Template>;
+
+  deleteTemplate?(
+    id: string,
+  ): Promise<void>;
 }
 
 export interface EditorModuleContext {

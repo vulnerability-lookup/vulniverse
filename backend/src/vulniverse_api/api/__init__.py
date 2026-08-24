@@ -26,4 +26,4 @@ def capabilities() -> dict:
     }
 
 
-from . import records, reference_data, validation  # noqa: F401
+from . import records, reference_data, templates, validation  # noqa: F401

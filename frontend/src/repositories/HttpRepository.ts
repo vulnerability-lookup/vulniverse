@@ -2,6 +2,8 @@ import type {
   EditorRepository,
   LoadedRecord,
   ReferenceListItem,
+  Template,
+  TemplateField,
   ValidationResult,
   VulnerabilityRecord,
 } from "@/editor/contracts";
@@ -119,6 +121,57 @@ export class HttpRepository
     );
 
     return result.items;
+  }
+
+  async listTemplates(): Promise<Template[]> {
+    const result = await this.request<{
+      templates: Array<{ id: number; name: string; fields: TemplateField[] }>;
+    }>("/templates");
+
+    return result.templates.map((template) => ({
+      ...template,
+      id: String(template.id),
+    }));
+  }
+
+  async saveTemplate(
+    name: string,
+    fields: TemplateField[],
+  ): Promise<Template> {
+    const result = await this.request<{ id: number; name: string; fields: TemplateField[] }>(
+      "/templates",
+      {
+        method: "POST",
+        body: JSON.stringify({ name, fields }),
+      },
+    );
+
+    return { ...result, id: String(result.id) };
+  }
+
+  async updateTemplate(
+    id: string,
+    name: string,
+    fields: TemplateField[],
+  ): Promise<Template> {
+    const result = await this.request<{ id: number; name: string; fields: TemplateField[] }>(
+      `/templates/${encodeURIComponent(id)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ name, fields }),
+      },
+    );
+
+    return { ...result, id: String(result.id) };
+  }
+
+  async deleteTemplate(
+    id: string,
+  ): Promise<void> {
+    await this.request<unknown>(
+      `/templates/${encodeURIComponent(id)}`,
+      { method: "DELETE" },
+    );
   }
 
   private async request<T>(

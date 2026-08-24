@@ -56,6 +56,9 @@ import RejectedRecordSection from
 import SchemaFormSection from
   "./sections/SchemaFormSection.vue";
 
+import TemplatesSection from
+  "./sections/TemplatesSection.vue";
+
 const props = withDefaults(
   defineProps<{
     repository?: EditorRepository;
@@ -116,6 +119,10 @@ const BUILTIN_NAVIGATION_ITEMS = [
     id: "json",
     label: "Advanced JSON",
   },
+  {
+    id: "templates",
+    label: "Templates",
+  },
 ];
 
 const BUILTIN_SECTION_COMPONENTS:
@@ -123,6 +130,7 @@ const BUILTIN_SECTION_COMPONENTS:
     json: JsonSection,
     editor: SchemaFormSection,
     preview: PreviewSection,
+    templates: TemplatesSection,
   };
 
 /*

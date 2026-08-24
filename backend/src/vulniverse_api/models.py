@@ -49,3 +49,29 @@ class VulnerabilityRecord(db.Model):
         onupdate=func.now(),
         nullable=False,
     )
+
+
+class Template(db.Model):
+    __tablename__ = "template"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    name: Mapped[str] = mapped_column(
+        String(256),
+        nullable=False,
+    )
+
+    # A list of {"path": "containers.cna.affected.0.vendor", "value": "Acme"}
+    # entries — arbitrary and unvalidated against any schema, applied by
+    # the frontend as a set of targeted writes onto whatever record is
+    # currently open.
+    fields: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
