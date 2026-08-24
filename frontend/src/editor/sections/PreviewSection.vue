@@ -606,12 +606,18 @@ function isEmptySource(
                   {{ impact.capecId }} —
                 </span>
 
-                <span
+                <div
                   v-for="(description, descIndex) in impactDescriptionsOf(impact)"
                   :key="descIndex"
                 >
                   {{ description.value }}
-                </span>
+
+                  <SupportingMediaPreview
+                    v-for="(media, mediaIndex) in supportingMediaOf(description)"
+                    :key="mediaIndex"
+                    :media="media"
+                  />
+                </div>
               </li>
             </ul>
           </div>
