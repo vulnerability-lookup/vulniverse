@@ -11,10 +11,12 @@ first-class goal: use the complete standalone application, embed the editor in
 [Vulnerability-Lookup](https://github.com/vulnerability-lookup/vulnerability-lookup),
 or connect it to any software that works with the CVE Record Format.
 
-The project currently targets **CVE Record Format 5.2.0**. Its schema tooling
-also tracks the **GCVE BCP-05 1.7** extension profile so that GCVE-specific
-authoring and validation can be added incrementally. GCVE support is a future
-direction, not yet a claim of complete compatibility.
+The project targets **CVE Record Format 5.2.0**, and also supports authoring
+and validating the **GCVE BCP-05 1.7** extension profile: a dedicated `x_gcve`
+editor, profile-aware JSON Schema validation, and the BCP-05 semantic rules
+(relationships required for certain record types, `language` required for
+translations, relationship-type checking). This covers those specific rules,
+not a full audit against every rule in the BCP-05 specification text.
 
 > [!NOTE]
 > Vulniverse is under active development. The editor and API are usable, but
@@ -33,6 +35,9 @@ direction, not yet a claim of complete compatibility.
   the underlying record instead of being discarded.
 - **Official-schema validation** — validate against the bundled CVE 5.2.0
   schema and receive errors with record paths and useful messages.
+- **GCVE BCP-05 authoring** — create and edit records under the GCVE BCP-05
+  1.7 extension profile with a dedicated `x_gcve` editor, validated against
+  both the base CVE schema and BCP-05's own semantic rules.
 - **Draft-friendly workflow** — incomplete records can be saved as drafts;
   non-draft records are rejected by the API when they do not validate.
 - **Reusable integration surface** — ship the UI as a framework-independent
@@ -73,8 +78,9 @@ included `HttpRepository` and the `/api/v1` endpoints.
 | CVE 5.2.0 schema validation | Available |
 | Draft persistence through the REST API | Available |
 | Embeddable Web Component build | Available |
-| GCVE BCP-05 profile/schema tracking | Foundation available |
-| Complete GCVE authoring and semantic validation | Planned |
+| Create and edit GCVE BCP-05 1.7 records (`x_gcve` editor) | Available |
+| GCVE BCP-05 semantic validation (relationships, translation `language`, relationship types) | Available |
+| Full audit against every BCP-05 rule | Not claimed |
 | External publication integrations | Planned |
 
 ## Prerequisites
@@ -227,8 +233,9 @@ uv run pytest
 ## Project direction
 
 Vulniverse aims to make structured vulnerability authoring a component rather
-than a silo. The immediate focus is a robust CVE 5.2.0 workflow and clean
-integration into Vulnerability-Lookup and similar platforms. The schema
-profile architecture provides a path toward GCVE extensions and additional
-semantic checks while preserving interoperability with software that already
-consumes CVE records.
+than a silo. The immediate focus is a robust CVE 5.2.0 workflow, GCVE BCP-05
+authoring on top of it, and clean integration into Vulnerability-Lookup and
+similar platforms. The schema profile architecture already carries both
+formats side by side, and provides a path toward covering more of the BCP-05
+semantic rule set while preserving interoperability with software that
+already consumes CVE records.

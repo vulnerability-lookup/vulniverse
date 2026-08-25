@@ -8,8 +8,22 @@ repo_name = "vulnerability-lookup/vulniverse"
 edit_uri = "edit/main/docs/docs/"
 
 nav = [
-  { "Get started" = "index.md" },
-  { "Markdown in 5min" = "markdown.md" },
+    { "Introduction" = "index.md "},
+  
+    { "Setup" = [
+        { "Get started" = "setup/setup.md" },
+        { "Configuration" = "setup/config.md" },
+        { "Manage Schemas" = "setup/schema.md" },
+    ]},
+
+    { "Development" = [
+        { "Architecture" = "development/architecture.md" },
+    ] },
+
+    { "Embedding" = [
+        { "Vulnerability-Lookup" = "embedding/vl.md" },
+    ] },
+
 ]
 
 dev_addr = "localhost:8008"
