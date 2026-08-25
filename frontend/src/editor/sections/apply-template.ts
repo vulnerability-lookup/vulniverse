@@ -95,3 +95,36 @@ export function applyTemplateFields(
     setPath(record, field.path, field.value);
   }
 }
+
+/**
+ * Walks an already-loaded record and returns every leaf value
+ * (string/number/boolean/null — never an object or array itself)
+ * paired with the dot-path setPath() would need to write it back —
+ * so a user can pick "which of the fields I've already filled in
+ * should become part of this template" instead of typing paths from
+ * memory. Empty arrays/objects contribute nothing (there's no value
+ * to capture there); everything else, including falsy leaves like
+ * `false` or `0`, is included.
+ */
+export function flattenRecord(
+  value: unknown,
+  prefix = "",
+): TemplateField[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => flattenRecord(
+      item,
+      prefix ? `${prefix}.${index}` : `${index}`,
+    ));
+  }
+
+  if (value !== null && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>).flatMap(
+      ([key, item]) => flattenRecord(
+        item,
+        prefix ? `${prefix}.${key}` : key,
+      ),
+    );
+  }
+
+  return prefix ? [{ path: prefix, value }] : [];
+}

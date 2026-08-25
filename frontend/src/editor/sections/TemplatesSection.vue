@@ -2,6 +2,7 @@
 import {
   computed,
   onMounted,
+  reactive,
   ref,
 } from "vue";
 
@@ -15,9 +16,18 @@ import {
 
 import {
   applyTemplateFields,
+  flattenRecord,
   parseFieldValue,
   stringifyFieldValue,
 } from "./apply-template";
+
+import {
+  suggestPaths,
+} from "./template-path-catalog";
+
+import type {
+  PathSuggestion,
+} from "./template-path-catalog";
 
 import type {
   Template,
@@ -82,6 +92,91 @@ function removeDraftField(
   draftFields.value.splice(index, 1);
 }
 
+// --- Path autocomplete (per field-path input, keyed by row index) ---
+
+const activeSuggestionIndex = ref<number | null>(null);
+
+function pathSuggestionsFor(
+  index: number,
+): PathSuggestion[] {
+  if (activeSuggestionIndex.value !== index) {
+    return [];
+  }
+
+  return suggestPaths(draftFields.value[index]?.path ?? "");
+}
+
+function selectPathSuggestion(
+  index: number,
+  suggestion: PathSuggestion,
+): void {
+  draftFields.value[index]!.path = suggestion.path;
+  activeSuggestionIndex.value = null;
+}
+
+// --- Capture fields from the currently open record ---
+
+const showCapture = ref(false);
+const captureFilter = ref("");
+const captureSelections = reactive(new Set<string>());
+
+const capturedLeaves = computed<TemplateField[]>(() => {
+  return editor.record.value
+    ? flattenRecord(editor.record.value as unknown as Record<string, unknown>)
+    : [];
+});
+
+const filteredLeaves = computed(() => {
+  const term = captureFilter.value.trim().toLowerCase();
+
+  if (!term) {
+    return capturedLeaves.value;
+  }
+
+  return capturedLeaves.value.filter(
+    (leaf) => leaf.path.toLowerCase().includes(term),
+  );
+});
+
+function toggleCaptureSelection(
+  path: string,
+): void {
+  if (captureSelections.has(path)) {
+    captureSelections.delete(path);
+  } else {
+    captureSelections.add(path);
+  }
+}
+
+function addSelectedCaptures(): void {
+  const existingPaths = new Set(
+    draftFields.value.map((field) => field.path.trim()),
+  );
+
+  const toAdd = filteredLeaves.value.filter(
+    (leaf) => captureSelections.has(leaf.path) && !existingPaths.has(leaf.path),
+  );
+
+  if (toAdd.length === 0) {
+    captureSelections.clear();
+    return;
+  }
+
+  const nonEmptyExisting = draftFields.value.filter(
+    (field) => field.path.trim().length > 0,
+  );
+
+  draftFields.value = [
+    ...nonEmptyExisting,
+    ...toAdd.map((leaf) => ({
+      path: leaf.path,
+      value: stringifyFieldValue(leaf.value),
+    })),
+  ];
+
+  captureSelections.clear();
+}
+
 const canSave = computed(() => {
   return draftName.value.trim().length > 0
     && draftFields.value.some((field) => field.path.trim().length > 0);
@@ -127,22 +222,18 @@ async function submitDraft(): Promise<void> {
 
   try {
     if (editingTemplateId.value) {
-      const update = repository.value?.updateTemplate;
-
-      if (!update) {
+      if (!repository.value?.updateTemplate) {
         return;
       }
 
-      await update(editingTemplateId.value, name, fields);
+      await repository.value.updateTemplate(editingTemplateId.value, name, fields);
       statusMessage.value = "Template updated.";
     } else {
-      const create = repository.value?.saveTemplate;
-
-      if (!create) {
+      if (!repository.value?.saveTemplate) {
         return;
       }
 
-      await create(name, fields);
+      await repository.value.saveTemplate(name, fields);
       statusMessage.value = "Template saved.";
     }
 
@@ -314,6 +405,80 @@ async function deleteTemplate(
         </div>
       </div>
 
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Capture fields from the current record</span>
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            @click="showCapture = !showCapture"
+          >
+            {{ showCapture ? "Hide" : "Show" }}
+          </button>
+        </div>
+
+        <div
+          v-if="showCapture"
+          class="card-body"
+        >
+          <p
+            v-if="!capturedLeaves.length"
+            class="text-secondary small mb-0"
+          >
+            The current record has no fields filled in yet.
+          </p>
+
+          <template v-else>
+            <input
+              v-model="captureFilter"
+              type="text"
+              class="form-control mb-2"
+              placeholder="Filter by path, e.g. affected or vendor"
+            >
+
+            <div class="capture-field-list mb-2">
+              <p
+                v-if="!filteredLeaves.length"
+                class="text-secondary small mb-0"
+              >
+                No fields match "{{ captureFilter }}".
+              </p>
+
+              <div
+                v-for="leaf in filteredLeaves"
+                :key="leaf.path"
+                class="form-check"
+              >
+                <input
+                  :id="`capture-${leaf.path}`"
+                  type="checkbox"
+                  class="form-check-input"
+                  :checked="captureSelections.has(leaf.path)"
+                  @change="toggleCaptureSelection(leaf.path)"
+                >
+
+                <label
+                  :for="`capture-${leaf.path}`"
+                  class="form-check-label small"
+                >
+                  <code>{{ leaf.path }}</code> = {{ stringifyFieldValue(leaf.value) }}
+                </label>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              :disabled="captureSelections.size === 0"
+              @click="addSelectedCaptures"
+            >
+              Add {{ captureSelections.size }} selected field(s)
+            </button>
+          </template>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
           {{ editingTemplateId ? "Edit template" : "Create a new template" }}
@@ -336,7 +501,7 @@ async function deleteTemplate(
             :key="index"
             class="row g-2 mb-2 align-items-end"
           >
-            <div class="col-5">
+            <div class="col-5 position-relative">
               <label class="form-label">Field path</label>
 
               <input
@@ -344,7 +509,35 @@ async function deleteTemplate(
                 type="text"
                 class="form-control"
                 placeholder="containers.cna.affected.0.vendor"
+                autocomplete="off"
+                @focus="activeSuggestionIndex = index"
+                @blur="activeSuggestionIndex = null"
               >
+
+              <ul
+                v-if="pathSuggestionsFor(index).length"
+                class="reference-id-suggestions"
+              >
+                <li
+                  v-for="suggestion in pathSuggestionsFor(index)"
+                  :key="suggestion.path"
+                >
+                  <button
+                    type="button"
+                    class="reference-id-suggestion"
+                    @mousedown.prevent="selectPathSuggestion(index, suggestion)"
+                  >
+                    <code>{{ suggestion.path }}</code>
+
+                    <span
+                      v-if="suggestion.title"
+                      class="text-secondary"
+                    >
+                      — {{ suggestion.title }}
+                    </span>
+                  </button>
+                </li>
+              </ul>
             </div>
 
             <div class="col-5">
@@ -377,6 +570,11 @@ async function deleteTemplate(
           >
             + Add field
           </button>
+
+          <p class="text-secondary small mb-3">
+            Suggested paths default array positions to <code>0</code>
+            — edit that digit to target a different entry.
+          </p>
 
           <div class="d-flex gap-2">
             <button

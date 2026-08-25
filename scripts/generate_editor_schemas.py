@@ -436,6 +436,31 @@ def collect_field_catalog(
     return fields
 
 
+def frontend_path_catalog(
+    field_catalog: list[JsonObject],
+) -> list[JsonObject]:
+    """
+    A trimmed projection of collect_field_catalog()'s output for the
+    Templates section's path autocomplete: only scalar leaves (a
+    template field sets one concrete value, so an "object"/"array"/
+    "unknown" branch entry — e.g. containers.cna.affected[] itself —
+    isn't a useful suggestion), and only the {path, title, type}
+    fields that UI actually needs. description/enum/format/scope/
+    required are dropped so this ships to the browser as a small
+    fraction of fields.json's size (which stays full-size and
+    schemas/generated/-only, for other tooling that wants it).
+    """
+    return [
+        {
+            "path": field["path"],
+            "title": field.get("title"),
+            "type": field["type"],
+        }
+        for field in field_catalog
+        if field["type"] not in ("object", "array", "unknown")
+    ]
+
+
 def generate(
     project_root: Path,
     profile_id: str,
@@ -696,9 +721,11 @@ def generate(
         ui_schema,
     )
 
+    field_catalog = collect_field_catalog(authoring_schema)
+
     write_json(
         output_directory / "fields.json",
-        collect_field_catalog(authoring_schema),
+        field_catalog,
     )
 
     report = {
@@ -728,6 +755,11 @@ def generate(
             output_directory / filename,
             frontend_directory / filename,
         )
+
+    write_json(
+        frontend_directory / "field-paths.json",
+        frontend_path_catalog(field_catalog),
+    )
 
     print(f"Generated {profile_id} editor schemas.")
 
