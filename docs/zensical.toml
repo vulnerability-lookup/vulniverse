@@ -34,7 +34,7 @@ dev_addr = "localhost:8008"
 [project.theme]
 # variant = "classic"
 # custom_dir = "overrides"
-# favicon = "images/icon.png"
+favicon = "images/icon.png"
 language = "en"
 features = [
   "announce.dismiss",

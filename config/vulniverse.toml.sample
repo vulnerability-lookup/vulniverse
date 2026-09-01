@@ -1,0 +1,44 @@
+# Vulniverse standalone-app configuration.
+#
+# Copy this file to vulniverse.toml (untracked, gitignored) and edit it for
+# your deployment. If vulniverse.toml is absent, the backend falls back to
+# this sample file's values, so a fresh checkout behaves exactly like a
+# deployment with no config file at all — nothing here is required.
+
+[panels]
+# Which sidebar panels the standalone app shows, keyed by EditorPanel.id
+# (see frontend/src/editor/panels/*.ts). A panel id with no entry here
+# defaults to enabled, matching pre-config behavior.
+"stats" = false
+"vl" = false
+"cve-program" = false
+# Opt-in only: needed by hosts with GCVE-only storage (e.g.
+# Vulnerability-Lookup), not by the standalone app.
+"gcve-identifier" = false
+
+[modules]
+# Which header-button modules the standalone app shows, keyed by
+# EditorModule.id (see frontend/src/editor/modules/*.ts).
+"download-json" = true
+
+# CNA publication targets for the "Vulnerability-Lookup" and "CVE Program"
+# panels. A target is just that base URL plus the credentials for it. 
+# A target with any of these five keys missing is treated as "not configured"
+
+# [integrations.vl]
+# cve_url = "https://your-vl-instance.example/api/cna"
+# short_name = "..."
+# cve_api_org = "..."
+# cve_api_user = "..."
+# cve_api_key = "..."
+
+# Commented out deliberately: no default cveawg URL is baked in, so nothing
+# can publish a real CVE until an operator opts in with real credentials.
+# Use cveawg-test.mitre.org while validating, cveawg.mitre.org for real
+# publication.
+# [integrations.cve-program]
+# cve_url = "https://cveawg-test.mitre.org/api"
+# short_name = "..."
+# cve_api_org = "..."
+# cve_api_user = "..."
+# cve_api_key = "..."

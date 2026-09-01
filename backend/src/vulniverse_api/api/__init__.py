@@ -1,5 +1,7 @@
 from flask import Blueprint
 
+from ..services.app_config import load_app_config
+
 api_bp = Blueprint("api_v1", __name__)
 
 
@@ -10,6 +12,8 @@ def health() -> dict[str, str]:
 
 @api_bp.get("/capabilities")
 def capabilities() -> dict:
+    app_config = load_app_config()
+
     return {
         "apiVersion": "1.0",
         "recordProfiles": [
@@ -21,9 +25,11 @@ def capabilities() -> dict:
             "validation": True,
             "cpeSearch": False,
             "cpeProposals": False,
-            "publication": False,
+            "publication": True,
         },
+        "panels": app_config["panels"],
+        "modules": app_config["modules"],
     }
 
 
-from . import records, reference_data, templates, validation  # noqa: F401
+from . import publish, records, reference_data, templates, validation  # noqa: F401

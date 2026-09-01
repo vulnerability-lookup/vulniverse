@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  onMounted,
   ref,
 } from "vue";
 
@@ -26,9 +27,30 @@ import {
   BUILTIN_PANELS,
 } from "@/editor/panels";
 
+import {
+  filterEnabled,
+} from "@/editor/enabled-extensions";
+
 const router = useRouter();
 
 const repository = new HttpRepository("/api/v1");
+
+const enabledModules = ref(BUILTIN_MODULES);
+const enabledPanels = ref(BUILTIN_PANELS);
+
+onMounted(async () => {
+  try {
+    const capabilities = await repository.getCapabilities();
+
+    enabledModules.value = filterEnabled(BUILTIN_MODULES, capabilities.modules);
+    enabledPanels.value = filterEnabled(BUILTIN_PANELS, capabilities.panels);
+  } catch (error) {
+    console.warn(
+      "Could not load app capabilities, showing all built-in panels/modules:",
+      error,
+    );
+  }
+});
 
 const selectedProfile = ref<string | null>(null);
 
@@ -96,8 +118,8 @@ function handleError(
     :repository="repository"
     mode="create"
     :profile="selectedProfile"
-    :modules="BUILTIN_MODULES"
-    :panels="BUILTIN_PANELS"
+    :modules="enabledModules"
+    :panels="enabledPanels"
     @loaded="handleLoaded"
     @error="handleError"
   />

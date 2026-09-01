@@ -28,6 +28,18 @@ export interface RecordSummary {
   updatedAt: string;
 }
 
+/*
+ * Not part of EditorRepository either: which panels/modules the
+ * standalone app shows is a deployment-config concern
+ * (config/vulniverse.toml), not something an embedding host needs —
+ * a host authors its own panels/modules directly, see
+ * editor/panels/index.ts and editor/modules/index.ts.
+ */
+export interface AppCapabilities {
+  panels: Record<string, boolean>;
+  modules: Record<string, boolean>;
+}
+
 export class HttpRepository
   implements EditorRepository
 {
@@ -41,6 +53,18 @@ export class HttpRepository
     );
 
     return result.records;
+  }
+
+  async getCapabilities(): Promise<AppCapabilities> {
+    const result = await this.request<{
+      panels?: Record<string, boolean>;
+      modules?: Record<string, boolean>;
+    }>("/capabilities");
+
+    return {
+      panels: result.panels ?? {},
+      modules: result.modules ?? {},
+    };
   }
 
   async loadRecord(

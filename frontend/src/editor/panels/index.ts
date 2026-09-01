@@ -2,6 +2,14 @@ import {
   recordStatsPanel,
 } from "./record-stats";
 
+import {
+  vulnerabilityLookupPanel,
+} from "./vulnerability-lookup";
+
+import {
+  cveProgramPanel,
+} from "./cve-program";
+
 import type {
   EditorPanel,
 } from "../contracts";
@@ -18,7 +26,11 @@ import type {
  */
 export const BUILTIN_PANELS: EditorPanel[] = [
   recordStatsPanel,
+  vulnerabilityLookupPanel,
+  cveProgramPanel,
 ];
 
 export { recordStatsPanel };
+export { vulnerabilityLookupPanel };
+export { cveProgramPanel };
 export { gcveIdentifierPanel } from "./gcve-identifier";

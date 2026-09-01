@@ -5,7 +5,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 backend/.venv/
-backend/instance/
+backend/src/instance/
 
 # JavaScript
 frontend/node_modules/
@@ -21,3 +21,7 @@ docs/site/
 .env
 .env.*
 !.env.example
+
+# Config
+config/vulniverse.toml
+!config/vulniverse.toml.sample
