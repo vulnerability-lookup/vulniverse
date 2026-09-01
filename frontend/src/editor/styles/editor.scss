@@ -2,11 +2,25 @@
   display: block;
   width: 100%;
   min-width: 0;
+
+  /*
+   * Percentage heights resolve to auto against an indefinite-height
+   * containing block (CSS Sizing §5), so this is a no-op wherever the
+   * host page doesn't give <vulniverse-editor> a real height (every
+   * embedding host today, e.g. VL — deliberately unaffected). It only
+   * takes effect where a host explicitly opts in by giving the
+   * element itself a definite height, which is what the standalone
+   * app's own page wrapper does (see pages/EditorPage.vue).
+   */
+  height: 100%;
 }
 
 .vulniverse-editor {
   width: 100%;
   min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 
   --bs-border-width: 1px;
   --bs-border-style: solid;
@@ -161,7 +175,19 @@
     minmax(13rem, 17rem)
     minmax(0, 1fr);
 
+  /*
+   * The 40rem floor guarantees a sane minimum in a content-sized
+   * ancestor (every embedding host, unaffected). flex-grow lets it
+   * additionally consume any real extra height .vulniverse-editor
+   * receives from a host that opts in (the standalone app) — see the
+   * :host height comment in this file's first rule.
+   */
   min-height: 40rem;
+  flex: 1 1 auto;
+}
+
+.editor-status {
+  flex: 1 1 auto;
 }
 
 .editor-sidebar {
@@ -190,19 +216,16 @@
 }
 
 /*
- * .editor-layout has no rule tying its height to the browser
- * viewport (deliberately — this component is also the embeddable
- * <vulniverse-editor>, which shouldn't assume it owns the whole
- * window). Editor/Preview tabs still end up viewport-filling in
- * practice because their own content (many form fields, a full
- * record dump) is naturally taller than the layout's 40rem floor.
- * This tab's only real content was a fixed 32rem box, so the whole
- * card fell back to that floor — visibly shorter than the window,
- * leaving the page background exposed below it. calc(100vh - 24rem)
- * is a rough estimate of the surrounding chrome (header, tab title,
- * button row, card padding) so the box grows with the window in the
- * standalone app; clamped so it neither disappears nor becomes
- * absurdly tall if actually embedded somewhere height-constrained.
+ * .editor-content stretches to fill .editor-layout's row (CSS Grid's
+ * default align-items: stretch) — which itself only fills real extra
+ * height where a host opts in (see the :host height comment above).
+ * A host that doesn't opt in leaves .editor-content auto/content-sized,
+ * so a fixed viewport-relative height here still independently covers
+ * that case (an embedded host, or the standalone app before it
+ * mounts): calc(100vh - 24rem) estimates the surrounding chrome
+ * (header, tab title, button row, card padding), clamped so it
+ * neither disappears nor becomes absurdly tall if actually embedded
+ * somewhere height-constrained.
  */
 .json-editor {
   display: flex;

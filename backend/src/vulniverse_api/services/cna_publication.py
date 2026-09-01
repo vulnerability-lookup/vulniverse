@@ -79,6 +79,11 @@ class CnaPublicationService:
         self.target = target
         self.base_url = credentials["cve_url"].rstrip("/")
         self.short_name = credentials["short_name"]
+        # Deliberately distinct from cve_api_org below: org_id is the CNA's
+        # registered UUID for providerMetadata.orgId (CVE Record Format
+        # requirement), cve_api_org is the CVE-API-ORG auth header value —
+        # the target's own auth scheme, not necessarily UUID-shaped.
+        self.org_id = credentials["org_id"]
         self._api_key = credentials["cve_api_key"]
         self._headers = {
             "CVE-API-ORG": credentials["cve_api_org"],
@@ -136,18 +141,28 @@ class CnaPublicationService:
         data = response.json()
 
         try:
-            cve_id = data["cve_ids"][0]["cve_id"]
+            # The real CVE Services API always populates cve_id. VL's own
+            # GNA-shaped implementation of this same protocol reserves a
+            # GCVE identifier instead — it returns cve_id: "" (no official
+            # CVE assigned yet) with the real id under vuln_id — so fall
+            # back to that when cve_id is empty, rather than treating an
+            # empty string as a successfully reserved (blank) identifier.
+            entry = data["cve_ids"][0]
+            reserved_id = entry.get("cve_id") or entry["vuln_id"]
+
+            if not reserved_id:
+                raise KeyError("cve_id/vuln_id")
         except (KeyError, IndexError, TypeError) as exc:
             publication.status = PublicationStatus.RESERVATION_PENDING.value
             publication.last_response = self._scrub(json.dumps(data))
             publication.last_error = self._scrub(
-                f"Unexpected response shape, no cve_ids[0].cve_id: {json.dumps(data)}",
+                f"Unexpected response shape, no cve_ids[0].cve_id/vuln_id: {json.dumps(data)}",
             )
             self._save(publication)
-            raise ValueError("Upstream returned no CVE ID.") from exc
+            raise ValueError("Upstream returned no reserved identifier.") from exc
 
         publication.status = PublicationStatus.RESERVED.value
-        publication.cve_id = cve_id
+        publication.cve_id = reserved_id
         publication.reserved_at = datetime.now(UTC)
         publication.last_response = self._scrub(json.dumps(data))
         publication.last_error = None
@@ -174,6 +189,8 @@ class CnaPublicationService:
         if not isinstance(cna_container, dict):
             # A malformed/incomplete record, not a caller type error.
             raise ValueError("Record has no containers.cna to publish.")  # noqa: TRY004
+
+        cna_container = self._with_default_provider_metadata(cna_container)
 
         body = {"cnaContainer": cna_container}
         use_put = publication.published_at is not None
@@ -250,6 +267,34 @@ class CnaPublicationService:
         return publication
 
     # ----- internals -----
+
+    def _with_default_provider_metadata(
+        self,
+        cna_container: dict[str, Any],
+    ) -> dict[str, Any]:
+        """The target's publish endpoint requires providerMetadata.orgId
+        (a plain CVE Record Format requirement — see
+        definitions.providerMetadata in the upstream schema) and rejects
+        the request outright without it. Default it from this target's
+        own configured credentials when the record doesn't already
+        supply one, rather than failing publish over a field most
+        records won't think to set by hand. Applied to the outgoing
+        request only — never persisted back into the stored record, so
+        the record you're editing is untouched either way.
+        """
+        provider_metadata = cna_container.get("providerMetadata")
+
+        if isinstance(provider_metadata, dict) and provider_metadata.get("orgId"):
+            return cna_container
+
+        return {
+            **cna_container,
+            "providerMetadata": {
+                **(provider_metadata if isinstance(provider_metadata, dict) else {}),
+                "orgId": self.org_id,
+                "shortName": self.short_name,
+            },
+        }
 
     def _assert_can_transition(
         self,

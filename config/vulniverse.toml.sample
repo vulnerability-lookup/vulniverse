@@ -23,12 +23,18 @@
 "download-json" = true
 
 # CNA publication targets for the "Vulnerability-Lookup" and "CVE Program"
-# panels. A target is just that base URL plus the credentials for it. 
-# A target with any of these five keys missing is treated as "not configured"
+# panels. A target is just that base URL plus the credentials for it.
+# A target with any of these six keys missing is treated as "not configured".
+#
+# org_id and cve_api_org are deliberately separate: org_id is the CNA's
+# registered UUID, sent as providerMetadata.orgId on every record you
+# publish; cve_api_org is the CVE-API-ORG auth header value for this
+# target's own auth scheme, which isn't necessarily UUID-shaped.
 
 # [integrations.vl]
 # cve_url = "https://your-vl-instance.example/api/cna"
 # short_name = "..."
+# org_id = "..."
 # cve_api_org = "..."
 # cve_api_user = "..."
 # cve_api_key = "..."
@@ -40,6 +46,7 @@
 # [integrations.cve-program]
 # cve_url = "https://cveawg-test.mitre.org/api"
 # short_name = "..."
+# org_id = "..."
 # cve_api_org = "..."
 # cve_api_user = "..."
 # cve_api_key = "..."

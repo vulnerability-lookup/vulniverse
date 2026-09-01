@@ -33,6 +33,28 @@ def extract_identifier(
     return identifier if isinstance(identifier, str) else None
 
 
+def identifier_still_present(
+    document: dict[str, Any],
+    identifier: str,
+) -> bool:
+    """A record's identifier, once assigned at creation, is pinned to
+    this row forever — but which of vulnId/cveId originally produced it
+    doesn't matter after that. A record legitimately accumulates a
+    second identifying field over its life (a GCVE record later gets an
+    official cveId, or a cveId record picks up a vulnId when reserving
+    through a GNA target), so update_record checks containment here
+    rather than re-deriving "the" identifier via extract_identifier's
+    vulnId-first preference — which would reject that entirely
+    legitimate case as a fabricated identity change.
+    """
+    metadata = document.get("cveMetadata")
+
+    if not isinstance(metadata, dict):
+        return False
+
+    return identifier in (metadata.get("vulnId"), metadata.get("cveId"))
+
+
 @api_bp.get("/records")
 def list_records() -> tuple[dict, int]:
     # id DESC as a tiebreak: sqlite's CURRENT_TIMESTAMP only has
@@ -154,12 +176,7 @@ def update_record(identifier: str) -> tuple[dict, int]:
     if profile not in known_profiles():
         return {"message": f"Unknown profile: {profile!r}"}, 400
 
-    document_identifier = extract_identifier(document)
-
-    if (
-        document_identifier
-        and document_identifier != identifier
-    ):
+    if not identifier_still_present(document, identifier):
         return {
             "message": "The record identifier cannot be changed.",
         }, 400

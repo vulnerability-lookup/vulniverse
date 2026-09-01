@@ -40,6 +40,7 @@ def configured_vl(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda target: {
             "cve_url": "http://test/api/cna",
             "short_name": "test-cna",
+            "org_id": "TEST-ORG",
             "cve_api_org": "TEST-ORG",
             "cve_api_user": "tester@example.com",
             "cve_api_key": "key123",

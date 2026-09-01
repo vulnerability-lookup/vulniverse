@@ -16,6 +16,7 @@ SAMPLE_CONFIG_PATH = CONFIG_DIR / "vulniverse.toml.sample"
 REQUIRED_INTEGRATION_KEYS = frozenset({
     "cve_url",
     "short_name",
+    "org_id",
     "cve_api_org",
     "cve_api_user",
     "cve_api_key",

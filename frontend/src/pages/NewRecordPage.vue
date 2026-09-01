@@ -113,14 +113,38 @@ function handleError(
     </div>
   </div>
 
-  <VulniverseEditor
+  <div
     v-else
-    :repository="repository"
-    mode="create"
-    :profile="selectedProfile"
-    :modules="enabledModules"
-    :panels="enabledPanels"
-    @loaded="handleLoaded"
-    @error="handleError"
-  />
+    class="editor-page"
+  >
+    <VulniverseEditor
+      :repository="repository"
+      mode="create"
+      :profile="selectedProfile"
+      :modules="enabledModules"
+      :panels="enabledPanels"
+      @loaded="handleLoaded"
+      @error="handleError"
+    />
+  </div>
 </template>
+
+<style scoped>
+/*
+ * See EditorPage.vue for why this wrapper exists — it's what opts
+ * the standalone app's page into filling the viewport height, which
+ * VulniverseEditor.ce.vue itself deliberately doesn't assume.
+ */
+.editor-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.editor-page :deep(.vulniverse-editor) {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+</style>

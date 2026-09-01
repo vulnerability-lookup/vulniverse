@@ -61,9 +61,20 @@ const canReject = computed(() =>
 
 const canAbort = computed(() => status.value !== "ABORTED");
 
-const canUseCveId = computed(() =>
+/*
+ * "vl" reserves a GCVE identifier (vulnId), not an official CVE ID —
+ * VL's own reservation response even leaves cve_id blank for these
+ * (see services/cna_publication.py's reserve_cve_id). "cve-program" is
+ * the real CVE Services API, where the reserved value genuinely is a
+ * cveId. Same `publication.cveId` field either way; only which
+ * cveMetadata property it belongs in differs by target.
+ */
+const targetIdField = computed(() =>
+  props.target === "vl" ? "vulnId" : "cveId");
+
+const canUseReservedId = computed(() =>
   Boolean(publication.value?.cveId) &&
-  props.context.record.cveMetadata?.cveId !== publication.value?.cveId);
+  props.context.record.cveMetadata?.[targetIdField.value] !== publication.value?.cveId);
 
 const STATUS_BADGE: Record<string, string> = {
   LOCAL_ONLY: "secondary",
@@ -78,13 +89,13 @@ const STATUS_BADGE: Record<string, string> = {
 
 const badgeClass = computed(() => STATUS_BADGE[status.value] ?? "secondary");
 
-function useCveId(): void {
+function useReservedId(): void {
   if (!publication.value?.cveId) {
     return;
   }
 
   props.context.record.cveMetadata ??= {};
-  props.context.record.cveMetadata.cveId = publication.value.cveId;
+  props.context.record.cveMetadata[targetIdField.value] = publication.value.cveId;
 }
 
 async function submitReject(): Promise<void> {
@@ -229,12 +240,12 @@ async function submitReject(): Promise<void> {
       </div>
 
       <button
-        v-if="canUseCveId"
+        v-if="canUseReservedId"
         type="button"
         class="btn btn-link btn-sm px-0"
-        @click="useCveId"
+        @click="useReservedId"
       >
-        Use {{ publication?.cveId }} as cveMetadata.cveId
+        Use {{ publication?.cveId }} as cveMetadata.{{ targetIdField }}
       </button>
 
       <dl

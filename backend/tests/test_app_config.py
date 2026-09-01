@@ -91,6 +91,7 @@ def test_get_integration_returns_credentials_when_complete(
         "[integrations.vl]\n"
         'cve_url = "https://example.test/api/cna"\n'
         'short_name = "acme"\n'
+        'org_id = "11111111-1111-1111-1111-111111111111"\n'
         'cve_api_org = "ACME"\n'
         'cve_api_user = "user@example.test"\n'
         'cve_api_key = "secret"\n',
@@ -104,6 +105,7 @@ def test_get_integration_returns_credentials_when_complete(
     assert credentials == {
         "cve_url": "https://example.test/api/cna",
         "short_name": "acme",
+        "org_id": "11111111-1111-1111-1111-111111111111",
         "cve_api_org": "ACME",
         "cve_api_user": "user@example.test",
         "cve_api_key": "secret",

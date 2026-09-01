@@ -94,14 +94,39 @@ function handleDeleted(
 </script>
 
 <template>
-  <VulniverseEditor
-    :repository="repository"
-    mode="edit"
-    :record-id="recordId"
-    :modules="enabledModules"
-    :panels="enabledPanels"
-    @loaded="handleLoaded"
-    @error="handleError"
-    @deleted="handleDeleted"
-  />
+  <div class="editor-page">
+    <VulniverseEditor
+      :repository="repository"
+      mode="edit"
+      :record-id="recordId"
+      :modules="enabledModules"
+      :panels="enabledPanels"
+      @loaded="handleLoaded"
+      @error="handleError"
+      @deleted="handleDeleted"
+    />
+  </div>
 </template>
+
+<style scoped>
+/*
+ * VulniverseEditor.ce.vue's own styles fill 100% of whatever height
+ * they're given (see editor.scss's :host rule) but never assume a
+ * height themselves, since the same component is also the embeddable
+ * <vulniverse-editor> — an embedding host's page decides that, not
+ * the component. This wrapper is what actually opts the standalone
+ * app's own page into filling the viewport.
+ */
+.editor-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.editor-page :deep(.vulniverse-editor) {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+</style>

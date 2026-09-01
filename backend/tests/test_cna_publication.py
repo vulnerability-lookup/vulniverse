@@ -62,6 +62,7 @@ def configured_vl(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda target: {
             "cve_url": "http://test/api/cna",
             "short_name": "test-cna",
+            "org_id": "TEST-ORG",
             "cve_api_org": "TEST-ORG",
             "cve_api_user": "tester@example.com",
             "cve_api_key": API_KEY,
@@ -91,6 +92,39 @@ def test_reserve_success(app: Flask, configured_vl: None, monkeypatch: pytest.Mo
     assert publication.cve_id == "CVE-2026-00001"
     assert publication.reserved_at is not None
     assert publication.last_error is None
+
+
+def test_reserve_falls_back_to_vuln_id_when_cve_id_blank(
+    app: Flask, configured_vl: None, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # VL's own GNA-shaped reservation response: no official CVE assigned
+    # yet (cve_id is blank), the real identifier is the GCVE-format vuln_id.
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        return FakeResponse({
+            "cve_ids": [{"cve_id": "", "vuln_id": "GCVE-0-2026-00099"}],
+        })
+
+    monkeypatch.setattr(service_module.httpx, "request", fake_request)
+
+    service = CnaPublicationService("vl")
+    publication = service.reserve_cve_id("GCVE-0-2026-00099", 2026)
+
+    assert publication.status == PublicationStatus.RESERVED.value
+    assert publication.cve_id == "GCVE-0-2026-00099"
+
+
+def test_reserve_fails_when_neither_cve_id_nor_vuln_id_present(
+    app: Flask, configured_vl: None, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        return FakeResponse({"cve_ids": [{"cve_id": ""}]})
+
+    monkeypatch.setattr(service_module.httpx, "request", fake_request)
+
+    service = CnaPublicationService("vl")
+
+    with pytest.raises(ValueError, match="no reserved identifier"):
+        service.reserve_cve_id("GCVE-0-2026-00098", 2026)
 
 
 def test_reserve_upstream_error_sets_pending_and_scrubs_key(
@@ -146,7 +180,10 @@ def test_publish_success(app: Flask, configured_vl: None, monkeypatch: pytest.Mo
 
         assert url == "http://test/api/cna/cve/CVE-2026-00004/cna"
         assert kwargs["json"] == {
-            "cnaContainer": {"descriptions": [{"lang": "en", "value": "A bug."}]},
+            "cnaContainer": {
+                "descriptions": [{"lang": "en", "value": "A bug."}],
+                "providerMetadata": {"orgId": "TEST-ORG", "shortName": "test-cna"},
+            },
         }
         return FakeResponse({"state": "PUBLISHED"})
 
@@ -158,6 +195,42 @@ def test_publish_success(app: Flask, configured_vl: None, monkeypatch: pytest.Mo
 
     assert publication.status == PublicationStatus.PUBLISHED.value
     assert publication.published_at is not None
+
+
+def test_publish_does_not_override_existing_provider_metadata(
+    app: Flask, configured_vl: None, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    record = VulnerabilityRecord(
+        identifier="GCVE-0-2026-00009",
+        profile="gcve-bcp-05-1.7",
+        document={
+            "containers": {
+                "cna": {
+                    "descriptions": [{"lang": "en", "value": "A bug."}],
+                    "providerMetadata": {"orgId": "real-uuid-1234", "shortName": "Acme"},
+                },
+            },
+        },
+        is_draft=False,
+    )
+    db.session.add(record)
+    db.session.commit()
+
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        if url.endswith("/cve-id"):
+            return FakeResponse({"cve_ids": [{"cve_id": "CVE-2026-00009"}]})
+
+        assert kwargs["json"]["cnaContainer"]["providerMetadata"] == {
+            "orgId": "real-uuid-1234",
+            "shortName": "Acme",
+        }
+        return FakeResponse({"state": "PUBLISHED"})
+
+    monkeypatch.setattr(service_module.httpx, "request", fake_request)
+
+    service = CnaPublicationService("vl")
+    service.reserve_cve_id("GCVE-0-2026-00009", 2026)
+    service.publish("GCVE-0-2026-00009")
 
 
 def test_reject_requires_nonempty_reason(app: Flask, configured_vl: None) -> None:
