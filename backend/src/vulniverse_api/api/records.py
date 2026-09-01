@@ -4,10 +4,10 @@ from typing import Any
 
 from flask import request
 
-from . import api_bp
 from ..extensions import db
 from ..models import VulnerabilityRecord
 from ..services.record_validation import known_profiles, validate_record
+from . import api_bp
 
 
 def has_blocking_errors(errors: list[dict[str, Any]]) -> bool:

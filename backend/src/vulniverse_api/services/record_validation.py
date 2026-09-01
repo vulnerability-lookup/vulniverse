@@ -3,15 +3,15 @@ from __future__ import annotations
 import copy
 import json
 import re
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from jsonschema import FormatChecker
 from jsonschema.exceptions import ValidationError
 from jsonschema.protocols import Validator
 from jsonschema.validators import validator_for
-
 
 PROJECT_ROOT = Path(__file__).parents[4]
 

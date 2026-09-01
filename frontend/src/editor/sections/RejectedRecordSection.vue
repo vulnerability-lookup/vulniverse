@@ -25,6 +25,17 @@ import {
  */
 const editor = useEditorContext();
 
+/*
+ * Each computed below lazily materializes a nested piece of
+ * containers.cna the first time it's read, rather than requiring it
+ * to already exist — the same intentional live-write-through pattern
+ * GcveIdentifierPanel.vue uses on context.record, just nested a few
+ * levels deeper. The lint rule below flags any mutation inside a
+ * computed on principle, but these are idempotent (??=, safe to
+ * re-run every render) and exist so the v-model bindings in the
+ * template always have somewhere real to write.
+ */
+ 
 const cna = computed(() => {
   editor.record.value ??= {};
   editor.record.value.containers ??= {};
@@ -44,6 +55,7 @@ const reasons = computed<Description[]>(() => {
 
   return cna.value.rejectedReasons;
 });
+ 
 
 function addReason(): void {
   reasons.value.push({

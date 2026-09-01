@@ -1,7 +1,7 @@
 from flask import request
 
-from . import api_bp
 from ..services.record_validation import known_profiles, validate_record
+from . import api_bp
 
 
 @api_bp.post("/validate")

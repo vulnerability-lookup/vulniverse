@@ -922,6 +922,31 @@ wheels = [
 ]
 
 [[package]]
+name = "types-flask-migrate"
+version = "4.1.0.20260508"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flask" },
+    { name = "flask-sqlalchemy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/87/cd/31a5b4882cee1ba417cd602d5b55c263c51471cd8cbe4720e17238d9a075/types_flask_migrate-4.1.0.20260508.tar.gz", hash = "sha256:af42934032789f8b4e778c0d07ea22d670e7920894481589bfa18dcfa776376e", size = 8815, upload-time = "2026-05-08T04:52:05.782Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8a/b8/fe3858bb1848047b938e75001b44442a84e8c7445788f20abf7f7df2f5a2/types_flask_migrate-4.1.0.20260508-py3-none-any.whl", hash = "sha256:f22dfd36fe2c14eb533361ad021a26fc7c89079026c3b3b0ebb2d6a48a80b8e0", size = 8661, upload-time = "2026-05-08T04:52:04.673Z" },
+]
+
+[[package]]
+name = "types-jsonschema"
+version = "4.26.0.20260518"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "referencing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/dd/46/73b6a5d61a61015c4248030a8cb07e5bdddb4041430fae9e585a68692578/types_jsonschema-4.26.0.20260518.tar.gz", hash = "sha256:e1dd53dc97a64f5eccdd6fa9839666e09bb500a8ebba2db6fdaf1789faea81a6", size = 16638, upload-time = "2026-05-18T06:06:44.106Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/d5/134f8a147dcecda10db7f60cfc6af0578a25a5c53c87b3907a64385e0184/types_jsonschema-4.26.0.20260518-py3-none-any.whl", hash = "sha256:30b30a518c7fe335df85c919fcbcc631b69c03d4a4b5b632fa916bea03065307", size = 16072, upload-time = "2026-05-18T06:06:43.264Z" },
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -948,6 +973,8 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
+    { name = "types-flask-migrate" },
+    { name = "types-jsonschema" },
 ]
 
 [package.metadata]
@@ -965,6 +992,8 @@ dev = [
     { name = "pytest", specifier = ">=9.1.1,<10.0.0" },
     { name = "pytest-cov", specifier = ">=7.1.0,<8.0.0" },
     { name = "ruff", specifier = ">=0.16.1,<0.17.0" },
+    { name = "types-flask-migrate", specifier = ">=4.1.0.20260508" },
+    { name = "types-jsonschema", specifier = ">=4.26.0.20260518" },
 ]
 
 [[package]]

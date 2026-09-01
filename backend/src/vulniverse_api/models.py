@@ -9,7 +9,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .extensions import db
 
 
-class VulnerabilityRecord(db.Model):
+# db.Model is a Flask-SQLAlchemy 3.x dynamically-built declarative base —
+# mypy can't resolve it as a valid base class without a custom DeclarativeBase
+# (a bigger structural change than this warrants); see
+# https://github.com/pallets-eco/flask-sqlalchemy/issues/1327.
+class VulnerabilityRecord(db.Model):  # type: ignore[name-defined]
     __tablename__ = "vulnerability_record"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -51,7 +55,7 @@ class VulnerabilityRecord(db.Model):
     )
 
 
-class Template(db.Model):
+class Template(db.Model):  # type: ignore[name-defined]
     __tablename__ = "template"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -77,7 +81,7 @@ class Template(db.Model):
     )
 
 
-class CnaPublication(db.Model):
+class CnaPublication(db.Model):  # type: ignore[name-defined]
     __tablename__ = "cna_publication"
     __table_args__ = (
         UniqueConstraint("record_identifier", "target", name="uq_cna_publication_record_target"),

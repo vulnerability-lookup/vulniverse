@@ -24,7 +24,9 @@ dev = [
     "pytest (>=9.1.1,<10.0.0)",
     "pytest-cov (>=7.1.0,<8.0.0)",
     "ruff (>=0.16.1,<0.17.0)",
-    "mypy (>=2.3.0,<3.0.0)"
+    "mypy (>=2.3.0,<3.0.0)",
+    "types-jsonschema>=4.26.0.20260518",
+    "types-flask-migrate>=4.1.0.20260508",
 ]
 
 [tool.hatch.build.targets.wheel]
