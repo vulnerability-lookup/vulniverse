@@ -23,8 +23,10 @@ const vulnId = computed<string>({
     return props.context.record.cveMetadata?.vulnId ?? "";
   },
   set(value) {
+    /* eslint-disable vue/no-mutating-props */
     props.context.record.cveMetadata ??= {};
     props.context.record.cveMetadata.vulnId = value;
+    /* eslint-enable vue/no-mutating-props */
   },
 });
 </script>

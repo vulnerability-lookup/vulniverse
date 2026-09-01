@@ -43,10 +43,14 @@ const {
  */
 const { handleChange } = useJsonFormsControl(props);
 
+// TODO: every other array renderer (AffectedRenderer, ReferencesRenderer)
+// types this same JSONForms data as Record<string, unknown> — this one and
+// MetricsRenderer.vue are the only stragglers still on `any`. Fixing it
+// properly means modeling real types for the entries' nested
+// providerMetadata/etc. shape, not just swapping the cast.
 const items = computed(() => {
-  return (control.value.data ?? []) as Array<
-    Record<string, any>
-  >;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see TODO above
+  return (control.value.data ?? []) as Array<Record<string, any>>;
 });
 
 const atMinItems = computed(() => {

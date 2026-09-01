@@ -35,10 +35,14 @@ const {
   removeItems,
 } = useJsonFormsArrayControl(props);
 
+// TODO: every other array renderer (AffectedRenderer, ReferencesRenderer)
+// types this same JSONForms data as Record<string, unknown> — this one and
+// AdpRenderer.vue are the only stragglers still on `any`. Fixing it
+// properly means modeling real types for the metric entries' nested
+// other.content/[format].vectorString shape, not just swapping the cast.
 const items = computed(() => {
-  return (control.value.data ?? []) as Array<
-    Record<string, any>
-  >;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see TODO above
+  return (control.value.data ?? []) as Array<Record<string, any>>;
 });
 
 const { isExpanded, toggle } = useCollapsibleItems(

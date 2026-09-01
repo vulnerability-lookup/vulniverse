@@ -35,7 +35,7 @@ const editor = useEditorContext();
  * re-run every render) and exist so the v-model bindings in the
  * template always have somewhere real to write.
  */
- 
+/* oxlint-disable vue/no-side-effects-in-computed-properties */
 const cna = computed(() => {
   editor.record.value ??= {};
   editor.record.value.containers ??= {};
@@ -55,7 +55,8 @@ const reasons = computed<Description[]>(() => {
 
   return cna.value.rejectedReasons;
 });
- 
+/* oxlint-enable vue/no-side-effects-in-computed-properties */
+
 
 function addReason(): void {
   reasons.value.push({

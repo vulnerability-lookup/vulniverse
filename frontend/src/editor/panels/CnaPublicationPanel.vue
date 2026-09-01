@@ -94,8 +94,10 @@ function useReservedId(): void {
     return;
   }
 
+  /* eslint-disable vue/no-mutating-props */
   props.context.record.cveMetadata ??= {};
   props.context.record.cveMetadata[targetIdField.value] = publication.value.cveId;
+  /* eslint-enable vue/no-mutating-props */
 }
 
 async function submitReject(): Promise<void> {
