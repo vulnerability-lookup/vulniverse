@@ -7,19 +7,18 @@ import {
 
 import type {
   EditorModuleContext,
+  PublicationTarget,
 } from "../contracts";
 
 import {
-  fetchPublishTargets,
   useCnaPublication,
-  type PublicationTarget,
 } from "./cna-publication";
 
 /*
  * Shared by VulnerabilityLookupPanel.vue and CVEProgramPanel.vue — "vl" and
  * "cve-program" are the same CVE Services API-shaped protocol at a
- * different configured target, so one panel body serves both; only
- * `target`/`label` differ between the two call sites.
+ * different EditorRepository-resolved target, so one panel body serves
+ * both; only `target`/`label` differ between the two call sites.
  */
 const props = defineProps<{
   target: PublicationTarget;
@@ -28,9 +27,11 @@ const props = defineProps<{
 }>();
 
 const {
+  supported,
   publication,
   loading,
   error,
+  notConfigured,
   refresh,
   reserve,
   publish,
@@ -38,16 +39,11 @@ const {
   abort,
 } = useCnaPublication(props.target, props.context);
 
-const targetConfigured = ref<boolean | null>(null);
 const showRejectForm = ref(false);
 const rejectReason = ref("");
 
 onMounted(async () => {
-  const targets = await fetchPublishTargets().catch(() => null);
-
-  targetConfigured.value = targets ? Boolean(targets[props.target]?.configured) : null;
-
-  if (targetConfigured.value && props.context.identifier) {
+  if (supported.value && props.context.identifier) {
     await refresh();
   }
 });
@@ -106,19 +102,24 @@ async function submitReject(): Promise<void> {
 <template>
   <div class="p-3">
     <p
-      v-if="!context.identifier"
+      v-if="!supported"
+      class="text-secondary"
+    >
+      This host doesn't support publishing to {{ label }}.
+    </p>
+
+    <p
+      v-else-if="!context.identifier"
       class="text-secondary"
     >
       Save this record before publishing it to {{ label }}.
     </p>
 
     <p
-      v-else-if="targetConfigured === false"
+      v-else-if="notConfigured"
       class="text-secondary"
     >
-      {{ label }} isn't configured on this deployment. An operator needs to
-      set <code>[integrations.{{ target }}]</code> in
-      <code>config/vulniverse.toml</code>.
+      {{ label }} isn't configured on this deployment.
     </p>
 
     <template v-else>

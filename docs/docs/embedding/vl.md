@@ -53,9 +53,11 @@ into the adapter:
   existing data (`GET /api/cwe/`, `GET /api/capec/`) instead of fetching it
   a second time from MITRE.
 - `listTemplates`/`saveTemplate`/`updateTemplate`/`deleteTemplate` are not
-  implemented by `VulnerabilityLookupRepository` today, so the Templates
-  section shows its "this host app doesn't support templates" message
-  inside VL.
+  implemented by `VulnerabilityLookupRepository` today. Templates is an
+  opt-in panel (`templatesPanel`, imported from the built element bundle
+  the same way `gcveIdentifierPanel` is), explicitly included in VL's own
+  `editor.panels` — it shows its "this host doesn't support templates"
+  message inside VL rather than the create/apply UI.
 
 ## Choosing Vulniverse as the editor
 
@@ -97,6 +99,8 @@ editor.panels = [
   createGcveReservationPanel({ csrfToken, editUrlBase }),
   // only when the CNA publication feature is configured on this instance:
   createCnaPublicationPanel({ csrfToken }),
+  // imported straight from vulniverse-editor.js, same as gcveIdentifierPanel:
+  templatesPanel,
 ];
 
 editor.modules = [

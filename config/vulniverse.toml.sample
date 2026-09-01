@@ -9,6 +9,7 @@
 # Which sidebar panels the standalone app shows, keyed by EditorPanel.id
 # (see frontend/src/editor/panels/*.ts). A panel id with no entry here
 # defaults to enabled, matching pre-config behavior.
+"templates" = true
 "stats" = false
 "vl" = false
 "cve-program" = false

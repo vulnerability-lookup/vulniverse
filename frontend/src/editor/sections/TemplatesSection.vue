@@ -30,9 +30,21 @@ import type {
 } from "./template-path-catalog";
 
 import type {
+  EditorModuleContext,
   Template,
   TemplateField,
 } from "../contracts";
+
+/*
+ * Unused directly — this built-in panel reads/writes the record via
+ * useEditorContext() instead, same as it did as a section. Declared
+ * only so VulniverseEditor.ce.vue's `:context="..."` binding (every
+ * panel gets one) doesn't fall through onto the root element as a
+ * stringified DOM attribute.
+ */
+defineProps<{
+  context: EditorModuleContext;
+}>();
 
 const editor = useEditorContext();
 const repository = useEditorRepository();

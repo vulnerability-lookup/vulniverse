@@ -1,111 +1,84 @@
 import {
+  computed,
   ref,
 } from "vue";
 
+import {
+  useEditorRepository,
+} from "../use-editor-repository";
+
+import {
+  RepositoryError,
+} from "@/repositories/RepositoryError";
+
 import type {
+  CnaPublication,
   EditorModuleContext,
+  EditorRepository,
+  PublicationTarget,
 } from "../contracts";
 
 /*
- * "vl" and "cve-program" are the same CVE Services API-shaped protocol at a
- * different backend-configured base_url/credentials (see
- * services/cna_publication.py) — this one composable backs both panels.
+ * Backs both VulnerabilityLookupPanel.vue and CVEProgramPanel.vue — "vl"
+ * and "cve-program" are the same CVE Services API-shaped protocol at a
+ * different host-supplied EditorRepository target, so one composable
+ * serves both. Goes through EditorRepository (not a direct fetch), the
+ * same way TemplatesSection.vue does — that's what makes this portable
+ * to a host whose repository implements these methods against its own
+ * backend, and gracefully "not supported here" for one that doesn't.
  */
-export type PublicationTarget = "vl" | "cve-program";
-
-export interface CnaPublicationRecord {
-  id: number;
-  recordIdentifier: string;
-  target: PublicationTarget;
-  status: string;
-  cveId: string | null;
-  reservedAt: string | null;
-  publishedAt: string | null;
-  rejectedAt: string | null;
-  lastError: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export class PublishApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly publication?: CnaPublicationRecord,
-  ) {
-    super(message);
-  }
-}
-
-async function apiFetch<T>(
-  path: string,
-  init: RequestInit = {},
-): Promise<T> {
-  const headers = new Headers(init.headers);
-
-  headers.set("Accept", "application/json");
-
-  if (init.body !== undefined) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  const response = await fetch(`/api/v1${path}`, {
-    ...init,
-    headers,
-    credentials: "same-origin",
-  });
-
-  const body = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new PublishApiError(
-      body?.message ?? `${response.status} ${response.statusText}`,
-      response.status,
-      body?.publication,
-    );
-  }
-
-  return body as T;
-}
-
-export async function fetchPublishTargets(): Promise<
-  Record<string, { configured: boolean }>
-> {
-  return apiFetch("/publish/targets");
-}
-
 export function useCnaPublication(
   target: PublicationTarget,
   context: EditorModuleContext,
 ) {
-  const publication = ref<CnaPublicationRecord | null>(null);
+  const repository = useEditorRepository();
+
+  const supported = computed(() => Boolean(repository.value?.getCnaPublication));
+
+  const publication = ref<CnaPublication | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const notConfigured = ref(false);
+
+  function applyError(err: unknown, fallback: string): void {
+    notConfigured.value = err instanceof RepositoryError && err.status === 409;
+
+    if (
+      err instanceof RepositoryError &&
+      err.details &&
+      typeof err.details === "object" &&
+      "publication" in err.details
+    ) {
+      publication.value = (err.details as { publication: CnaPublication }).publication;
+    }
+
+    error.value = notConfigured.value
+      ? null
+      : err instanceof Error ? err.message : fallback;
+  }
 
   async function refresh(): Promise<void> {
-    if (!context.identifier) {
+    if (!context.identifier || !repository.value?.getCnaPublication) {
       return;
     }
 
     loading.value = true;
     error.value = null;
+    notConfigured.value = false;
 
     try {
-      publication.value = await apiFetch<CnaPublicationRecord>(
-        `/publish/${target}/${encodeURIComponent(context.identifier)}`,
-      );
+      publication.value = await repository.value.getCnaPublication(target, context.identifier);
     } catch (err) {
-      error.value = err instanceof Error ? err.message : "Could not load publication status.";
+      applyError(err, "Could not load publication status.");
     } finally {
       loading.value = false;
     }
   }
 
   async function runAction(
-    action: string,
-    body?: unknown,
+    action: (repo: EditorRepository, identifier: string) => Promise<CnaPublication>,
   ): Promise<void> {
-    if (!context.identifier) {
+    if (!context.identifier || !repository.value) {
       return;
     }
 
@@ -113,32 +86,24 @@ export function useCnaPublication(
     error.value = null;
 
     try {
-      publication.value = await apiFetch<CnaPublicationRecord>(
-        `/publish/${target}/${encodeURIComponent(context.identifier)}/${action}`,
-        {
-          method: "POST",
-          body: body !== undefined ? JSON.stringify(body) : undefined,
-        },
-      );
+      publication.value = await action(repository.value, context.identifier);
     } catch (err) {
-      if (err instanceof PublishApiError && err.publication) {
-        publication.value = err.publication;
-      }
-
-      error.value = err instanceof Error ? err.message : "The action failed.";
+      applyError(err, "The action failed.");
     } finally {
       loading.value = false;
     }
   }
 
   return {
+    supported,
     publication,
     loading,
     error,
+    notConfigured,
     refresh,
-    reserve: (year: number) => runAction("reserve", { year }),
-    publish: () => runAction("publish"),
-    reject: (reason: string) => runAction("reject", { reason }),
-    abort: () => runAction("abort"),
+    reserve: (year: number) => runAction((repo, id) => repo.reserveCveId!(target, id, year)),
+    publish: () => runAction((repo, id) => repo.publishCna!(target, id)),
+    reject: (reason: string) => runAction((repo, id) => repo.rejectCna!(target, id, reason)),
+    abort: () => runAction((repo, id) => repo.abortCna!(target, id)),
   };
 }

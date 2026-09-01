@@ -136,6 +136,28 @@ export interface Template {
   fields: TemplateField[];
 }
 
+/**
+ * "vl" and "cve-program" are both CVE Services API-shaped publish targets
+ * (POST /cve-id, POST|PUT /cve/<id>/cna, POST|PUT /cve/<id>/reject) at a
+ * different base URL/credentials — see the "CVE Program"/"Vulnerability-
+ * Lookup" panels (editor/panels/CnaPublicationPanel.vue).
+ */
+export type PublicationTarget = "vl" | "cve-program";
+
+export interface CnaPublication {
+  id: number;
+  recordIdentifier: string;
+  target: PublicationTarget;
+  status: string;
+  cveId: string | null;
+  reservedAt: string | null;
+  publishedAt: string | null;
+  rejectedAt: string | null;
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface EditorRepository {
   loadRecord(
     identifier: string,
@@ -196,6 +218,42 @@ export interface EditorRepository {
   deleteTemplate?(
     id: string,
   ): Promise<void>;
+
+  /**
+   * Optional: a host may have no CNA-publication backend at all (e.g. no
+   * outbound access it's willing to grant, or it does this some other
+   * way), in which case the "Vulnerability-Lookup"/"CVE Program" panels
+   * show a "not supported here" message instead of the publish UI. A
+   * host that does implement these is expected to implement all five
+   * together — the panels gate visibility on getCnaPublication alone,
+   * the same way the Templates section gates on listTemplates alone.
+   */
+  getCnaPublication?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CnaPublication>;
+
+  reserveCveId?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+    year: number,
+  ): Promise<CnaPublication>;
+
+  publishCna?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CnaPublication>;
+
+  rejectCna?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+    reason: string,
+  ): Promise<CnaPublication>;
+
+  abortCna?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CnaPublication>;
 }
 
 export interface EditorModuleContext {

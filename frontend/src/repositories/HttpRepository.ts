@@ -1,6 +1,8 @@
 import type {
+  CnaPublication,
   EditorRepository,
   LoadedRecord,
+  PublicationTarget,
   ReferenceListItem,
   Template,
   TemplateField,
@@ -195,6 +197,63 @@ export class HttpRepository
     await this.request<unknown>(
       `/templates/${encodeURIComponent(id)}`,
       { method: "DELETE" },
+    );
+  }
+
+  async getCnaPublication(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CnaPublication> {
+    return this.request<CnaPublication>(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}`,
+    );
+  }
+
+  async reserveCveId(
+    target: PublicationTarget,
+    recordIdentifier: string,
+    year: number,
+  ): Promise<CnaPublication> {
+    return this.request<CnaPublication>(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}/reserve`,
+      {
+        method: "POST",
+        body: JSON.stringify({ year }),
+      },
+    );
+  }
+
+  async publishCna(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CnaPublication> {
+    return this.request<CnaPublication>(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}/publish`,
+      { method: "POST" },
+    );
+  }
+
+  async rejectCna(
+    target: PublicationTarget,
+    recordIdentifier: string,
+    reason: string,
+  ): Promise<CnaPublication> {
+    return this.request<CnaPublication>(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}/reject`,
+      {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      },
+    );
+  }
+
+  async abortCna(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CnaPublication> {
+    return this.request<CnaPublication>(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}/abort`,
+      { method: "POST" },
     );
   }
 

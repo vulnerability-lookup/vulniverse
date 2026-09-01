@@ -1,4 +1,8 @@
 import {
+  templatesPanel,
+} from "./templates";
+
+import {
   recordStatsPanel,
 } from "./record-stats";
 
@@ -25,11 +29,13 @@ import type {
  * on by default for every host.
  */
 export const BUILTIN_PANELS: EditorPanel[] = [
+  templatesPanel,
   recordStatsPanel,
   vulnerabilityLookupPanel,
   cveProgramPanel,
 ];
 
+export { templatesPanel };
 export { recordStatsPanel };
 export { vulnerabilityLookupPanel };
 export { cveProgramPanel };

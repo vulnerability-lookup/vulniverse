@@ -45,7 +45,10 @@ export type {
 } from "./editor/contracts";
 
 export {
+  cveProgramPanel,
   gcveIdentifierPanel,
+  templatesPanel,
+  vulnerabilityLookupPanel,
 } from "./editor/panels";
 
 /*
