@@ -75,10 +75,14 @@ class VulnerabilityRecord(db.Model):  # type: ignore[name-defined]
         default=True,
     )
 
-    # Attribution only, not access control — nullable because records
-    # created before this column existed have no author on file, and any
-    # logged-in user can still view/edit any record regardless of who
-    # created it.
+    # Doubles as access control for drafts: a draft is visible only to
+    # its owner (or an admin) — see is_visible() in api/records.py.
+    # Published records stay flat/visible to every logged-in user
+    # regardless of owner, unchanged from before this mattered for
+    # access. Nullable because records created before this column
+    # existed had no author on file — backfilled via the
+    # backfill-record-owner CLI command (see cli.py) so this should
+    # never actually be None in practice going forward.
     created_by_id: Mapped[int | None] = mapped_column(
         ForeignKey("user.id"),
         nullable=True,
@@ -110,8 +114,11 @@ class Template(db.Model):  # type: ignore[name-defined]
         nullable=False,
     )
 
-    # Attribution only, not access control — see the same field on
-    # VulnerabilityRecord above.
+    # Attribution only, not access control — unlike
+    # VulnerabilityRecord.created_by_id above, templates have no
+    # draft/published concept for this to gate, so every logged-in
+    # user can still view/edit/delete any template regardless of
+    # who created it.
     created_by_id: Mapped[int | None] = mapped_column(
         ForeignKey("user.id"),
         nullable=True,

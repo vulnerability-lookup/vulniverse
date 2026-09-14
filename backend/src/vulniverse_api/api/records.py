@@ -4,6 +4,7 @@ from typing import Any
 
 from flask import request
 from flask_login import current_user
+from sqlalchemy import or_
 
 from ..extensions import db
 from ..models import VulnerabilityRecord
@@ -56,12 +57,36 @@ def identifier_still_present(
     return identifier in (metadata.get("vulnId"), metadata.get("cveId"))
 
 
+def is_visible(record: VulnerabilityRecord) -> bool:
+    """A draft is visible only to its own owner (or an admin); a
+    published record is visible to any logged-in user, exactly like
+    today's flat access model. Enforced on every read/write route
+    below, not just the list — otherwise a non-owner who somehow
+    knew/guessed an identifier could still reach a draft that isn't
+    supposed to be visible to them at all.
+    """
+    if not record.is_draft:
+        return True
+
+    return current_user.is_admin or record.created_by_id == current_user.id
+
+
 @api_bp.get("/records")
 def list_records() -> tuple[dict, int]:
+    query = VulnerabilityRecord.query
+
+    if not current_user.is_admin:
+        query = query.filter(
+            or_(
+                VulnerabilityRecord.is_draft.is_(False),
+                VulnerabilityRecord.created_by_id == current_user.id,
+            ),
+        )
+
     # id DESC as a tiebreak: sqlite's CURRENT_TIMESTAMP only has
     # second-level precision, so two records created within the
     # same second would otherwise sort ambiguously.
-    records = VulnerabilityRecord.query.order_by(
+    records = query.order_by(
         VulnerabilityRecord.updated_at.desc(),
         VulnerabilityRecord.id.desc(),
     ).all()
@@ -86,7 +111,7 @@ def get_record(identifier: str) -> tuple[dict, int]:
         identifier=identifier,
     ).first()
 
-    if record is None:
+    if record is None or not is_visible(record):
         return {"message": "Record not found."}, 404
 
     return {
@@ -161,7 +186,7 @@ def update_record(identifier: str) -> tuple[dict, int]:
         identifier=identifier,
     ).first()
 
-    if record is None:
+    if record is None or not is_visible(record):
         return {"message": "Record not found."}, 404
 
     payload = request.get_json(silent=True)
@@ -213,7 +238,7 @@ def delete_record(identifier: str) -> tuple[dict, int]:
         identifier=identifier,
     ).first()
 
-    if record is None:
+    if record is None or not is_visible(record):
         return {"message": "Record not found."}, 404
 
     db.session.delete(record)

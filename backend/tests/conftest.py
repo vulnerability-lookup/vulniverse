@@ -84,3 +84,26 @@ def admin_client(app: Flask, admin_user: User) -> FlaskClient:
         session["_user_id"] = str(admin_user.id)
 
     return test_client
+
+
+@pytest.fixture
+def other_user(app: Flask) -> User:
+    with app.app_context():
+        user = User(
+            email="other@example.com",
+            password_hash=generate_password_hash("password123"),
+        )
+        db.session.add(user)
+        db.session.commit()
+        db.session.refresh(user)
+        return user
+
+
+@pytest.fixture
+def other_client(app: Flask, other_user: User) -> FlaskClient:
+    test_client = app.test_client()
+
+    with test_client.session_transaction() as session:
+        session["_user_id"] = str(other_user.id)
+
+    return test_client

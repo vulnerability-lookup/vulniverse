@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from vulniverse_api.extensions import db
+from vulniverse_api.models import VulnerabilityRecord
+
 
 def minimal_cve_record(cve_id: str) -> dict[str, Any]:
     return {
@@ -42,6 +45,47 @@ def create_draft(client, cve_id: str, profile: str = "cve-5.2.0"):
             "isDraft": True,
         },
     )
+
+
+def create_published(client, cve_id: str, profile: str = "cve-5.2.0"):
+    return client.post(
+        "/api/v1/records",
+        json={
+            "record": minimal_cve_record(cve_id),
+            "profile": profile,
+            "isDraft": False,
+        },
+    )
+
+
+def insert_record(
+    app,
+    cve_id: str,
+    owner_id: int,
+    is_draft: bool,
+    profile: str = "cve-5.2.0",
+) -> None:
+    """Inserts a record directly via the ORM rather than through an
+    authenticated HTTP request. Cross-user visibility tests need two
+    distinct identities, but two different logged-in test_client()s
+    each making a real request within one test share the app
+    fixture's single ambient app context — Flask reuses it rather
+    than pushing a fresh one per request, so flask_login's
+    g-scoped current_user caching leaks the *first* request's
+    identity into the second. Only ever making one live authenticated
+    request per test (here, none — the "other" side's data is
+    inserted directly) sidesteps that entirely.
+    """
+    with app.app_context():
+        record = VulnerabilityRecord(
+            identifier=cve_id,
+            profile=profile,
+            document=minimal_cve_record(cve_id),
+            is_draft=is_draft,
+            created_by_id=owner_id,
+        )
+        db.session.add(record)
+        db.session.commit()
 
 
 def test_list_records_is_empty_with_no_records(client) -> None:
@@ -172,3 +216,85 @@ def test_update_record_rejects_when_all_identifying_fields_removed(client) -> No
 
     assert response.status_code == 400
     assert "cannot be changed" in response.get_json()["message"]
+
+
+def test_draft_is_hidden_from_list_for_non_owner(app, test_user, other_client) -> None:
+    insert_record(app, "CVE-2026-00010", test_user.id, is_draft=True)
+
+    response = other_client.get("/api/v1/records")
+
+    assert response.get_json()["records"] == []
+
+
+def test_draft_is_visible_in_list_for_its_owner(app, test_user, client) -> None:
+    insert_record(app, "CVE-2026-00011", test_user.id, is_draft=True)
+
+    response = client.get("/api/v1/records")
+    identifiers = {record["identifier"] for record in response.get_json()["records"]}
+
+    assert "CVE-2026-00011" in identifiers
+
+
+def test_published_record_is_visible_to_everyone(app, test_user, other_client) -> None:
+    insert_record(app, "CVE-2026-00012", test_user.id, is_draft=False)
+
+    response = other_client.get("/api/v1/records")
+    identifiers = {record["identifier"] for record in response.get_json()["records"]}
+
+    assert "CVE-2026-00012" in identifiers
+
+
+def test_admin_sees_others_drafts_in_list(app, test_user, admin_client) -> None:
+    insert_record(app, "CVE-2026-00013", test_user.id, is_draft=True)
+
+    response = admin_client.get("/api/v1/records")
+    identifiers = {record["identifier"] for record in response.get_json()["records"]}
+
+    assert "CVE-2026-00013" in identifiers
+
+
+def test_get_others_draft_is_404_for_non_owner(app, test_user, other_client) -> None:
+    insert_record(app, "CVE-2026-00014", test_user.id, is_draft=True)
+
+    response = other_client.get("/api/v1/records/CVE-2026-00014")
+
+    assert response.status_code == 404
+
+
+def test_get_others_draft_succeeds_for_admin(app, test_user, admin_client) -> None:
+    insert_record(app, "CVE-2026-00015", test_user.id, is_draft=True)
+
+    response = admin_client.get("/api/v1/records/CVE-2026-00015")
+
+    assert response.status_code == 200
+
+
+def test_get_published_record_succeeds_for_non_owner(app, test_user, other_client) -> None:
+    insert_record(app, "CVE-2026-00016", test_user.id, is_draft=False)
+
+    response = other_client.get("/api/v1/records/CVE-2026-00016")
+
+    assert response.status_code == 200
+
+
+def test_update_others_draft_is_404_for_non_owner(app, test_user, other_client) -> None:
+    insert_record(app, "CVE-2026-00017", test_user.id, is_draft=True)
+
+    response = other_client.put(
+        "/api/v1/records/CVE-2026-00017",
+        json={
+            "record": minimal_cve_record("CVE-2026-00017"),
+            "profile": "cve-5.2.0",
+            "isDraft": True,
+        },
+    )
+
+    assert response.status_code == 404
+
+
+def test_delete_others_draft_is_404_for_non_owner(app, test_user, other_client) -> None:
+    insert_record(app, "CVE-2026-00018", test_user.id, is_draft=True)
+
+    response = other_client.delete("/api/v1/records/CVE-2026-00018")
+
+    assert response.status_code == 404

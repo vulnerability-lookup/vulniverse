@@ -4,7 +4,7 @@ import click
 from flask import Flask
 
 from .extensions import db
-from .models import User
+from .models import Template, User, VulnerabilityRecord
 
 
 def register_cli(app: Flask) -> None:
