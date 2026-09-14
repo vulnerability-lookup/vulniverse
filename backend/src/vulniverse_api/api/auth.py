@@ -24,6 +24,7 @@ def _serialize(user: User) -> dict[str, Any]:
     return {
         "id": user.id,
         "email": user.email,
+        "isAdmin": user.is_admin,
     }
 
 
@@ -82,6 +83,9 @@ def login() -> tuple[dict, int]:
 
     if user is None or not check_password_hash(user.password_hash, password):
         return {"message": "Invalid email or password."}, 401
+
+    if not user.is_active:
+        return {"message": "This account has been deactivated."}, 403
 
     login_user(user)
 

@@ -68,14 +68,25 @@ def create_app(
     # Ensure models are registered with SQLAlchemy and Alembic.
     from . import models
     from .api import api_bp
+    from .cli import register_cli
 
     @login_manager.user_loader
     def load_user(user_id: str) -> models.User | None:
-        return db.session.get(models.User, int(user_id))
+        # populate_existing=True: is_admin/is_active can change (an admin
+        # action) between two requests from the same still-logged-in
+        # session — without this, a stale identity-mapped User object
+        # could mask a deactivation until something else evicts it.
+        return db.session.get(
+            models.User,
+            int(user_id),
+            populate_existing=True,
+        )
 
     app.register_blueprint(
         api_bp,
         url_prefix="/api/v1",
     )
+
+    register_cli(app)
 
     return app

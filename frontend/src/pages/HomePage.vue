@@ -116,7 +116,7 @@ const filteredRecords = computed(() => {
 <template>
   <main class="container py-5">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-      <h1>Vulniverse</h1>
+      <h1>Overview</h1>
 
       <RouterLink
         to="/editor/new"

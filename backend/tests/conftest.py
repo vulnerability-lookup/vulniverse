@@ -48,6 +48,20 @@ def test_user(app: Flask) -> User:
 
 
 @pytest.fixture
+def admin_user(app: Flask) -> User:
+    with app.app_context():
+        user = User(
+            email="admin@example.com",
+            password_hash=generate_password_hash("password123"),
+            is_admin=True,
+        )
+        db.session.add(user)
+        db.session.commit()
+        db.session.refresh(user)
+        return user
+
+
+@pytest.fixture
 def anon_client(app: Flask) -> FlaskClient:
     return app.test_client()
 
@@ -58,5 +72,15 @@ def client(app: Flask, test_user: User) -> FlaskClient:
 
     with test_client.session_transaction() as session:
         session["_user_id"] = str(test_user.id)
+
+    return test_client
+
+
+@pytest.fixture
+def admin_client(app: Flask, admin_user: User) -> FlaskClient:
+    test_client = app.test_client()
+
+    with test_client.session_transaction() as session:
+        session["_user_id"] = str(admin_user.id)
 
     return test_client

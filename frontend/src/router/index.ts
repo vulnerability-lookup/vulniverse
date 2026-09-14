@@ -21,6 +21,9 @@ import RegisterPage from
 import CnaCredentialsPage from
   "@/pages/CnaCredentialsPage.vue";
 
+import AdminUsersPage from
+  "@/pages/AdminUsersPage.vue";
+
 import { useAuthStore } from "@/stores/auth";
 
 export const router = createRouter({
@@ -52,6 +55,12 @@ export const router = createRouter({
       component: CnaCredentialsPage,
     },
     {
+      path: "/admin/users",
+      name: "admin-users",
+      component: AdminUsersPage,
+      meta: { adminOnly: true },
+    },
+    {
       path: "/editor/new",
       name: "editor-new",
       component: NewRecordPage,
@@ -80,6 +89,10 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.public && auth.isAuthenticated) {
+    return { name: "home" };
+  }
+
+  if (to.meta.adminOnly && !auth.currentUser?.isAdmin) {
     return { name: "home" };
   }
 

@@ -22,7 +22,3 @@
 # EditorModule.id (see frontend/src/editor/modules/*.ts).
 "download-json" = true
 
-# CNA publication credentials for the "Vulnerability-Lookup" and "CVE
-# Program" panels are no longer configured here — each user sets their
-# own under their account's CNA credentials page (per-user, encrypted at
-# rest; see docs/setup/production.md).

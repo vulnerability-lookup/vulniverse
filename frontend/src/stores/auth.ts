@@ -8,6 +8,7 @@ import { RepositoryError } from "@/repositories/RepositoryError";
 export interface AuthUser {
   id: number;
   email: string;
+  isAdmin: boolean;
 }
 
 export const useAuthStore = defineStore("auth", () => {

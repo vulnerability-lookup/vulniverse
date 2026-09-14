@@ -18,7 +18,12 @@ EXEMPT_ENDPOINTS = frozenset({
 
 @api_bp.before_request
 def require_login() -> tuple[dict, int] | None:
-    if request.endpoint in EXEMPT_ENDPOINTS or current_user.is_authenticated:
+    if request.endpoint in EXEMPT_ENDPOINTS:
+        return None
+
+    # A deactivated account's existing session loses access immediately,
+    # not just on its next login attempt (see api/auth.py's login()).
+    if current_user.is_authenticated and current_user.is_active:
         return None
 
     return {"message": "Authentication required."}, 401
@@ -52,6 +57,7 @@ def capabilities() -> dict:
 
 
 from . import (  # noqa: F401
+    admin,
     auth,
     cna_credentials,
     publish,

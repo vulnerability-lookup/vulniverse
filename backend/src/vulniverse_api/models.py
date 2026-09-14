@@ -31,6 +31,15 @@ class User(UserMixin, db.Model):  # type: ignore[name-defined]
         nullable=False,
     )
 
+    # A single admin/non-admin tier — user management only (see
+    # api/admin.py), not record/template access, which stays flat.
+    is_admin: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+    # A deactivated account can't log in (checked in api/auth.py's
+    # login()) but its existing records/templates and created_by
+    # attribution are untouched.
+    is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
