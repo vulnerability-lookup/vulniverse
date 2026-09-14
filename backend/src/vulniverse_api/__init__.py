@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from flask import Flask
 
 from .extensions import db, migrate
@@ -11,6 +13,11 @@ from .extensions import db, migrate
 def create_app(
     test_config: dict[str, Any] | None = None,
 ) -> Flask:
+    # A no-op if no .env file exists (e.g. production, where the real
+    # environment is expected to already carry these) — see
+    # docs/setup/production.md.
+    load_dotenv()
+
     app = Flask(
         __name__,
         instance_relative_config=True,
@@ -21,9 +28,21 @@ def create_app(
 
     database_path = instance_path / "vulniverse.sqlite"
 
+    secret_key = os.environ.get("SECRET_KEY")
+
+    if not secret_key and test_config is None:
+        raise RuntimeError(
+            "SECRET_KEY environment variable is not set. Copy "
+            "backend/.env.example to backend/.env and fill it in "
+            "(see docs/setup/production.md).",
+        )
+
     app.config.from_mapping(
-        SECRET_KEY="development-only-change-me",
-        SQLALCHEMY_DATABASE_URI=f"sqlite:///{database_path}",
+        SECRET_KEY=secret_key or "development-only-change-me",
+        SQLALCHEMY_DATABASE_URI=os.environ.get(
+            "DATABASE_URL",
+            f"sqlite:///{database_path}",
+        ),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
 

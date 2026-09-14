@@ -11,7 +11,10 @@ dependencies = [
     "flask-sqlalchemy (>=3.1.1,<4.0.0)",
     "flask-migrate (>=4.1.0,<5.0.0)",
     "jsonschema (>=4.26.0,<5.0.0)",
-    "httpx (>=0.28.1,<0.29.0)"
+    "httpx (>=0.28.1,<0.29.0)",
+    "python-dotenv>=1.2.3",
+    "gunicorn>=26.2.0",
+    "psycopg[binary]>=3.3.5",
 ]
 
 

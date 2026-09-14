@@ -1,0 +1,32 @@
+# Example systemd unit for running the Vulniverse backend under gunicorn.
+# See docs/setup/production.md for the full walkthrough. Copy this to
+# /etc/systemd/system/vulniverse.service and adjust the paths/user below
+# for your deployment, then:
+#
+#   systemctl daemon-reload
+#   systemctl enable --now vulniverse
+
+[Unit]
+Description=Vulniverse backend
+After=network.target
+
+[Service]
+# A dedicated, unprivileged user — never run this as root.
+User=vulniverse
+Group=vulniverse
+
+WorkingDirectory=/opt/vulniverse/backend
+
+# Replace with actual secret
+Environment=SECRET_KEY=replace-with-a-real-generated-secret
+
+ExecStart=/opt/vulniverse/backend/.venv/bin/gunicorn \
+    --workers 2 \
+    --bind 127.0.0.1:8000 \
+    wsgi:app
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

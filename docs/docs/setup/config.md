@@ -4,43 +4,76 @@ icon: lucide/settings
 
 # Configuration
 
-Vulniverse does not currently have an environment-variable or config-file
-based settings system. What's configurable today is a short, specific
-list, split between the backend, the frontend build, and the embeddable
-editor's own props.
+This page covers configuring the **standalone app** specifically:
+`config/vulniverse.toml` (its own runtime settings) and a short list of
+hardcoded backend/frontend-build values. 
 
-## Backend
+How a *host* configures the
+embeddable `<vulniverse-editor>` element itself is a separate concern, covered in
+[Embedding: The `<vulniverse-editor>` element](../embedding/element.md).
 
-`backend/src/vulniverse_api/__init__.py`'s `create_app()` hardcodes its
-configuration:
+## Config file 
 
-```python
-app.config.from_mapping(
-    SECRET_KEY="development-only-change-me",
-    SQLALCHEMY_DATABASE_URI=f"sqlite:///{database_path}",
-    SQLALCHEMY_TRACK_MODIFICATIONS=False,
-)
+`config/vulniverse.toml` controls two things: which
+built-in panels/modules it shows, and the credentials for the CNA
+publication targets ("Vulnerability-Lookup" and "CVE Program" panels). 
+
+  ```bash
+  cp config/vulniverse.toml.sample config/vulniverse.toml
+  ```
+
+- **Fallback**: if `vulniverse.toml` doesn't exist, the backend falls back
+  to reading `vulniverse.toml.sample` directly, so a fresh checkout with no
+  real config file behaves exactly like the sample's own values — nothing
+  here is required to get started.
+
+### `[panels]` / `[modules]`
+
+
+```toml
+[panels]
+"templates"    = true
+"stats"        = true
+"vl"           = true
+"cve-program"  = true
+"gcve-identifier" = false
+
+[modules]
+"download-json" = true
 ```
 
-- `database_path` is `vulniverse.sqlite` inside Flask's
-  [instance folder](https://flask.palletsprojects.com/en/stable/config/#instance-folders)
-  (`backend/src/instance/`), which `create_app()` creates automatically.
-  There is no setting to point it elsewhere yet.
-- `SECRET_KEY` is a literal development placeholder. There is no override
-  mechanism today — change the constant in source if you need a different
-  value.
-- `create_app()` also accepts a `test_config` dict, which is how the test
-  suite (`backend/tests/conftest.py`) points `SQLALCHEMY_DATABASE_URI` at
-  `sqlite:///:memory:`. This isn't wired up to any runtime entry point
-  (`flask run`), only to code that calls `create_app()` directly.
+### `[integrations.<target>]`
 
-### Which CVE/GCVE schema versions are active
+Credentials for the CNA-publication panels — "Vulnerability-Lookup"
+(target id `vl`) and "CVE Program" (target id `cve-program`). 
 
-`schemas/manifest.json`'s `currentProfiles` selects which pinned schema
-version `scripts/generate_editor_schemas.py` generates from by default
-(currently `cve-5.2.0` and `gcve-bcp-05-1.7`). This is a schema-generation-time
-setting, not something the running backend or frontend reads — see
-[Architecture](../development/architecture.md) for how the generator fits in.
+```toml
+[integrations.vl]
+cve_url      = "https://your-vl-instance.example/api/cna"
+short_name   = "..."
+org_id       = "..."          # this CNA's registered UUID
+cve_api_org  = "..."          # CVE-API-ORG auth header value
+cve_api_user = "..."
+cve_api_key  = "..."
+```
+
+## Backend environment (`.env`)
+
+The `backend/.env` file is needed to start the backend:
+
+```bash
+cd backend
+cp .env.sample .env
+```
+
+And a secret key need to be set: 
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"   # paste into SECRET_KEY=
+```
+
+Optionally the DB adress can be changed here as well.
+
 
 ## Frontend dev server
 
@@ -60,39 +93,3 @@ server: {
 If the backend runs on a different host/port during development, this is
 the line to change.
 
-## The embeddable `<vulniverse-editor>` element
-
-This is the actual integration surface — everything a host application
-configures when embedding the editor:
-
-| Prop | Type | Notes |
-| --- | --- | --- |
-| `mode` | `"create" \| "edit"` | Defaults to `"create"`. |
-| `record-id` | `string` | Required when `mode="edit"`. |
-| `profile` | `string` | Defaults to `"cve-5.2.0"`. |
-| `repository` | `EditorRepository` | Set from JavaScript (`editor.repository = ...`), not an HTML attribute — see below. |
-| `modules` | `EditorModule[]` | Optional extra header buttons. |
-| `panels` | `EditorPanel[]` | Optional extra sidebar tabs. |
-
-`repository` is a plain object, not a string, so it's always assigned from
-JavaScript rather than written as an HTML attribute:
-
-```js
-const editor = document.querySelector("vulniverse-editor");
-editor.repository = myRepository;
-```
-
-The standalone app's own `HttpRepository`
-(`frontend/src/repositories/HttpRepository.ts`) takes one constructor
-argument:
-
-```ts
-new HttpRepository(apiRoot = "/api/v1")
-```
-
-`apiRoot` is the one genuinely reusable "base URL" setting in the whole
-project — change it if Vulniverse's backend is mounted somewhere other than
-`/api/v1` relative to the page the editor is embedded on. A host supplying
-its *own* `EditorRepository` (as Vulnerability-Lookup does) defines its own
-equivalent constructor options instead; see
-[Embedding: Vulnerability-Lookup](../embedding/vl.md).

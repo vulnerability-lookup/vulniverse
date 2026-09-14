@@ -19,9 +19,15 @@ frontend, talking to each other over `/api/v1`.
 ```bash
 cd backend
 uv sync
+cp .env.example .env
+python3 -c "import secrets; print(secrets.token_hex(32))"   # paste into .env's SECRET_KEY=
 uv run flask --app vulniverse_api db upgrade
 uv run flask --app vulniverse_api run --debug
 ```
+
+`create_app()` requires `SECRET_KEY` to be set (via `.env` or the real
+environment) and fails fast with a clear error if it isn't — see
+[Configuration](config.md) and [Running in production](production.md).
 
 The API listens on `http://127.0.0.1:5000` by default. The SQLite database
 lives in the Flask instance directory (`backend/src/instance/`), created
@@ -41,9 +47,6 @@ Open `http://localhost:5173`. During development, Vite proxies `/api`
 requests to the Flask server at `http://127.0.0.1:5000` (configured in
 `frontend/vite.config.ts`) — the backend from step 1 must already be
 running for the editor to load or save anything.
-
-A stored record can be opened at `/editor/<record-id>`, for example
-`/editor/CVE-2026-99999`.
 
 ## Development checks
 

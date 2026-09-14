@@ -79,10 +79,6 @@ class CnaPublicationService:
         self.target = target
         self.base_url = credentials["cve_url"].rstrip("/")
         self.short_name = credentials["short_name"]
-        # Deliberately distinct from cve_api_org below: org_id is the CNA's
-        # registered UUID for providerMetadata.orgId (CVE Record Format
-        # requirement), cve_api_org is the CVE-API-ORG auth header value —
-        # the target's own auth scheme, not necessarily UUID-shaped.
         self.org_id = credentials["org_id"]
         self._api_key = credentials["cve_api_key"]
         self._headers = {

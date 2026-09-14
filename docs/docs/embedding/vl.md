@@ -8,7 +8,9 @@ icon: lucide/view
 (VL) is the reference example of embedding `<vulniverse-editor>` into a
 host application that has its own backend, its own record storage, and its
 own authentication — none of which Vulniverse's own backend is involved in
-at all. This page describes exactly how that integration is wired up.
+at all. This page describes exactly how that integration is wired up; for
+the element's general props/contract reference (not VL-specific), see
+[The `<vulniverse-editor>` element](element.md).
 
 ## Where the pieces live
 
