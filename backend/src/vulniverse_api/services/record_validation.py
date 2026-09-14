@@ -45,6 +45,32 @@ def known_profiles() -> set[str]:
     return set(load_manifest().get("profiles", {}))
 
 
+def deep_merge_properties(
+    base: dict[str, Any],
+    overlay: dict[str, Any],
+) -> dict[str, Any]:
+    """Recursively merge overlay into base, overlay values winning on
+    conflict except where both sides have a dict at the same key
+    (merged recursively too). A plain dict.update() would let an
+    overlay legalizing a nested property (e.g.
+    containers.properties.cna.properties.x_gcve) silently clobber
+    every *other* sibling property already declared at that same
+    level — mirrors scripts/generate_editor_schemas.py's identical
+    helper, which has the same bug for the same reason.
+    """
+    merged = dict(base)
+
+    for key, value in overlay.items():
+        existing = merged.get(key)
+
+        if isinstance(existing, dict) and isinstance(value, dict):
+            merged[key] = deep_merge_properties(existing, value)
+        else:
+            merged[key] = copy.deepcopy(value)
+
+    return merged
+
+
 def load_overlay(profile_id: str) -> dict[str, Any] | None:
     """
     Profile-specific schema overlay, e.g. schemas/overlays/<profile_id>.json.
@@ -86,8 +112,9 @@ def get_cve_validator(profile_id: str) -> Validator:
         # submitted record actually matches. cve-5.2.0 has no overlay
         # file, so its compiled validator is unaffected.
         for branch in schema.get("oneOf") or [schema]:
-            branch.setdefault("properties", {}).update(
-                copy.deepcopy(overlay_properties),
+            branch["properties"] = deep_merge_properties(
+                branch.get("properties", {}),
+                overlay_properties,
             )
 
     validator_class = validator_for(schema)

@@ -7,6 +7,14 @@ import {
   useEditorContext,
 } from "../use-editor-context";
 
+import {
+  findXGcveOccurrences,
+} from "../gcve";
+
+import type {
+  GcveExtension,
+} from "../contracts";
+
 import SupportingMediaPreview from "./SupportingMediaPreview.vue";
 
 type AnyRecord = Record<string, unknown>;
@@ -21,13 +29,71 @@ const cveMetadata = computed<AnyRecord>(() => {
   return (record.value.cveMetadata as AnyRecord) ?? {};
 });
 
-const cveId = computed(() => {
-  return (
-    cveMetadata.value.cveId
-    ?? cveMetadata.value.vulnId
-    ?? "Unassigned identifier"
-  ) as string;
+const isGcve = computed(() => {
+  return editor.profile.value?.startsWith("gcve-") ?? false;
 });
+
+/*
+ * x_gcve is valid wherever it appears in the record (see ../gcve.ts) —
+ * a record assembled by another tool may place it under
+ * containers.cna, containers.adp[*], etc. rather than the top level
+ * the editor's own generated form/new-record default uses.
+ */
+const gcveOccurrences = computed(() => {
+  return findXGcveOccurrences(record.value);
+});
+
+const gcveVulnId = computed(() => {
+  return gcveOccurrences.value[0]?.extensions[0]?.vulnId;
+});
+
+/*
+ * The real GCVE-BCP-05 x_gcve[].vulnId (found above) takes priority
+ * over cveMetadata.vulnId, Vulniverse's own non-standard convenience
+ * field for GCVE-only-storage hosts (see GcveIdentifierPanel.vue) —
+ * the former is what actually gets validated, the latter may not
+ * have been kept in sync with it.
+ */
+const primaryIdentifier = computed(() => {
+  const cveId = cveMetadata.value.cveId as string | undefined;
+  const vulnId = gcveVulnId.value
+    ?? (cveMetadata.value.vulnId as string | undefined);
+
+  if (isGcve.value && vulnId) {
+    return vulnId;
+  }
+
+  return cveId ?? vulnId ?? "Unassigned identifier";
+});
+
+const secondaryIdentifier = computed(() => {
+  const cveId = cveMetadata.value.cveId as string | undefined;
+
+  return cveId && cveId !== primaryIdentifier.value
+    ? cveId
+    : undefined;
+});
+
+const KNOWN_GCVE_KEYS = new Set([
+  "vulnId",
+  "recordType",
+  "relationships",
+  "language",
+]);
+
+function extraGcveFields(
+  extension: GcveExtension,
+): Array<[string, unknown]> {
+  return Object.entries(extension).filter(
+    ([key]) => !KNOWN_GCVE_KEYS.has(key),
+  );
+}
+
+function gcvePathLabel(
+  path: Array<string | number>,
+): string {
+  return path.length === 0 ? "record root" : path.join(".");
+}
 
 const state = computed(() => {
   return cveMetadata.value.state as string | undefined;
@@ -410,7 +476,14 @@ function isEmptySource(
     <div class="card mb-4">
       <div class="card-body">
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-          <h3 class="h5 mb-0">{{ cveId }}</h3>
+          <h3 class="h5 mb-0">{{ primaryIdentifier }}</h3>
+
+          <span
+            v-if="secondaryIdentifier"
+            class="badge text-bg-light text-secondary border"
+          >
+            {{ secondaryIdentifier }}
+          </span>
 
           <span
             v-if="state"
@@ -434,6 +507,72 @@ function isEmptySource(
             <dd class="col-sm-9">{{ entry.value }}</dd>
           </template>
         </dl>
+      </div>
+    </div>
+
+    <div
+      v-for="occurrence in gcveOccurrences"
+      :key="gcvePathLabel(occurrence.path)"
+      class="card mb-4"
+    >
+      <div class="card-header d-flex align-items-center gap-2">
+        <span class="badge text-bg-secondary">GCVE</span>
+        <span class="fw-semibold">x_gcve</span>
+        <span class="text-secondary small">
+          at {{ gcvePathLabel(occurrence.path) }}
+        </span>
+      </div>
+
+      <div class="card-body">
+        <div
+          v-for="(extension, index) in occurrence.extensions"
+          :key="index"
+          class="mb-3"
+        >
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="fw-semibold">{{ extension.vulnId }}</span>
+
+            <span
+              v-if="extension.recordType"
+              class="badge text-bg-light text-secondary border"
+            >
+              {{ extension.recordType }}
+            </span>
+
+            <span
+              v-if="extension.language"
+              class="badge text-bg-light text-secondary border"
+            >
+              {{ extension.language }}
+            </span>
+          </div>
+
+          <ul
+            v-if="extension.relationships?.length"
+            class="small mb-2"
+          >
+            <li
+              v-for="(relationship, relIndex) in extension.relationships"
+              :key="relIndex"
+            >
+              <span v-if="relationship.srcId">{{ relationship.srcId }} </span>
+              {{ relationship.type }} {{ relationship.destId }}
+            </li>
+          </ul>
+
+          <dl
+            v-if="extraGcveFields(extension).length"
+            class="row mb-0 small"
+          >
+            <template
+              v-for="[key, value] in extraGcveFields(extension)"
+              :key="key"
+            >
+              <dt class="col-sm-3 text-secondary">{{ key }}</dt>
+              <dd class="col-sm-9">{{ formatSourceValue(value) }}</dd>
+            </template>
+          </dl>
+        </div>
       </div>
     </div>
 

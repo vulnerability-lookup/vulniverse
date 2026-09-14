@@ -150,6 +150,29 @@ def test_x_gcve_is_validated_at_nested_locations_too() -> None:
     assert ["containers", "cna", "x_gcve", 0, "vulnId"] in error_paths(errors)
 
 
+def test_legalizing_nested_x_gcve_does_not_clobber_sibling_cna_properties() -> None:
+    """
+    The overlay that legalizes containers.cna.x_gcve merges into the
+    compiled base-schema validator's containers.properties.cna
+    dict — a naive shallow update() there (rather than a recursive
+    merge) would silently replace the *entire* real cna.properties
+    definition with just {x_gcve: ...}, meaning every other cna field
+    (affected, descriptions, etc.) would lose its real type
+    constraint and stop being checked at all. Guards against that
+    regression directly, independent of test_valid_gcve_record_passes
+    happening to still pass for other reasons.
+    """
+    record = minimal_cve_record()
+    record["containers"]["cna"]["x_gcve"] = [
+        {"vulnId": "GCVE-0-2026-00001", "recordType": "creation"},
+    ]
+    record["containers"]["cna"]["affected"] = "not-an-array"
+
+    errors = validate_record(record, "gcve-bcp-05-1.7")
+
+    assert ["containers", "cna", "affected"] in error_paths(errors)
+
+
 def test_unknown_profile_is_rejected_by_the_api(client) -> None:
     response = client.post(
         "/api/v1/validate",

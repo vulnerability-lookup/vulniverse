@@ -461,6 +461,33 @@ def frontend_path_catalog(
     ]
 
 
+def deep_merge_properties(
+    base: JsonObject,
+    overlay: JsonObject,
+) -> JsonObject:
+    """Recursively merge overlay into base, overlay values winning on
+    conflict except where both sides have a dict at the same key
+    (merged recursively too). A plain dict.update() would let an
+    overlay legalizing a nested property (e.g.
+    containers.properties.cna.properties.x_gcve) silently clobber
+    every *other* sibling property already declared at that same
+    level — mirrors record_validation.py's identical helper, which
+    has the same bug for the same reason (both read the same overlay
+    file).
+    """
+    merged = dict(base)
+
+    for key, value in overlay.items():
+        existing = merged.get(key)
+
+        if isinstance(existing, dict) and isinstance(value, dict):
+            merged[key] = deep_merge_properties(existing, value)
+        else:
+            merged[key] = copy.deepcopy(value)
+
+    return merged
+
+
 def generate(
     project_root: Path,
     profile_id: str,
@@ -550,8 +577,9 @@ def generate(
         # which is the actual authority validating x_gcve content).
         overlay = load_json(overlay_path)
 
-        authoring_schema.setdefault("properties", {}).update(
-            copy.deepcopy(overlay.get("properties", {})),
+        authoring_schema["properties"] = deep_merge_properties(
+            authoring_schema.get("properties", {}),
+            overlay.get("properties", {}),
         )
 
     authoring_schema["$schema"] = official_schema.get("$schema")
