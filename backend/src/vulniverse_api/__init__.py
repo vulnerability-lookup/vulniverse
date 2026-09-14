@@ -7,7 +7,7 @@ from typing import Any
 from dotenv import load_dotenv
 from flask import Flask
 
-from .extensions import db, migrate
+from .extensions import csrf, db, login_manager, migrate
 
 
 def create_app(
@@ -37,8 +37,19 @@ def create_app(
             "(see docs/setup/production.md).",
         )
 
+    cna_encryption_key = os.environ.get("CNA_CREDENTIAL_ENCRYPTION_KEY")
+
+    if not cna_encryption_key and test_config is None:
+        raise RuntimeError(
+            "CNA_CREDENTIAL_ENCRYPTION_KEY environment variable is not "
+            "set. Generate one with `python -c \"from cryptography.fernet "
+            'import Fernet; print(Fernet.generate_key().decode())"` and '
+            "set it in backend/.env (see docs/setup/production.md).",
+        )
+
     app.config.from_mapping(
         SECRET_KEY=secret_key or "development-only-change-me",
+        CNA_CREDENTIAL_ENCRYPTION_KEY=cna_encryption_key,
         SQLALCHEMY_DATABASE_URI=os.environ.get(
             "DATABASE_URL",
             f"sqlite:///{database_path}",
@@ -51,10 +62,16 @@ def create_app(
 
     db.init_app(app)
     migrate.init_app(app, db)
+    login_manager.init_app(app)
+    csrf.init_app(app)
 
     # Ensure models are registered with SQLAlchemy and Alembic.
-    from . import models  # noqa: F401
+    from . import models
     from .api import api_bp
+
+    @login_manager.user_loader
+    def load_user(user_id: str) -> models.User | None:
+        return db.session.get(models.User, int(user_id))
 
     app.register_blueprint(
         api_bp,

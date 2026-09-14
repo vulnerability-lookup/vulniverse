@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask import request
+from flask_login import current_user
 
 from ..extensions import db
 from ..models import Template
@@ -35,6 +36,7 @@ def _serialize(
         "id": template.id,
         "name": template.name,
         "fields": template.fields,
+        "createdBy": template.created_by.email if template.created_by else None,
     }
 
 
@@ -70,6 +72,7 @@ def create_template() -> tuple[dict, int]:
     template = Template(
         name=name.strip(),
         fields=fields,
+        created_by_id=current_user.id,
     )
 
     db.session.add(template)

@@ -51,7 +51,7 @@ def test_list_records_is_empty_with_no_records(client) -> None:
     assert response.get_json() == {"records": []}
 
 
-def test_list_records_returns_created_records(client) -> None:
+def test_list_records_returns_created_records(client, test_user) -> None:
     create_draft(client, "CVE-2026-00001")
     create_draft(client, "CVE-2026-00002", profile="gcve-bcp-05-1.7")
 
@@ -69,6 +69,7 @@ def test_list_records_returns_created_records(client) -> None:
     assert by_identifier["CVE-2026-00002"]["profile"] == "gcve-bcp-05-1.7"
     assert by_identifier["CVE-2026-00001"]["isDraft"] is True
     assert "updatedAt" in by_identifier["CVE-2026-00001"]
+    assert by_identifier["CVE-2026-00001"]["createdBy"] == test_user.email
 
     # The list is summary data only — it must not embed the full
     # record document (fetched separately via GET /records/<id>).

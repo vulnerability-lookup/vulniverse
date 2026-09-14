@@ -17,8 +17,14 @@ Group=vulniverse
 
 WorkingDirectory=/opt/vulniverse/backend
 
-# Replace with actual secret
+# Replace with actual generated values — see docs/setup/production.md.
 Environment=SECRET_KEY=replace-with-a-real-generated-secret
+Environment=CNA_CREDENTIAL_ENCRYPTION_KEY=replace-with-a-real-generated-fernet-key
+
+# Runs on every start and restart, with the same User/WorkingDirectory/
+# Environment as ExecStart below — safe to repeat, since "db upgrade" is
+# a no-op once already at the latest revision.
+ExecStartPre=/opt/vulniverse/backend/.venv/bin/flask --app vulniverse_api db upgrade
 
 ExecStart=/opt/vulniverse/backend/.venv/bin/gunicorn \
     --workers 2 \

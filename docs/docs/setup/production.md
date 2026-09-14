@@ -10,7 +10,8 @@ for a real deployment.
 
 ## Step 1 — Configure the environment
 
-`create_app()` requires a `SECRET_KEY` from the environment.
+`create_app()` requires a `SECRET_KEY` and a `CNA_CREDENTIAL_ENCRYPTION_KEY`
+from the environment — it refuses to start without either.
 
 1. Copy the template:
    ```bash
@@ -21,7 +22,15 @@ for a real deployment.
    ```bash
    python3 -c "import secrets; print(secrets.token_hex(32))"
    ```
-3. Leave `DATABASE_URL` unset for now if you're staying on SQLite — skip to
+3. Generate a Fernet key and paste it into `.env`'s
+   `CNA_CREDENTIAL_ENCRYPTION_KEY=` — this encrypts each user's CNA
+   credentials at rest. Changing it later makes previously-saved
+   credentials undecryptable, so treat it like `SECRET_KEY`: generate it
+   once, keep it, back it up:
+   ```bash
+   python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+   ```
+4. Leave `DATABASE_URL` unset for now if you're staying on SQLite — skip to
    [Step 3](#step-3-run-migrations). Otherwise continue to Step 2.
 
 
@@ -64,8 +73,9 @@ outside development.
    ```bash
    uv run gunicorn --workers 2 --bind 127.0.0.1:8000 wsgi:app
    ```
-   Two workers is deliberate, not a placeholder — see
-   [Should I migrate off SQLite?](#should-i-migrate-off-sqlite) above.
+   Two workers is deliberate, not a placeholder: SQLite allows only one
+   writer at a time, so more worker *processes* sharing the one SQLite
+   file risks lock contention under real concurrent writes.
 2. Confirm it's actually answering:
    ```bash
    curl http://127.0.0.1:8000/api/v1/health
@@ -93,7 +103,3 @@ To use it follow these steps:
    sudo systemctl enable --now vulniverse
    systemctl status vulniverse
    ```
-
-The unit does **not** run migrations itself — Step 3 stays a manual step
-you repeat before restarting the service on any deploy that adds one.
-

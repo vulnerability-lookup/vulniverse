@@ -22,31 +22,7 @@
 # EditorModule.id (see frontend/src/editor/modules/*.ts).
 "download-json" = true
 
-# CNA publication targets for the "Vulnerability-Lookup" and "CVE Program"
-# panels. A target is just that base URL plus the credentials for it.
-# A target with any of these six keys missing is treated as "not configured".
-#
-# org_id and cve_api_org are deliberately separate: org_id is the CNA's
-# registered UUID, sent as providerMetadata.orgId on every record you
-# publish; cve_api_org is the CVE-API-ORG auth header value for this
-# target's own auth scheme, which isn't necessarily UUID-shaped.
-
-# [integrations.vl]
-# cve_url = "https://your-vl-instance.example/api/cna"
-# short_name = "..."
-# org_id = "..."
-# cve_api_org = "..."
-# cve_api_user = "..."
-# cve_api_key = "..."
-
-# Commented out deliberately: no default cveawg URL is baked in, so nothing
-# can publish a real CVE until an operator opts in with real credentials.
-# Use cveawg-test.mitre.org while validating, cveawg.mitre.org for real
-# publication.
-# [integrations.cve-program]
-# cve_url = "https://cveawg-test.mitre.org/api"
-# short_name = "..."
-# org_id = "..."
-# cve_api_org = "..."
-# cve_api_user = "..."
-# cve_api_key = "..."
+# CNA publication credentials for the "Vulnerability-Lookup" and "CVE
+# Program" panels are no longer configured here — each user sets their
+# own under their account's CNA credentials page (per-user, encrypted at
+# rest; see docs/setup/production.md).

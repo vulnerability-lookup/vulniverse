@@ -18,6 +18,12 @@ import {
   RepositoryError,
 } from "./RepositoryError";
 
+import {
+  getCsrfToken,
+} from "./csrf";
+
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
 /*
  * Not part of EditorRepository: listing records is a standalone-app
  * concern (the home page), not something the embeddable
@@ -28,6 +34,7 @@ export interface RecordSummary {
   profile: string;
   isDraft: boolean;
   updatedAt: string;
+  createdBy: string | null;
 }
 
 /*
@@ -270,6 +277,12 @@ export class HttpRepository
         "Content-Type",
         "application/json",
       );
+    }
+
+    const method = (init.method ?? "GET").toUpperCase();
+
+    if (MUTATING_METHODS.has(method)) {
+      headers.set("X-CSRFToken", await getCsrfToken(this.apiRoot));
     }
 
     const response = await fetch(

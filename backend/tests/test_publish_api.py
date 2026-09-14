@@ -4,10 +4,11 @@ from typing import Any
 
 import httpx
 import pytest
+from flask import Flask
 from flask.testing import FlaskClient
 
-from vulniverse_api.api import publish as publish_api
 from vulniverse_api.services import cna_publication as service_module
+from vulniverse_api.services.cna_credentials import set_credential
 
 
 class FakeResponse:
@@ -33,26 +34,15 @@ class FakeResponse:
 
 
 @pytest.fixture
-def configured_vl(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        service_module,
-        "get_integration",
-        lambda target: {
-            "cve_url": "http://test/api/cna",
-            "short_name": "test-cna",
-            "org_id": "TEST-ORG",
-            "cve_api_org": "TEST-ORG",
-            "cve_api_user": "tester@example.com",
-            "cve_api_key": "key123",
-        }
-        if target == "vl"
-        else None,
-    )
-    monkeypatch.setattr(
-        publish_api,
-        "is_integration_configured",
-        lambda target: target == "vl",
-    )
+def configured_vl(app: Flask, test_user) -> None:
+    set_credential(test_user.id, "vl", {
+        "cve_url": "http://test/api/cna",
+        "short_name": "test-cna",
+        "org_id": "TEST-ORG",
+        "cve_api_org": "TEST-ORG",
+        "cve_api_user": "tester@example.com",
+        "cve_api_key": "key123",
+    })
 
 
 def test_targets_endpoint_reports_configured(

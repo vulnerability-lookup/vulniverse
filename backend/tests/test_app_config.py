@@ -33,7 +33,6 @@ def test_falls_back_to_sample_file_when_real_config_absent(
     assert result == {
         "panels": {"stats": True},
         "modules": {"download-json": False},
-        "integrations": {},
     }
 
 
@@ -63,55 +62,7 @@ def test_empty_tables_when_neither_file_exists(
 
     result = app_config.load_app_config()
 
-    assert result == {"panels": {}, "modules": {}, "integrations": {}}
-
-
-def test_get_integration_returns_none_when_keys_missing(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    config_path = tmp_path / "vulniverse.toml"
-    config_path.write_text(
-        '[integrations.vl]\ncve_url = "https://example.test/api/cna"\n',
-    )
-
-    monkeypatch.setattr(app_config, "CONFIG_PATH", config_path)
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "missing.sample")
-
-    assert app_config.get_integration("vl") is None
-    assert app_config.is_integration_configured("vl") is False
-
-
-def test_get_integration_returns_credentials_when_complete(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    config_path = tmp_path / "vulniverse.toml"
-    config_path.write_text(
-        "[integrations.vl]\n"
-        'cve_url = "https://example.test/api/cna"\n'
-        'short_name = "acme"\n'
-        'org_id = "11111111-1111-1111-1111-111111111111"\n'
-        'cve_api_org = "ACME"\n'
-        'cve_api_user = "user@example.test"\n'
-        'cve_api_key = "secret"\n',
-    )
-
-    monkeypatch.setattr(app_config, "CONFIG_PATH", config_path)
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "missing.sample")
-
-    credentials = app_config.get_integration("vl")
-
-    assert credentials == {
-        "cve_url": "https://example.test/api/cna",
-        "short_name": "acme",
-        "org_id": "11111111-1111-1111-1111-111111111111",
-        "cve_api_org": "ACME",
-        "cve_api_user": "user@example.test",
-        "cve_api_key": "secret",
-    }
-    assert app_config.is_integration_configured("vl") is True
-    assert app_config.get_integration("cve-program") is None
+    assert result == {"panels": {}, "modules": {}}
 
 
 def test_capabilities_endpoint_includes_panels_and_modules(client: FlaskClient) -> None:

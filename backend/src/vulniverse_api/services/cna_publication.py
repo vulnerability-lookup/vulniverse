@@ -9,14 +9,14 @@ import httpx
 
 from ..extensions import db
 from ..models import CnaPublication, VulnerabilityRecord
-from .app_config import get_integration
+from .cna_credentials import get_credential
 
 REQUEST_TIMEOUT_SECONDS = 30.0
 
 # "vl" and "cve-program" speak the identical CVE Services API-shaped
 # protocol (see docs/embedding/vl.md and VL's own website/web/api/v1/cna.py)
-# — the only difference is which [integrations.<target>] table in
-# config/vulniverse.toml supplies the base URL and credentials.
+# — the only difference is which per-user UserCnaCredential row supplies
+# the base URL and credentials.
 KNOWN_TARGETS = frozenset({"vl", "cve-program"})
 
 
@@ -67,13 +67,13 @@ class CnaPublicationService:
     serves both — see KNOWN_TARGETS above.
     """
 
-    def __init__(self, target: str) -> None:
-        credentials = get_integration(target)
+    def __init__(self, user_id: int, target: str) -> None:
+        credentials = get_credential(user_id, target)
 
         if credentials is None:
             raise IntegrationNotConfiguredError(
-                f"No credentials configured for {target!r}. Set "
-                f"[integrations.{target}] in config/vulniverse.toml.",
+                f"No CNA credentials configured for {target!r}. Set them "
+                "up under your account's CNA credentials.",
             )
 
         self.target = target

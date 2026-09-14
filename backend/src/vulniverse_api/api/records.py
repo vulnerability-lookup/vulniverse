@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from flask import request
+from flask_login import current_user
 
 from ..extensions import db
 from ..models import VulnerabilityRecord
@@ -72,6 +73,7 @@ def list_records() -> tuple[dict, int]:
                 "profile": record.profile,
                 "isDraft": record.is_draft,
                 "updatedAt": record.updated_at.isoformat(),
+                "createdBy": record.created_by.email if record.created_by else None,
             }
             for record in records
         ],
@@ -139,6 +141,7 @@ def create_record() -> tuple[dict, int]:
         profile=profile,
         document=document,
         is_draft=is_draft,
+        created_by_id=current_user.id,
     )
 
     db.session.add(record)

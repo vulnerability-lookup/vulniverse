@@ -28,7 +28,20 @@ body {
 
 #app {
   width: 100%;
-  min-height: 100vh;
+
+  /*
+   * A definite height (not just a min-height floor) is what lets
+   * .editor-page's flex: 1 1 auto below actually resolve to a real
+   * pixel value equal to "the rest of the viewport below this
+   * header" — short page content then fills exactly that (no gray
+   * gap), and content taller than it overflows visually past #app's
+   * box, growing body/the page to scroll normally instead of being
+   * clipped (default overflow: visible, no fixed-height clipping).
+   */
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
 .standalone-page {

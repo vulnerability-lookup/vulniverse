@@ -95,16 +95,18 @@ function handleDeleted(
 
 <template>
   <div class="editor-page">
-    <VulniverseEditor
-      :repository="repository"
-      mode="edit"
-      :record-id="recordId"
-      :modules="enabledModules"
-      :panels="enabledPanels"
-      @loaded="handleLoaded"
-      @error="handleError"
-      @deleted="handleDeleted"
-    />
+    <div class="editor-card card shadow-sm">
+      <VulniverseEditor
+        :repository="repository"
+        mode="edit"
+        :record-id="recordId"
+        :modules="enabledModules"
+        :panels="enabledPanels"
+        @loaded="handleLoaded"
+        @error="handleError"
+        @deleted="handleDeleted"
+      />
+    </div>
   </div>
 </template>
 
@@ -115,16 +117,33 @@ function handleDeleted(
  * height themselves, since the same component is also the embeddable
  * <vulniverse-editor> — an embedding host's page decides that, not
  * the component. This wrapper is what actually opts the standalone
- * app's own page into filling the viewport.
+ * app's own page into filling the viewport (#app is a flex column in
+ * main.scss, so flex: 1 1 auto here fills whatever's left below
+ * AppHeader rather than re-claiming the full viewport height itself).
  */
 .editor-page {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 1.5rem;
 }
 
-.editor-page :deep(.vulniverse-editor) {
+/*
+ * The editor sits in its own card, similar to how Vulnerability-Lookup
+ * frames embedded widgets — overflow: hidden keeps the editor's own
+ * (rectangular) header/sidebar backgrounds clipped to the card's
+ * rounded corners.
+ */
+.editor-card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-card :deep(.vulniverse-editor) {
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;

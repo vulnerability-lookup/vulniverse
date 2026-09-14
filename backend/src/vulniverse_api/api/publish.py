@@ -5,9 +5,10 @@ from typing import Any
 
 import httpx
 from flask import request
+from flask_login import current_user
 
 from ..models import CnaPublication
-from ..services.app_config import is_integration_configured
+from ..services.cna_credentials import is_credential_configured
 from ..services.cna_publication import (
     KNOWN_TARGETS,
     CnaPublicationService,
@@ -41,7 +42,7 @@ def _resolve_service(
         return None, ({"message": f"Unknown publication target: {target!r}"}, 404)
 
     try:
-        return CnaPublicationService(target), None
+        return CnaPublicationService(current_user.id, target), None
     except IntegrationNotConfiguredError as exc:
         return None, ({"message": str(exc)}, 409)
 
@@ -59,7 +60,7 @@ def _upstream_error_response(
 @api_bp.get("/publish/targets")
 def publish_targets() -> tuple[dict, int]:
     return {
-        target: {"configured": is_integration_configured(target)}
+        target: {"configured": is_credential_configured(current_user.id, target)}
         for target in KNOWN_TARGETS
     }, 200
 

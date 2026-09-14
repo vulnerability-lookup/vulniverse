@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, String, Text, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column
+from flask_login import UserMixin
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .extensions import db
 
@@ -13,6 +14,30 @@ from .extensions import db
 # mypy can't resolve it as a valid base class without a custom DeclarativeBase
 # (a bigger structural change than this warrants); see
 # https://github.com/pallets-eco/flask-sqlalchemy/issues/1327.
+class User(UserMixin, db.Model):  # type: ignore[name-defined]
+    __tablename__ = "user"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    email: Mapped[str] = mapped_column(
+        String(256),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    password_hash: Mapped[str] = mapped_column(
+        String(256),
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
 class VulnerabilityRecord(db.Model):  # type: ignore[name-defined]
     __tablename__ = "vulnerability_record"
 
@@ -41,6 +66,17 @@ class VulnerabilityRecord(db.Model):  # type: ignore[name-defined]
         default=True,
     )
 
+    # Attribution only, not access control — nullable because records
+    # created before this column existed have no author on file, and any
+    # logged-in user can still view/edit any record regardless of who
+    # created it.
+    created_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("user.id"),
+        nullable=True,
+    )
+
+    created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id])
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -65,6 +101,15 @@ class Template(db.Model):  # type: ignore[name-defined]
         nullable=False,
     )
 
+    # Attribution only, not access control — see the same field on
+    # VulnerabilityRecord above.
+    created_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("user.id"),
+        nullable=True,
+    )
+
+    created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id])
+
     # A list of {"path": "containers.cna.affected.0.vendor", "value": "Acme"}
     # entries — arbitrary and unvalidated against any schema, applied by
     # the frontend as a set of targeted writes onto whatever record is
@@ -77,6 +122,47 @@ class Template(db.Model):  # type: ignore[name-defined]
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
+        nullable=False,
+    )
+
+
+class UserCnaCredential(db.Model):  # type: ignore[name-defined]
+    __tablename__ = "user_cna_credential"
+    __table_args__ = (
+        UniqueConstraint("user_id", "target", name="uq_user_cna_credential_user_target"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id"),
+        nullable=False,
+        index=True,
+    )
+
+    # "vl" | "cve-program" — see KNOWN_TARGETS in services/cna_publication.py.
+    target: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    cve_url: Mapped[str] = mapped_column(String(512), nullable=False)
+    short_name: Mapped[str] = mapped_column(String(256), nullable=False)
+    org_id: Mapped[str] = mapped_column(String(256), nullable=False)
+    cve_api_org: Mapped[str] = mapped_column(String(256), nullable=False)
+    cve_api_user: Mapped[str] = mapped_column(String(256), nullable=False)
+
+    # Encrypted at rest with Fernet (CNA_CREDENTIAL_ENCRYPTION_KEY) — see
+    # services/cna_credentials.py. Never returned by any API response.
+    cve_api_key_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
         nullable=False,
     )
 
@@ -98,8 +184,9 @@ class CnaPublication(db.Model):  # type: ignore[name-defined]
         index=True,
     )
 
-    # "vl" | "cve-program" — matches an [integrations.<target>] table in
-    # config/vulniverse.toml. One row per (record, target) pair.
+    # "vl" | "cve-program" — matches a UserCnaCredential.target for
+    # whichever user triggered the publish. One row per (record, target)
+    # pair, shared across whoever acts on that record.
     target: Mapped[str] = mapped_column(
         String(64),
         nullable=False,

@@ -15,6 +15,9 @@ dependencies = [
     "python-dotenv>=1.2.3",
     "gunicorn>=26.2.0",
     "psycopg[binary]>=3.3.5",
+    "flask-login>=0.6.3",
+    "flask-wtf>=1.3.0",
+    "cryptography>=50.0.1",
 ]
 
 
@@ -41,3 +44,8 @@ target-version = "py312"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[[tool.mypy.overrides]]
+# Neither ships a py.typed marker or has a maintained types- stub package.
+module = ["flask_login.*", "flask_wtf.*"]
+ignore_missing_imports = true

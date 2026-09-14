@@ -14,9 +14,8 @@ embeddable `<vulniverse-editor>` element itself is a separate concern, covered i
 
 ## Config file 
 
-`config/vulniverse.toml` controls two things: which
-built-in panels/modules it shows, and the credentials for the CNA
-publication targets ("Vulnerability-Lookup" and "CVE Program" panels). 
+`config/vulniverse.toml` controls which built-in panels/modules the
+standalone app shows.
 
   ```bash
   cp config/vulniverse.toml.sample config/vulniverse.toml
@@ -42,20 +41,11 @@ publication targets ("Vulnerability-Lookup" and "CVE Program" panels).
 "download-json" = true
 ```
 
-### `[integrations.<target>]`
-
-Credentials for the CNA-publication panels — "Vulnerability-Lookup"
-(target id `vl`) and "CVE Program" (target id `cve-program`). 
-
-```toml
-[integrations.vl]
-cve_url      = "https://your-vl-instance.example/api/cna"
-short_name   = "..."
-org_id       = "..."          # this CNA's registered UUID
-cve_api_org  = "..."          # CVE-API-ORG auth header value
-cve_api_user = "..."
-cve_api_key  = "..."
-```
+CNA-publication credentials — "Vulnerability-Lookup" (target id `vl`) and
+"CVE Program" (target id `cve-program`) — are **not** configured here.
+Each registered user sets their own under their account's CNA credentials
+page; they're stored per-user, encrypted at rest. See [Running in
+production](production.md).
 
 ## Backend environment (`.env`)
 
@@ -63,16 +53,17 @@ The `backend/.env` file is needed to start the backend:
 
 ```bash
 cd backend
-cp .env.sample .env
+cp .env.example .env
 ```
 
-And a secret key need to be set: 
+A secret key and a CNA-credential encryption key both need to be set:
 
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"   # paste into SECRET_KEY=
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"   # paste into CNA_CREDENTIAL_ENCRYPTION_KEY=
 ```
 
-Optionally the DB adress can be changed here as well.
+Optionally the DB address can be changed here as well.
 
 
 ## Frontend dev server

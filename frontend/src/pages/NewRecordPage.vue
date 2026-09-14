@@ -117,15 +117,17 @@ function handleError(
     v-else
     class="editor-page"
   >
-    <VulniverseEditor
-      :repository="repository"
-      mode="create"
-      :profile="selectedProfile"
-      :modules="enabledModules"
-      :panels="enabledPanels"
-      @loaded="handleLoaded"
-      @error="handleError"
-    />
+    <div class="editor-card card shadow-sm">
+      <VulniverseEditor
+        :repository="repository"
+        mode="create"
+        :profile="selectedProfile"
+        :modules="enabledModules"
+        :panels="enabledPanels"
+        @loaded="handleLoaded"
+        @error="handleError"
+      />
+    </div>
   </div>
 </template>
 
@@ -133,16 +135,33 @@ function handleError(
 /*
  * See EditorPage.vue for why this wrapper exists — it's what opts
  * the standalone app's page into filling the viewport height, which
- * VulniverseEditor.ce.vue itself deliberately doesn't assume.
+ * VulniverseEditor.ce.vue itself deliberately doesn't assume (#app is
+ * a flex column in main.scss, so flex: 1 1 auto here fills whatever's
+ * left below AppHeader).
  */
 .editor-page {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 1.5rem;
 }
 
-.editor-page :deep(.vulniverse-editor) {
+/*
+ * The editor sits in its own card, similar to how Vulnerability-Lookup
+ * frames embedded widgets — overflow: hidden keeps the editor's own
+ * (rectangular) header/sidebar backgrounds clipped to the card's
+ * rounded corners.
+ */
+.editor-card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-card :deep(.vulniverse-editor) {
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
