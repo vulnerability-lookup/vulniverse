@@ -25,3 +25,7 @@ docs/site/
 # Config
 config/vulniverse.toml
 !config/vulniverse.toml.sample
+
+# Drawio
+*.drawio.bkp
+*.drawio.dtmp

@@ -22,7 +22,7 @@ async function onSubmit(): Promise<void> {
 
     const redirect = typeof route.query.redirect === "string"
       ? route.query.redirect
-      : "/";
+      : "/records";
 
     await router.replace(redirect);
   } catch (err) {

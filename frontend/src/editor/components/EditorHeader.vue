@@ -4,6 +4,7 @@ import vulniverseLogo from "../../assets/vulniverse-logo.png";
 import { displayIdentifier } from "../identifier";
 
 defineProps<{
+  canDelete: boolean;
   identifier: string | null;
   profile: string | null;
   isDraft: boolean;
@@ -221,7 +222,7 @@ defineEmits<{
           </button>
         </template>
 
-        <template v-if="identifier">
+        <template v-if="identifier && canDelete">
           <div
             class="vr d-none d-md-block"
             aria-hidden="true"

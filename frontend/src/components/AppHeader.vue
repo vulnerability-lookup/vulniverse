@@ -5,7 +5,7 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { HttpRepository } from "@/repositories/HttpRepository";
 
-import vulniverseLogo from "@/assets/vulniverse-logo.png";
+import vulniverseLogo from "@/assets/vulniverse-icon.png";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -49,6 +49,10 @@ async function onLogout(): Promise<void> {
       v-if="auth.isAuthenticated"
       class="d-flex align-items-center ms-auto gap-3"
     >
+      <RouterLink to="/records" class="text-decoration-none">
+        Records
+      </RouterLink>
+
       <RouterLink
         v-if="auth.currentUser?.isAdmin"
         to="/admin/users"
@@ -74,6 +78,23 @@ async function onLogout(): Promise<void> {
       >
         Log out
       </button>
+    </nav>
+
+    <nav
+      v-else
+      class="d-flex align-items-center ms-auto gap-3"
+    >
+      <RouterLink to="/try" class="text-decoration-none">
+        Try it
+      </RouterLink>
+
+      <RouterLink to="/login" class="text-decoration-none">
+        Log in
+      </RouterLink>
+
+      <RouterLink to="/register" class="btn btn-primary btn-sm">
+        Register
+      </RouterLink>
     </nav>
   </header>
 </template>

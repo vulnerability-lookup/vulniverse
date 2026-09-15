@@ -173,6 +173,16 @@ def test_legalizing_nested_x_gcve_does_not_clobber_sibling_cna_properties() -> N
     assert ["containers", "cna", "affected"] in error_paths(errors)
 
 
+def test_validate_is_exempt_from_the_login_gate(anon_client) -> None:
+    response = anon_client.post(
+        "/api/v1/validate",
+        json={"record": minimal_cve_record(), "profile": "cve-5.2.0"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["valid"] is True
+
+
 def test_unknown_profile_is_rejected_by_the_api(client) -> None:
     response = client.post(
         "/api/v1/validate",

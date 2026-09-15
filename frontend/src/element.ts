@@ -45,6 +45,10 @@ export type {
 } from "./editor/contracts";
 
 export {
+  RecordValidationError,
+} from "./editor/contracts";
+
+export {
   cveProgramPanel,
   gcveIdentifierPanel,
   templatesPanel,

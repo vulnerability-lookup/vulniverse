@@ -18,7 +18,7 @@ async function onSubmit(): Promise<void> {
 
   try {
     await auth.register(email.value, password.value);
-    await router.replace("/");
+    await router.replace("/records");
   } catch (err) {
     error.value = err instanceof Error
       ? err.message

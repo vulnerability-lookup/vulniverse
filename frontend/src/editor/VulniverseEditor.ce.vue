@@ -327,8 +327,10 @@ async function handleSave(
   }
 }
 
+const canDelete = computed(() => Boolean(props.repository?.deleteRecord));
+
 async function handleDelete(): Promise<void> {
-  if (!props.repository || !state.identifier.value) {
+  if (!props.repository?.deleteRecord || !state.identifier.value) {
     return;
   }
 
@@ -346,7 +348,7 @@ async function handleDelete(): Promise<void> {
   state.saveError.value = null;
 
   try {
-    await props.repository.deleteRecord(identifier);
+    await props.repository.deleteRecord!(identifier);
 
     state.clear();
     emit("deleted", identifier);
@@ -553,6 +555,7 @@ onMounted(loadRecord);
       @publish="handleSave(false)"
       @unpublish="handleSave(true)"
       @reject="handleRejectClick"
+      :can-delete="canDelete"
       @delete="handleDelete"
       @run-module="handleRunModule"
     />

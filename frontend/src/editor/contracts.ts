@@ -181,7 +181,7 @@ export interface EditorRepository {
     profile: string,
   ): Promise<ValidationResult>;
 
-  deleteRecord(
+  deleteRecord?(
     identifier: string,
   ): Promise<void>;
 

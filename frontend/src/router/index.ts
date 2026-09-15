@@ -3,11 +3,17 @@ import {
   createWebHistory,
 } from "vue-router";
 
+import LandingPage from
+  "@/pages/LandingPage.vue";
+
+import TryEditorPage from
+  "@/pages/TryEditorPage.vue";
+
+import RecordsPage from
+  "@/pages/RecordsPage.vue";
+
 import EditorPage from
   "@/pages/EditorPage.vue";
-
-import HomePage from
-  "@/pages/HomePage.vue";
 
 import NewRecordPage from
   "@/pages/NewRecordPage.vue";
@@ -34,20 +40,32 @@ export const router = createRouter({
   routes: [
     {
       path: "/",
-      name: "home",
-      component: HomePage,
+      name: "landing",
+      component: LandingPage,
+      meta: { public: true },
+    },
+    {
+      path: "/try",
+      name: "try",
+      component: TryEditorPage,
+      meta: { public: true },
+    },
+    {
+      path: "/records",
+      name: "records",
+      component: RecordsPage,
     },
     {
       path: "/login",
       name: "login",
       component: LoginPage,
-      meta: { public: true },
+      meta: { public: true, guestOnly: true },
     },
     {
       path: "/register",
       name: "register",
       component: RegisterPage,
-      meta: { public: true },
+      meta: { public: true, guestOnly: true },
     },
     {
       path: "/cna-credentials",
@@ -88,12 +106,16 @@ router.beforeEach(async (to) => {
     };
   }
 
-  if (to.meta.public && auth.isAuthenticated) {
-    return { name: "home" };
+  // Only login/register bounce an already-authenticated visitor away —
+  // the landing page and the sandbox editor are public for everyone,
+  // logged in or not, unlike login/register which stop making sense
+  // once you're already signed in.
+  if (to.meta.guestOnly && auth.isAuthenticated) {
+    return { name: "records" };
   }
 
   if (to.meta.adminOnly && !auth.currentUser?.isAdmin) {
-    return { name: "home" };
+    return { name: "records" };
   }
 
   return true;

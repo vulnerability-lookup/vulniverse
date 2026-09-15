@@ -102,7 +102,7 @@ function handleDeleted(
     identifier,
   );
 
-  router.push("/");
+  router.push("/records");
 }
 </script>
 
