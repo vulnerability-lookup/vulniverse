@@ -44,3 +44,11 @@ The host provides an `EditorRepository`, allowing Vulniverse to work with
 the host application's existing API, storage, authentication and
 authorization.
 
+## Documentation
+
+- [Getting started](docs/docs/setup/setup.md)
+- [Production deployment](docs/docs/setup/production.md)
+- [Configuration](docs/docs/setup/config.md)
+- [Architecture](docs/docs/development/architecture.md)
+- [Embedding Vulniverse](docs/docs/embedding/element.md)
+- [Vulnerability-Lookup integration](docs/docs/embedding/vl.md)
