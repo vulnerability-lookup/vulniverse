@@ -5,11 +5,15 @@ from typing import Any
 
 from flask import request
 from flask_login import current_user
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 
 from ..extensions import db
 from ..models import CnaPublication, VulnerabilityRecord
-from ..services.record_validation import known_profiles, validate_record
+from ..services.record_validation import (
+    find_x_gcve_occurrences,
+    known_profiles,
+    validate_record,
+)
 from . import api_bp
 
 
@@ -20,18 +24,49 @@ def has_blocking_errors(errors: list[dict[str, Any]]) -> bool:
     )
 
 
-def extract_identifier(
-    document: dict[str, Any],
-) -> str | None:
-    metadata = document.get("cveMetadata")
+def gcve_vuln_id(document: dict[str, Any]) -> str | None:
+    """The real GCVE-BCP-05 identifier, read from wherever x_gcve
+    actually appears in the document
+    """
+    occurrences = find_x_gcve_occurrences(document)
 
-    if not isinstance(metadata, dict):
+    if not occurrences:
         return None
 
-    identifier = (
-        metadata.get("vulnId")
-        or metadata.get("cveId")
-    )
+    _path, extensions = occurrences[0]
+
+    if not isinstance(extensions, list) or not extensions:
+        return None
+
+    first = extensions[0]
+    vuln_id = first.get("vulnId") if isinstance(first, dict) else None
+
+    return vuln_id if isinstance(vuln_id, str) else None
+
+
+def is_gcve_profile(profile: str) -> bool:
+    return profile.startswith("gcve-")
+
+
+def extract_identifier(
+    document: dict[str, Any],
+    profile: str,
+) -> str | None:
+    """Mirrors PreviewSection.vue's primaryIdentifier exactly: for a
+    gcve-* profile, the real GCVE-BCP-05 x_gcve[].vulnId (or its
+    non-standard cveMetadata.vulnId stand-in) wins over cveId; for any
+    other profile, cveId wins — a plain cve-5.2.0 draft can carry a
+    stray x_gcve key (drafts skip schema validation), and that
+    shouldn't out-rank its actual cveId just because it happens to be
+    present.
+    """
+    metadata = document.get("cveMetadata")
+    cve_metadata = metadata if isinstance(metadata, dict) else {}
+
+    vuln_id = gcve_vuln_id(document) or cve_metadata.get("vulnId")
+    cve_id = cve_metadata.get("cveId")
+
+    identifier = vuln_id if is_gcve_profile(profile) and vuln_id else (cve_id or vuln_id)
 
     return identifier if isinstance(identifier, str) else None
 
@@ -41,21 +76,51 @@ def identifier_still_present(
     identifier: str,
 ) -> bool:
     """A record's identifier, once assigned at creation, is pinned to
-    this row forever — but which of vulnId/cveId originally produced it
-    doesn't matter after that. A record legitimately accumulates a
-    second identifying field over its life (a GCVE record later gets an
-    official cveId, or a cveId record picks up a vulnId when reserving
-    through a GNA target), so update_record checks containment here
-    rather than re-deriving "the" identifier via extract_identifier's
-    vulnId-first preference — which would reject that entirely
-    legitimate case as a fabricated identity change.
+    this row forever
     """
     metadata = document.get("cveMetadata")
+    cve_metadata = metadata if isinstance(metadata, dict) else {}
 
-    if not isinstance(metadata, dict):
-        return False
+    candidates = (
+        gcve_vuln_id(document),
+        cve_metadata.get("vulnId"),
+        cve_metadata.get("cveId"),
+    )
 
-    return identifier in (metadata.get("vulnId"), metadata.get("cveId"))
+    # Case-insensitive: CVE/GCVE identifiers are conventionally
+    # uppercase, but a hand-typed or externally-sourced one may not be
+    # — "GCVE-1-2026-1" and "gcve-1-2026-1" are the same identifier, not
+    # a fabricated identity change.
+    identifier_lower = identifier.lower()
+
+    return any(
+        isinstance(candidate, str) and candidate.lower() == identifier_lower
+        for candidate in candidates
+    )
+
+
+def find_record_by_identifier(identifier: str) -> VulnerabilityRecord | None:
+    """Case-insensitive lookup — see identifier_still_present()."""
+    return VulnerabilityRecord.query.filter(
+        func.lower(VulnerabilityRecord.identifier) == identifier.lower(),
+    ).first()
+
+
+def record_identifier_taken(
+    identifier: str,
+    *,
+    exclude_id: int | None = None,
+) -> bool:
+    """Case-insensitive "does another record already use this
+    identifier" check — see identifier_still_present()."""
+    query = VulnerabilityRecord.query.filter(
+        func.lower(VulnerabilityRecord.identifier) == identifier.lower(),
+    )
+
+    if exclude_id is not None:
+        query = query.filter(VulnerabilityRecord.id != exclude_id)
+
+    return db.session.query(query.exists()).scalar()
 
 
 PLACEHOLDER_PREFIX = "draft-"
@@ -151,9 +216,7 @@ def list_records() -> tuple[dict, int]:
 
 @api_bp.get("/records/<string:identifier>")
 def get_record(identifier: str) -> tuple[dict, int]:
-    record = VulnerabilityRecord.query.filter_by(
-        identifier=identifier,
-    ).first()
+    record = find_record_by_identifier(identifier)
 
     if record is None or not is_visible(record):
         return {"message": "Record not found."}, 404
@@ -183,20 +246,15 @@ def create_record() -> tuple[dict, int]:
     if profile not in known_profiles():
         return {"message": f"Unknown profile: {profile!r}"}, 400
 
-    identifier = extract_identifier(document)
+    identifier = extract_identifier(document, profile)
 
     if not identifier and not is_draft:
         return {
             "message": "A record needs a CVE/GCVE identifier before it can be published.",
         }, 400
 
-    if identifier:
-        existing = VulnerabilityRecord.query.filter_by(
-            identifier=identifier,
-        ).first()
-
-        if existing:
-            return {"message": "The record already exists."}, 409
+    if identifier and record_identifier_taken(identifier):
+        return {"message": "The record already exists."}, 409
 
     # Incomplete drafts should be saveable.
     if not is_draft:
@@ -240,9 +298,7 @@ def create_record() -> tuple[dict, int]:
 
 @api_bp.put("/records/<string:identifier>")
 def update_record(identifier: str) -> tuple[dict, int]:
-    record = VulnerabilityRecord.query.filter_by(
-        identifier=identifier,
-    ).first()
+    record = find_record_by_identifier(identifier)
 
     if record is None or not is_visible(record):
         return {"message": "Record not found."}, 404
@@ -266,20 +322,17 @@ def update_record(identifier: str) -> tuple[dict, int]:
     # Only meaningful while is_placeholder — extract_identifier() looks
     # at vulnId/cveId directly, unlike identifier_still_present()'s
     # "did the pinned one survive" check used once a real one exists.
-    real_identifier = extract_identifier(document) if is_placeholder else None
+    real_identifier = extract_identifier(document, profile) if is_placeholder else None
 
     if is_placeholder:
         # Not pinned to anything real yet — the first real vulnId/cveId
         # the document picks up (if any) becomes the record's identifier
         # for good, exactly as if it had been supplied at creation.
-        if real_identifier:
-            conflict = VulnerabilityRecord.query.filter(
-                VulnerabilityRecord.identifier == real_identifier,
-                VulnerabilityRecord.id != record.id,
-            ).first()
-
-            if conflict:
-                return {"message": "The record already exists."}, 409
+        if real_identifier and record_identifier_taken(
+            real_identifier,
+            exclude_id=record.id,
+        ):
+            return {"message": "The record already exists."}, 409
         elif not is_draft:
             return {
                 "message": "A record needs a CVE/GCVE identifier before it can be published.",
@@ -317,9 +370,7 @@ def update_record(identifier: str) -> tuple[dict, int]:
 
 @api_bp.delete("/records/<string:identifier>")
 def delete_record(identifier: str) -> tuple[dict, int]:
-    record = VulnerabilityRecord.query.filter_by(
-        identifier=identifier,
-    ).first()
+    record = find_record_by_identifier(identifier)
 
     if record is None or not is_visible(record):
         return {"message": "Record not found."}, 404

@@ -103,3 +103,24 @@ To use it follow these steps:
    sudo systemctl enable --now vulniverse
    systemctl status vulniverse
    ```
+
+## Step 6 — Serve the frontend and expose it with nginx
+
+1. Build the frontend:
+   ```bash
+   cd frontend
+   npm ci
+   npm run build
+   ```
+   This writes static files to `frontend/dist`.
+2. `backend/deploy/vulniverse.nginx.conf` is a template that serves
+   `frontend/dist` and reverse-proxies `/api/` to gunicorn. Copy it and
+   adjust `server_name` and the `root` path for your deployment:
+   ```bash
+   sudo cp backend/deploy/vulniverse.nginx.conf /etc/nginx/sites-available/vulniverse
+   sudo ln -s /etc/nginx/sites-available/vulniverse /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+3. Add TLS with rather than serving over plain HTTP in production.
+
