@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 
 import { apiRequest } from "@/repositories/apiRequest";
 import { RepositoryError } from "@/repositories/RepositoryError";
+import { HttpRepository } from "@/repositories/HttpRepository";
 import type { PublicationTarget } from "@/editor/contracts";
 
 interface TargetInfo {
@@ -52,12 +53,25 @@ const savingTarget = ref<PublicationTarget | null>(null);
 const errors = reactive<Partial<Record<PublicationTarget, string>>>({});
 const loading = ref(true);
 
+const repository = new HttpRepository("/api/v1");
+const panelFlags = ref<Record<string, boolean>>({});
+
+// A panel id absent from config defaults to enabled — same convention
+// as editor/enabled-extensions.ts's filterEnabled() and AppHeader.vue's
+// showCnaCredentialsLink.
+const visibleTargets = computed(() =>
+  TARGETS.filter((target) => panelFlags.value[target.id] ?? true),
+);
+
 async function load(): Promise<void> {
   loading.value = true;
 
-  const result = await apiRequest<Record<string, StoredCredential>>(
-    "/cna-credentials",
-  );
+  const [result, capabilities] = await Promise.all([
+    apiRequest<Record<string, StoredCredential>>("/cna-credentials"),
+    repository.getCapabilities(),
+  ]);
+
+  panelFlags.value = capabilities.panels;
 
   for (const target of TARGETS) {
     const stored = result[target.id];
@@ -131,9 +145,13 @@ onMounted(load);
 
     <div v-if="loading" class="text-secondary">Loading…</div>
 
+    <p v-else-if="visibleTargets.length === 0" class="text-secondary">
+      No CNA publication targets are enabled on this deployment.
+    </p>
+
     <div v-else>
       <section
-        v-for="target in TARGETS"
+        v-for="target in visibleTargets"
         :key="target.id"
         class="card mb-4"
       >
