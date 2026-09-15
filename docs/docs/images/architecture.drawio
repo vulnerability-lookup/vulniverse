@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram name="Page-1" id="hRB-XQv3uRM_3MwswtZa">
-    <mxGraphModel dx="1285" dy="917" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1664" dy="1187" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -153,6 +153,12 @@
         </mxCell>
         <mxCell id="p4smuvwx1m3Vq3BGlluB-13" parent="p4smuvwx1m3Vq3BGlluB-6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="&lt;b&gt;Repository&lt;/b&gt;&lt;div&gt;&lt;b&gt;Adapter&lt;/b&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="144" width="89" x="-26" y="85" as="geometry" />
+        </mxCell>
+        <mxCell id="p4smuvwx1m3Vq3BGlluB-55" parent="p4smuvwx1m3Vq3BGlluB-6" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="contract.ts" vertex="1">
+          <mxGeometry height="30" width="60" x="71" y="177" as="geometry" />
+        </mxCell>
+        <mxCell id="p4smuvwx1m3Vq3BGlluB-56" parent="p4smuvwx1m3Vq3BGlluB-6" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://icons.diagrams.net/assets/gitlab-icons/1/Policy.svg;" value="" vertex="1">
+          <mxGeometry height="50" width="50" x="71" y="128" as="geometry" />
         </mxCell>
         <mxCell id="p4smuvwx1m3Vq3BGlluB-9" parent="p4smuvwx1m3Vq3BGlluB-53" style="rounded=1;whiteSpace=wrap;html=1;" value="API" vertex="1">
           <mxGeometry height="206" width="74" x="307" y="30" as="geometry" />

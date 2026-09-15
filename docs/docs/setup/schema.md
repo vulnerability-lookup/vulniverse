@@ -14,10 +14,6 @@ neither runs in CI:
    the hand-maintained layout into the authoring/UI schemas the frontend
    actually uses, per profile.
 
-See [Architecture](../development/architecture.md#schema-tooling-schemas-scripts)
-for what each output file is; this page is about the *update* workflow —
-pulling in a new upstream version and propagating it through.
-
 ## Update to a new CVE Record Format version
 
 ```bash
@@ -125,9 +121,7 @@ Regeneration touches two trees:
 - `schemas/generated/<profile>/` — `authoring.schema.json`,
   `ui.schema.json`, `fields.json`, `generation-report.json`.
 - `frontend/src/generated/schemas/<profile>/` — `authoring.schema.json`,
-  `ui.schema.json`, `field-paths.json` (a trimmed projection of
-  `fields.json`, generated directly here — see
-  [Architecture](../development/architecture.md#schema-tooling-schemas-scripts)).
+  `ui.schema.json`, `field-paths.json`
 
 Diff all of it before committing. `schemas/upstream/` and
 `schemas/generated/` are meant to be treated as read-only/generated —

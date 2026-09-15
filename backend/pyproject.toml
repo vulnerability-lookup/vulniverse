@@ -1,6 +1,6 @@
 [project]
 name = "vulniverse-api"
-version = "0.1.0"
+version = "0.1.0a1"
 description = ""
 authors = [
     {name = "NMD03",email = "nicjan01@gmail.com"}
