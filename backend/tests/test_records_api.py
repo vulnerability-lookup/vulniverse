@@ -298,3 +298,142 @@ def test_delete_others_draft_is_404_for_non_owner(app, test_user, other_client) 
     response = other_client.delete("/api/v1/records/CVE-2026-00018")
 
     assert response.status_code == 404
+
+
+def test_create_record_without_identifier_gets_a_placeholder(client) -> None:
+    response = client.post(
+        "/api/v1/records",
+        json={"record": {}, "profile": "cve-5.2.0", "isDraft": True},
+    )
+
+    assert response.status_code == 201
+    assert response.get_json()["identifier"].startswith("draft-")
+
+
+def test_create_record_without_identifier_rejects_publish(client) -> None:
+    response = client.post(
+        "/api/v1/records",
+        json={"record": {}, "profile": "cve-5.2.0", "isDraft": False},
+    )
+
+    assert response.status_code == 400
+
+
+def test_placeholder_record_is_listed_and_fetchable(client) -> None:
+    create_response = client.post(
+        "/api/v1/records",
+        json={"record": {}, "profile": "cve-5.2.0", "isDraft": True},
+    )
+    placeholder = create_response.get_json()["identifier"]
+
+    list_response = client.get("/api/v1/records")
+    identifiers = {r["identifier"] for r in list_response.get_json()["records"]}
+    assert placeholder in identifiers
+
+    get_response = client.get(f"/api/v1/records/{placeholder}")
+    assert get_response.status_code == 200
+    assert get_response.get_json()["identifier"] == placeholder
+
+
+def test_updating_placeholder_record_without_an_identifier_keeps_the_placeholder(client) -> None:
+    create_response = client.post(
+        "/api/v1/records",
+        json={"record": {}, "profile": "cve-5.2.0", "isDraft": True},
+    )
+    placeholder = create_response.get_json()["identifier"]
+
+    response = client.put(
+        f"/api/v1/records/{placeholder}",
+        json={"record": {"dataType": "CVE_RECORD"}, "profile": "cve-5.2.0", "isDraft": True},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["identifier"] == placeholder
+
+
+def test_updating_placeholder_record_with_a_real_identifier_assigns_it(client) -> None:
+    create_response = client.post(
+        "/api/v1/records",
+        json={"record": {}, "profile": "gcve-bcp-05-1.7", "isDraft": True},
+    )
+    placeholder = create_response.get_json()["identifier"]
+
+    document = {"cveMetadata": {"vulnId": "GCVE-0-2026-00042"}}
+    response = client.put(
+        f"/api/v1/records/{placeholder}",
+        json={"record": document, "profile": "gcve-bcp-05-1.7", "isDraft": True},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["identifier"] == "GCVE-0-2026-00042"
+
+    # The old placeholder is gone; the record now lives under the real one.
+    assert client.get(f"/api/v1/records/{placeholder}").status_code == 404
+    assert client.get("/api/v1/records/GCVE-0-2026-00042").status_code == 200
+
+
+def test_updating_placeholder_record_rejects_publish_without_identifier(client) -> None:
+    create_response = client.post(
+        "/api/v1/records",
+        json={"record": {}, "profile": "cve-5.2.0", "isDraft": True},
+    )
+    placeholder = create_response.get_json()["identifier"]
+
+    response = client.put(
+        f"/api/v1/records/{placeholder}",
+        json={"record": {}, "profile": "cve-5.2.0", "isDraft": False},
+    )
+
+    assert response.status_code == 400
+
+
+def test_updating_placeholder_record_conflicts_when_identifier_already_taken(client) -> None:
+    create_draft(client, "CVE-2026-00020")
+
+    create_response = client.post(
+        "/api/v1/records",
+        json={"record": {}, "profile": "cve-5.2.0", "isDraft": True},
+    )
+    placeholder = create_response.get_json()["identifier"]
+
+    response = client.put(
+        f"/api/v1/records/{placeholder}",
+        json={"record": minimal_cve_record("CVE-2026-00020"), "profile": "cve-5.2.0", "isDraft": True},
+    )
+
+    assert response.status_code == 409
+
+
+def test_assigning_a_real_identifier_rekeys_cna_publication_rows(app, client) -> None:
+    from vulniverse_api.models import CnaPublication
+
+    create_response = client.post(
+        "/api/v1/records",
+        json={"record": {}, "profile": "gcve-bcp-05-1.7", "isDraft": True},
+    )
+    placeholder = create_response.get_json()["identifier"]
+
+    with app.app_context():
+        publication = CnaPublication(
+            record_identifier=placeholder,
+            target="vl",
+            status="RESERVED",
+            cve_id="GCVE-0-2026-00099",
+        )
+        db.session.add(publication)
+        db.session.commit()
+
+    document = {"cveMetadata": {"vulnId": "GCVE-0-2026-00099"}}
+    response = client.put(
+        f"/api/v1/records/{placeholder}",
+        json={"record": document, "profile": "gcve-bcp-05-1.7", "isDraft": True},
+    )
+    assert response.status_code == 200
+
+    with app.app_context():
+        moved = CnaPublication.query.filter_by(record_identifier="GCVE-0-2026-00099").first()
+        assert moved is not None
+        assert moved.status == "RESERVED"
+
+        orphaned = CnaPublication.query.filter_by(record_identifier=placeholder).first()
+        assert orphaned is None

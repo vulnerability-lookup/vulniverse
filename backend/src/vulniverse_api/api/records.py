@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from flask import request
@@ -7,7 +8,7 @@ from flask_login import current_user
 from sqlalchemy import or_
 
 from ..extensions import db
-from ..models import VulnerabilityRecord
+from ..models import CnaPublication, VulnerabilityRecord
 from ..services.record_validation import known_profiles, validate_record
 from . import api_bp
 
@@ -55,6 +56,49 @@ def identifier_still_present(
         return False
 
     return identifier in (metadata.get("vulnId"), metadata.get("cveId"))
+
+
+PLACEHOLDER_PREFIX = "draft-"
+
+
+def is_placeholder_identifier(identifier: str) -> bool:
+    """True for the "draft-<id>" placeholder create_record() assigns
+    when a record is saved with no vulnId/cveId yet — a real CVE/GCVE
+    identifier can never start with this (their formats are fixed:
+    "CVE-YYYY-NNNN", "GCVE-N-YYYY-NNNNN"), so it's unambiguous. Plain
+    letters/digits/hyphens only — deliberately not e.g. a "#" prefix,
+    which would need percent-encoding in every URL it appears in and
+    breaks outright if any call site (including a test, as one did
+    here) forgets to.
+    """
+    return identifier.startswith(PLACEHOLDER_PREFIX)
+
+
+def reassign_identifier(record: VulnerabilityRecord, new_identifier: str) -> None:
+    """Moves a record off its "draft-<id>" placeholder onto a real
+    identifier — the one-time transition from "created with no ID"
+    to "has an ID" (see create_record()). Also re-keys any
+    CnaPublication rows filed under the placeholder (e.g. from
+    reserving a CVE ID before ever typing one in) so a reservation
+    made before this moment isn't silently orphaned. Skips a
+    particular (target) re-key only in the pathological case where a
+    row already exists under the new identifier for that target —
+    exceedingly unlikely, but safer than crashing on the unique
+    constraint.
+    """
+    old_identifier = record.identifier
+    record.identifier = new_identifier
+
+    for publication in CnaPublication.query.filter_by(
+        record_identifier=old_identifier,
+    ).all():
+        conflict = CnaPublication.query.filter_by(
+            record_identifier=new_identifier,
+            target=publication.target,
+        ).first()
+
+        if conflict is None:
+            publication.record_identifier = new_identifier
 
 
 def is_visible(record: VulnerabilityRecord) -> bool:
@@ -141,15 +185,18 @@ def create_record() -> tuple[dict, int]:
 
     identifier = extract_identifier(document)
 
-    if not identifier:
-        return {"message": "The record has no identifier."}, 400
+    if not identifier and not is_draft:
+        return {
+            "message": "A record needs a CVE/GCVE identifier before it can be published.",
+        }, 400
 
-    existing = VulnerabilityRecord.query.filter_by(
-        identifier=identifier,
-    ).first()
+    if identifier:
+        existing = VulnerabilityRecord.query.filter_by(
+            identifier=identifier,
+        ).first()
 
-    if existing:
-        return {"message": "The record already exists."}, 409
+        if existing:
+            return {"message": "The record already exists."}, 409
 
     # Incomplete drafts should be saveable.
     if not is_draft:
@@ -162,7 +209,13 @@ def create_record() -> tuple[dict, int]:
             }, 422
 
     record = VulnerabilityRecord(
-        identifier=identifier,
+        # A globally-unique placeholder, temporary only within this
+        # transaction — reassign_identifier() (via the PLACEHOLDER_PREFIX
+        # scheme) replaces it below once the row has a real id to build
+        # that from. Random, not "", so two concurrent identifier-less
+        # creates can never collide on the unique constraint before
+        # either gets its real placeholder assigned.
+        identifier=identifier or f"{PLACEHOLDER_PREFIX}pending-{uuid.uuid4().hex}",
         profile=profile,
         document=document,
         is_draft=is_draft,
@@ -170,10 +223,15 @@ def create_record() -> tuple[dict, int]:
     )
 
     db.session.add(record)
+
+    if not identifier:
+        db.session.flush()
+        record.identifier = f"{PLACEHOLDER_PREFIX}{record.id}"
+
     db.session.commit()
 
     return {
-        "identifier": identifier,
+        "identifier": record.identifier,
         "profile": profile,
         "record": document,
         "isDraft": is_draft,
@@ -204,7 +262,29 @@ def update_record(identifier: str) -> tuple[dict, int]:
     if profile not in known_profiles():
         return {"message": f"Unknown profile: {profile!r}"}, 400
 
-    if not identifier_still_present(document, identifier):
+    is_placeholder = is_placeholder_identifier(identifier)
+    # Only meaningful while is_placeholder — extract_identifier() looks
+    # at vulnId/cveId directly, unlike identifier_still_present()'s
+    # "did the pinned one survive" check used once a real one exists.
+    real_identifier = extract_identifier(document) if is_placeholder else None
+
+    if is_placeholder:
+        # Not pinned to anything real yet — the first real vulnId/cveId
+        # the document picks up (if any) becomes the record's identifier
+        # for good, exactly as if it had been supplied at creation.
+        if real_identifier:
+            conflict = VulnerabilityRecord.query.filter(
+                VulnerabilityRecord.identifier == real_identifier,
+                VulnerabilityRecord.id != record.id,
+            ).first()
+
+            if conflict:
+                return {"message": "The record already exists."}, 409
+        elif not is_draft:
+            return {
+                "message": "A record needs a CVE/GCVE identifier before it can be published.",
+            }, 400
+    elif not identifier_still_present(document, identifier):
         return {
             "message": "The record identifier cannot be changed.",
         }, 400
@@ -218,6 +298,9 @@ def update_record(identifier: str) -> tuple[dict, int]:
                 "errors": errors,
             }, 422
 
+    if real_identifier:
+        reassign_identifier(record, real_identifier)
+
     record.profile = profile
     record.document = document
     record.is_draft = is_draft
@@ -225,7 +308,7 @@ def update_record(identifier: str) -> tuple[dict, int]:
     db.session.commit()
 
     return {
-        "identifier": identifier,
+        "identifier": record.identifier,
         "profile": profile,
         "record": document,
         "isDraft": is_draft,

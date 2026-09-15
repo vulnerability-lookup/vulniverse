@@ -43,6 +43,8 @@ export function useCnaPublication(
   function applyError(err: unknown, fallback: string): void {
     notConfigured.value = err instanceof RepositoryError && err.status === 409;
 
+    let hasUpstreamDetail = false;
+
     if (
       err instanceof RepositoryError &&
       err.details &&
@@ -50,9 +52,15 @@ export function useCnaPublication(
       "publication" in err.details
     ) {
       publication.value = (err.details as { publication: CnaPublication }).publication;
+      hasUpstreamDetail = Boolean(publication.value?.lastError);
     }
 
-    error.value = notConfigured.value
+    // publication.lastError (rendered below, in the template) carries
+    // the actual upstream failure — the request URL/status/body — so
+    // it's strictly more useful than this generic message whenever
+    // it's available; showing both just buries the real detail under
+    // "The upstream request failed." every time.
+    error.value = notConfigured.value || hasUpstreamDetail
       ? null
       : err instanceof Error ? err.message : fallback;
   }

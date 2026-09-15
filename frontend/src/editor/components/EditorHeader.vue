@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import vulniverseLogo from "../../assets/vulniverse-logo.png";
 
+import { displayIdentifier } from "../identifier";
+
 defineProps<{
   identifier: string | null;
   profile: string | null;
@@ -48,7 +50,7 @@ defineEmits<{
       >
         <div>
           <h1 class="h5 mb-1">
-            {{ identifier ?? "New vulnerability record" }}
+            {{ displayIdentifier(identifier) }}
           </h1>
 
           <div

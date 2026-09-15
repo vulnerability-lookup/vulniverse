@@ -17,6 +17,10 @@ import {
   SUPPORTED_PROFILES,
 } from "@/editor/profiles";
 
+import {
+  displayIdentifier,
+} from "@/editor/identifier";
+
 const repository = new HttpRepository("/api/v1");
 
 function kindLabelFor(
@@ -258,7 +262,7 @@ const filteredRecords = computed(() => {
         >
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start">
-              <span class="fw-semibold">{{ record.identifier }}</span>
+              <span class="fw-semibold">{{ displayIdentifier(record.identifier) }}</span>
 
               <span
                 v-if="record.isDraft"

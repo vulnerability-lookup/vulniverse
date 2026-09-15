@@ -70,6 +70,19 @@ function handleLoaded(
     "Opened vulnerability record:",
     identifier,
   );
+
+  // A save can reassign the identifier — e.g. a record created with
+  // no vulnId/cveId yet gets a "draft-<id>" placeholder, which
+  // becomes the real one the first time it's saved with one (see
+  // backend/.../api/records.py's reassign_identifier()). The URL
+  // needs to track that, or refreshing/sharing/going back would hit
+  // the now-gone placeholder and 404.
+  if (identifier !== recordId.value) {
+    router.replace({
+      name: "editor",
+      params: { recordId: identifier },
+    });
+  }
 }
 
 function handleError(
