@@ -17,6 +17,27 @@ export interface GcveOccurrence {
  * top-level placement the editor's own generated form/new-record default
  * happens to use.
  */
+export const KNOWN_GCVE_ENTRY_KEYS = new Set([
+  "vulnId",
+  "recordType",
+  "relationships",
+  "language",
+]);
+
+export function extraGcveEntryEntries(
+  entry: Record<string, unknown>,
+): Array<[string, unknown]> {
+  return Object.entries(entry).filter(
+    ([key]) => !KNOWN_GCVE_ENTRY_KEYS.has(key),
+  );
+}
+
+export function extraGcveEntryFields(
+  entry: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.fromEntries(extraGcveEntryEntries(entry));
+}
+
 export function findXGcveOccurrences(
   document: unknown,
   path: Array<string | number> = [],

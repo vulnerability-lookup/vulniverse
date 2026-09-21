@@ -8,6 +8,7 @@ import {
 } from "../use-editor-context";
 
 import {
+  extraGcveEntryEntries,
   findXGcveOccurrences,
 } from "../gcve";
 
@@ -74,19 +75,10 @@ const secondaryIdentifier = computed(() => {
     : undefined;
 });
 
-const KNOWN_GCVE_KEYS = new Set([
-  "vulnId",
-  "recordType",
-  "relationships",
-  "language",
-]);
-
 function extraGcveFields(
   extension: GcveExtension,
 ): Array<[string, unknown]> {
-  return Object.entries(extension).filter(
-    ([key]) => !KNOWN_GCVE_KEYS.has(key),
-  );
+  return extraGcveEntryEntries(extension);
 }
 
 function gcvePathLabel(
@@ -433,6 +425,30 @@ function formatSourceValue(
 }
 
 /*
+ * An "extra field" the editor has no dedicated control for (e.g. a
+ * GCVE extension's non-standard `extensions` key) can itself be an
+ * arbitrarily deep object/array — formatSourceValue's minified
+ * single-line JSON.stringify is unreadable at that size. Those get a
+ * pretty-printed, collapsed-by-default block instead; a plain
+ * scalar stays inline as before.
+ */
+function isComplexValue(
+  value: unknown,
+): boolean {
+  return typeof value === "object" && value !== null;
+}
+
+function formatSourceValueJson(
+  value: unknown,
+): string {
+  return JSON.stringify(
+    value,
+    null,
+    2,
+  );
+}
+
+/*
  * Every array/object field a source can carry — kept in one place
  * so isEmptySource doesn't need to be updated by hand whenever a
  * new field gains its own preview block above.
@@ -569,7 +585,23 @@ function isEmptySource(
               :key="key"
             >
               <dt class="col-sm-3 text-secondary">{{ key }}</dt>
-              <dd class="col-sm-9">{{ formatSourceValue(value) }}</dd>
+
+              <dd
+                v-if="isComplexValue(value)"
+                class="col-sm-9"
+              >
+                <details>
+                  <summary class="text-secondary">Show details</summary>
+                  <pre class="preview-json-value mb-0 mt-1">{{ formatSourceValueJson(value) }}</pre>
+                </details>
+              </dd>
+
+              <dd
+                v-else
+                class="col-sm-9"
+              >
+                {{ formatSourceValue(value) }}
+              </dd>
             </template>
           </dl>
         </div>
@@ -924,7 +956,23 @@ function isEmptySource(
                 :key="key"
               >
                 <dt class="col-sm-3 text-secondary">{{ key }}</dt>
-                <dd class="col-sm-9">{{ formatSourceValue(value) }}</dd>
+
+                <dd
+                  v-if="isComplexValue(value)"
+                  class="col-sm-9"
+                >
+                  <details>
+                    <summary class="text-secondary">Show details</summary>
+                    <pre class="preview-json-value mb-0 mt-1">{{ formatSourceValueJson(value) }}</pre>
+                  </details>
+                </dd>
+
+                <dd
+                  v-else
+                  class="col-sm-9"
+                >
+                  {{ formatSourceValue(value) }}
+                </dd>
               </template>
             </dl>
           </div>
@@ -933,3 +981,12 @@ function isEmptySource(
     </div>
   </section>
 </template>
+
+<style scoped>
+.preview-json-value {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+</style>

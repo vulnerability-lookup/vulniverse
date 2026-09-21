@@ -146,3 +146,5 @@ usually show up there first:
 cd backend
 uv run pytest tests/test_record_validation.py
 ```
+
+## Generate UI Layout from Schemas

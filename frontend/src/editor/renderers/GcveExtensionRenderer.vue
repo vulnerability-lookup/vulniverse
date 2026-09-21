@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   computed,
+  ref,
 } from "vue";
 
 import {
@@ -21,6 +22,11 @@ import type {
 import {
   useCollapsibleItems,
 } from "./use-collapsible-items";
+
+import {
+  extraGcveEntryFields,
+  KNOWN_GCVE_ENTRY_KEYS,
+} from "../gcve";
 
 const props = defineProps({
   ...rendererProps<ControlElement>(),
@@ -98,6 +104,103 @@ function itemPath(
     control.value.path,
     `${index}`,
   );
+}
+
+/*
+ * Anything on an entry beyond the four known fields
+ * has no dedicated control — the schema itself gives
+ * it no name/type/shape to build one from (see
+ * gcve-bcp-05.schema.json's additionalProperties: true). Edited as
+ * raw JSON instead: one entry can be open for editing at a time,
+ * tracked by index rather than trying to keep N independent drafts
+ * in sync with upstream data changes.
+ */
+const editingExtraFieldsIndex = ref<number | null>(null);
+const extraFieldsDraft = ref("");
+const extraFieldsError = ref<string | null>(null);
+
+function extraFieldsOf(
+  index: number,
+): Record<string, unknown> {
+  return extraGcveEntryFields(
+    (items.value[index] ?? {}) as Record<string, unknown>,
+  );
+}
+
+function hasExtraFields(
+  index: number,
+): boolean {
+  return Object.keys(extraFieldsOf(index)).length > 0;
+}
+
+function formattedExtraFields(
+  index: number,
+): string {
+  return JSON.stringify(
+    extraFieldsOf(index),
+    null,
+    2,
+  );
+}
+
+function startEditingExtraFields(
+  index: number,
+): void {
+  editingExtraFieldsIndex.value = index;
+  extraFieldsDraft.value = formattedExtraFields(index);
+  extraFieldsError.value = null;
+}
+
+function cancelEditingExtraFields(): void {
+  editingExtraFieldsIndex.value = null;
+  extraFieldsError.value = null;
+}
+
+function applyExtraFields(
+  index: number,
+): void {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(extraFieldsDraft.value);
+  } catch {
+    extraFieldsError.value = "Invalid JSON.";
+    return;
+  }
+
+  if (
+    typeof parsed !== "object"
+    || parsed === null
+    || Array.isArray(parsed)
+  ) {
+    extraFieldsError.value = "Must be a JSON object.";
+    return;
+  }
+
+  // The four known fields stay under their own dedicated controls —
+  // this box only ever contributes the keys it's shown, even if the
+  // user pastes one of those names in too.
+  const current = (items.value[index] ?? {}) as Record<string, unknown>;
+
+  const knownFields = Object.fromEntries(
+    Object.entries(current).filter(
+      ([key]) => KNOWN_GCVE_ENTRY_KEYS.has(key),
+    ),
+  );
+
+  const extraFields = Object.fromEntries(
+    Object.entries(parsed as Record<string, unknown>).filter(
+      ([key]) => !KNOWN_GCVE_ENTRY_KEYS.has(key),
+    ),
+  );
+
+  handleChange(
+    itemPath(index),
+    { ...knownFields, ...extraFields },
+  );
+
+  editingExtraFieldsIndex.value = null;
+  extraFieldsError.value = null;
 }
 
 function controlFor(
@@ -399,7 +502,81 @@ function addEntry(): void {
             </button>
           </div>
         </div>
+
+        <div class="mt-3">
+          <label class="form-label d-flex align-items-center justify-content-between">
+            Extra fields (JSON)
+
+            <button
+              v-if="editingExtraFieldsIndex !== index"
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              :disabled="!control.enabled"
+              @click="startEditingExtraFields(index)"
+            >
+              {{ hasExtraFields(index) ? "Edit" : "+ Add extra fields" }}
+            </button>
+          </label>
+
+          <template v-if="editingExtraFieldsIndex === index">
+            <textarea
+              v-model="extraFieldsDraft"
+              class="form-control font-monospace small"
+              rows="8"
+              spellcheck="false"
+            />
+
+            <p
+              v-if="extraFieldsError"
+              role="alert"
+              class="text-danger small mt-1 mb-0"
+            >
+              {{ extraFieldsError }}
+            </p>
+
+            <div class="d-flex justify-content-end gap-2 mt-2">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                @click="cancelEditingExtraFields"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="applyExtraFields(index)"
+              >
+                Apply
+              </button>
+            </div>
+          </template>
+
+          <template v-else>
+            <p
+              v-if="!hasExtraFields(index)"
+              class="text-secondary small mb-0"
+            >
+              No extra fields.
+            </p>
+
+            <pre
+              v-else
+              class="extra-fields-preview small mb-0"
+            >{{ formattedExtraFields(index) }}</pre>
+          </template>
+        </div>
       </div>
     </div>
   </fieldset>
 </template>
+
+<style scoped>
+.extra-fields-preview {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+</style>

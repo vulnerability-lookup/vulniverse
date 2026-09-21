@@ -13,12 +13,12 @@ nav = [
     { "Setup" = [
         { "Get started" = "setup/setup.md" },
         { "Configuration" = "setup/config.md" },
-        { "Manage Schemas" = "setup/schema.md" },
         { "Running in production" = "setup/production.md" },
     ]},
 
     { "Development" = [
         { "Architecture" = "development/architecture.md" },
+        { "Manage Schemas" = "development/schema.md" },
     ] },
 
     { "Embedding" = [
