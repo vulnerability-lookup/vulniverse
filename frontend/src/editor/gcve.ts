@@ -1,5 +1,6 @@
 import type {
   GcveExtension,
+  VulnerabilityRecord,
 } from "./contracts";
 
 export interface GcveOccurrence {
@@ -65,4 +66,26 @@ export function findXGcveOccurrences(
   }
 
   return occurrences;
+}
+
+/**
+ * True once the record already carries a real GCVE identifier —
+ * cveMetadata.vulnId (Vulniverse's own convenience field), or a
+ * non-empty vulnId on any x_gcve entry, wherever it appears (see
+ * findXGcveOccurrences above). Used to stop a second GCVE ID from
+ * being reserved for a record that already has one, e.g. a record
+ * assembled elsewhere and pasted in with its identifier already set
+ * — CnaPublicationPanel.vue's own publication.status alone wouldn't
+ * catch that, since no reservation has been made through *this*
+ * panel yet.
+ */
+export function recordHasGcveId(
+  record: VulnerabilityRecord,
+): boolean {
+  if (typeof record.cveMetadata?.vulnId === "string" && record.cveMetadata.vulnId) {
+    return true;
+  }
+
+  return findXGcveOccurrences(record).some((occurrence) =>
+    occurrence.extensions.some((entry) => Boolean(entry?.vulnId)));
 }

@@ -25,6 +25,7 @@ import {
 
 import {
   editorRepositoryKey,
+  editorSaveKey,
   editorStateKey,
 } from "./editor-context";
 
@@ -99,6 +100,12 @@ provide(
 provide(
   editorRepositoryKey,
   toRef(props, "repository"),
+);
+
+// handleSave is a hoisted function declaration, defined further down.
+provide(
+  editorSaveKey,
+  (options) => handleSave(undefined, options),
 );
 
 const activeSection = ref("editor");
@@ -281,9 +288,10 @@ async function handleValidate(): Promise<void> {
 
 async function handleSave(
   isDraft: boolean = state.isDraft.value,
-): Promise<void> {
+  options: { silent?: boolean } = {},
+): Promise<string | null> {
   if (!props.repository || !state.record.value) {
-    return;
+    return null;
   }
 
   state.saving.value = true;
@@ -308,11 +316,22 @@ async function handleSave(
     state.replaceRecord(saved);
     state.validationErrors.value = [];
 
-    emit("loaded", saved.identifier);
+    // A silent save (see editorSaveKey/use-editor-save.ts) is an
+    // internal step to obtain SOME identifier before an action can
+    // proceed (e.g. reserving a CVE ID) — not the user "finishing"
+    // anything yet. Emitting "loaded" here would make the host page
+    // (e.g. NewRecordPage.vue) navigate to the record's own URL
+    // immediately, tearing this component down mid-action before
+    // that action (and its own follow-up save) ever finishes.
+    if (!options.silent) {
+      emit("loaded", saved.identifier);
+    }
+
+    return saved.identifier;
   } catch (error) {
     if (error instanceof RecordValidationError) {
       state.validationErrors.value = error.errors;
-      return;
+      return null;
     }
 
     const normalized = normalizeError(
@@ -322,6 +341,8 @@ async function handleSave(
 
     state.saveError.value = normalized;
     emit("error", normalized);
+
+    return null;
   } finally {
     state.saving.value = false;
   }

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from vulniverse_api.extensions import db
-from vulniverse_api.models import VulnerabilityRecord
+from vulniverse_api.models import CnaPublication, VulnerabilityRecord
 
 
 def minimal_cve_record(cve_id: str) -> dict[str, Any]:
@@ -148,6 +148,64 @@ def test_delete_unknown_record_returns_404(client) -> None:
     response = client.delete("/api/v1/records/CVE-2026-00001")
 
     assert response.status_code == 404
+
+
+def test_delete_record_cleans_up_its_cna_publication_rows(app, client) -> None:
+    create_draft(client, "CVE-2026-00001")
+
+    with app.app_context():
+        db.session.add_all([
+            CnaPublication(
+                record_identifier="CVE-2026-00001",
+                target="vl",
+                status="RESERVED",
+                cve_id="GCVE-0-2026-00001",
+            ),
+            CnaPublication(
+                record_identifier="CVE-2026-00001",
+                target="cve-program",
+                status="LOCAL_ONLY",
+            ),
+        ])
+        db.session.commit()
+
+    response = client.delete("/api/v1/records/CVE-2026-00001")
+
+    assert response.status_code == 200
+
+    with app.app_context():
+        remaining = CnaPublication.query.filter_by(
+            record_identifier="CVE-2026-00001",
+        ).all()
+
+        assert remaining == []
+
+
+def test_delete_record_only_removes_its_own_publication_rows(app, client) -> None:
+    create_draft(client, "CVE-2026-00001")
+    create_draft(client, "CVE-2026-00002")
+
+    with app.app_context():
+        db.session.add(
+            CnaPublication(
+                record_identifier="CVE-2026-00002",
+                target="vl",
+                status="RESERVED",
+                cve_id="GCVE-0-2026-00002",
+            ),
+        )
+        db.session.commit()
+
+    response = client.delete("/api/v1/records/CVE-2026-00001")
+
+    assert response.status_code == 200
+
+    with app.app_context():
+        remaining = CnaPublication.query.filter_by(
+            record_identifier="CVE-2026-00002",
+        ).all()
+
+        assert len(remaining) == 1
 
 
 def test_update_record_allows_adding_vulnid_alongside_existing_cveid(client) -> None:

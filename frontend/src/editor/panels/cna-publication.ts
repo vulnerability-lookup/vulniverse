@@ -8,6 +8,10 @@ import {
 } from "../use-editor-repository";
 
 import {
+  useEditorSave,
+} from "../use-editor-save";
+
+import {
   RepositoryError,
 } from "@/repositories/RepositoryError";
 
@@ -32,6 +36,7 @@ export function useCnaPublication(
   context: EditorModuleContext,
 ) {
   const repository = useEditorRepository();
+  const requestSave = useEditorSave();
 
   const supported = computed(() => Boolean(repository.value?.getCnaPublication));
 
@@ -83,10 +88,37 @@ export function useCnaPublication(
     }
   }
 
+  /*
+   * A brand-new, never-saved record has no identifier at all yet (see
+   * use-editor-state.ts) — silently save it first (as whatever draft
+   * state it's already in) so an action like "Reserve a CVE ID" can
+   * still be the very first thing a user does, rather than requiring
+   * a manual Save first. A no-op once the record already has an
+   * identifier. A save failure is already surfaced via the editor's
+   * own saveError/@error path, so this just bails out rather than
+   * reporting it a second time.
+   */
+  async function ensureIdentifier(): Promise<string | null> {
+    // A brand-new record's identifier starts as "" (see
+    // VulniverseEditor.ce.vue's loadRecord()), not null — ?? only
+    // catches null/undefined, so it would return "" as-is here and
+    // skip the save entirely. || treats both the same, matching the
+    // !context.identifier check the template already uses.
+    //
+    // silent: true — this save is only to obtain SOME identifier so
+    // the action below (reserve/publish/...) has something to act
+    // on; it isn't "the user is done" yet. A non-silent save here
+    // would make the host page navigate to the record's own URL
+    // immediately (see editorSaveKey), tearing this component down
+    // before the action — and CnaPublicationPanel.vue's own
+    // follow-up save applying the result — ever gets to run.
+    return context.identifier || await requestSave({ silent: true });
+  }
+
   async function runAction(
     action: (repo: EditorRepository, identifier: string) => Promise<CnaPublication>,
   ): Promise<void> {
-    if (!context.identifier || !repository.value) {
+    if (!repository.value) {
       return;
     }
 
@@ -94,7 +126,13 @@ export function useCnaPublication(
     error.value = null;
 
     try {
-      publication.value = await action(repository.value, context.identifier);
+      const identifier = await ensureIdentifier();
+
+      if (!identifier) {
+        return;
+      }
+
+      publication.value = await action(repository.value, identifier);
     } catch (err) {
       applyError(err, "The action failed.");
     } finally {

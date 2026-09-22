@@ -375,6 +375,11 @@ def delete_record(identifier: str) -> tuple[dict, int]:
     if record is None or not is_visible(record):
         return {"message": "Record not found."}, 404
 
+    # Publication Cleanup on record deletion
+    CnaPublication.query.filter(
+        func.lower(CnaPublication.record_identifier) == record.identifier.lower(),
+    ).delete(synchronize_session=False)
+
     db.session.delete(record)
     db.session.commit()
 
