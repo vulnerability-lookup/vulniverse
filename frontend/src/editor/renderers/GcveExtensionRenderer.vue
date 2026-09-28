@@ -75,6 +75,46 @@ function availableExtensions(
 
 const selectedExtension = ref<Record<number, string>>({});
 
+/*
+ * Per-extension fold state, keyed by "entryIndex:extensionId" (a
+ * GCVE entry can have more than one registered extension, and a
+ * document can have more than one entry). Unlike
+ * useCollapsibleItems() above (collapsed by default, newest entry
+ * auto-expanded), an extension starts expanded — it's already
+ * showing real data the moment it exists, whether just added or
+ * loaded from a pasted record — and only collapses on request.
+ */
+const collapsedExtensions = ref<Set<string>>(new Set());
+
+function extensionKey(
+  index: number,
+  extensionId: string,
+): string {
+  return `${index}:${extensionId}`;
+}
+
+function isExtensionExpanded(
+  index: number,
+  extensionId: string,
+): boolean {
+  return !collapsedExtensions.value.has(
+    extensionKey(index, extensionId),
+  );
+}
+
+function toggleExtension(
+  index: number,
+  extensionId: string,
+): void {
+  const key = extensionKey(index, extensionId);
+
+  if (collapsedExtensions.value.has(key)) {
+    collapsedExtensions.value.delete(key);
+  } else {
+    collapsedExtensions.value.add(key);
+  }
+}
+
 function extensionSchema(
   extensionId: string,
 ): JsonSchema | undefined {
@@ -721,17 +761,30 @@ function addEntry(): void {
                 {{ extensionId.toUpperCase() }}
               </span>
 
-              <button
-                type="button"
-                class="btn btn-outline-danger btn-sm"
-                :disabled="!control.enabled"
-                @click="removeExtension(index, extensionId)"
-              >
-                Remove
-              </button>
+              <div class="d-flex gap-1">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  @click="toggleExtension(index, extensionId)"
+                >
+                  {{ isExtensionExpanded(index, extensionId) ? "▾" : "▸" }}
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-outline-danger btn-sm"
+                  :disabled="!control.enabled"
+                  @click="removeExtension(index, extensionId)"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
 
-            <div class="card-body">
+            <div
+              v-if="isExtensionExpanded(index, extensionId)"
+              class="card-body"
+            >
               <dispatch-renderer
                 v-if="extensionSchema(extensionId)"
                 :schema="extensionSchema(extensionId)!"

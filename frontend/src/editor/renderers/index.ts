@@ -22,6 +22,7 @@ import AdpRenderer from "./AdpRenderer.vue";
 import GcveExtensionRenderer from "./GcveExtensionRenderer.vue";
 import SourceRenderer from "./SourceRenderer.vue";
 import TagsRenderer from "./TagsRenderer.vue";
+import GcveTagsRenderer from "./GcveTagsRenderer.vue";
 import ArrayCardRenderer from "./ArrayCardRenderer.vue";
 import BooleanSelectRenderer from "./BooleanSelectRenderer.vue";
 import ReferenceIdRenderer from "./ReferenceIdRenderer.vue";
@@ -70,6 +71,36 @@ const isReferenceIdControl = and(
   schemaMatches(
     (schema) => referenceKindForPattern(schema.pattern) !== null,
   ),
+);
+
+/*
+ * A plain free-form tags array — no oneOf, no enum (unlike
+ * containers.cna.tags/containers.adp[].tags, which are both a oneOf
+ * and already get TagsRenderer via options.renderer, rank 10 below —
+ * this never competes with those). Detected the same way
+ * isReferenceIdControl is, straight from the schema shape, because a
+ * GCVE extension's own sub-controls (e.g. ai_annotations[].tags,
+ * generated dynamically by GcveExtensionRenderer.vue's
+ * uiSchemaForExtension()) have no per-path uischema config to hang
+ * an options.renderer override on — JSONForms falls back to its own
+ * default uischema for everything nested past that point. Scope
+ * must end in "/tags" too, so this doesn't also catch some other
+ * unrelated plain string array with a different property name.
+ */
+const isGcvePlainTagsControl = and(
+  schemaTypeIs("array"),
+  (uischema: UISchemaElement) =>
+    (uischema as ControlElement).scope?.endsWith("/tags") ?? false,
+  schemaMatches((schema) => {
+    const items = schema.items as
+      | { type?: string; enum?: unknown; oneOf?: unknown }
+      | undefined;
+
+    return Boolean(items)
+      && items?.type === "string"
+      && !items.enum
+      && !items.oneOf;
+  }),
 );
 
 /*
@@ -126,6 +157,18 @@ export const customRenderers: JsonFormsRendererRegistryEntry[] = [
   {
     renderer: ReferenceIdRenderer,
     tester: rankWith(4, isReferenceIdControl),
+  },
+  /*
+   * Rank 6 beats ArrayCardRenderer's generic rank 5 for a plain
+   * tags-shaped array with no explicit uischema override — but
+   * never competes with the rank-10 options.renderer path
+   * containers.cna.tags/containers.adp[].tags use, since those are
+   * oneOf-shaped and isGcvePlainTagsControl only matches a plain
+   * string array.
+   */
+  {
+    renderer: GcveTagsRenderer,
+    tester: rankWith(6, isGcvePlainTagsControl),
   },
   /*
    * Rank 2 beats vanilla's own checkbox-based BooleanControlRenderer

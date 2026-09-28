@@ -111,11 +111,41 @@ function isTagsShaped(
  * properties to flatten — scope "#" dispatches straight at the
  * item value itself.
  */
+
+/*
+ * isLongTextControl (renderers/index.ts) deliberately excludes a
+ * bare item control (scope "#") from its own maxLength-based
+ * detection — a primitive-item array's item schema can coincidally
+ * have a large maxLength despite holding short enumerable values,
+ * not prose (confirmed live: the official CVE schema's own
+ * containers.cna.affected[].modules has maxLength 4096 too, purely
+ * as a generic ceiling — reusing that same threshold here would
+ * wrongly turn "Modules" into a growing textarea as well). A
+ * genuinely prose-shaped primitive item (e.g. a GCVE extension's
+ * free-text "assumptions" entries) still deserves one, so this opts
+ * in via an explicit, unambiguous marker instead — "format":
+ * "long-text" on the item schema, not derived from any length
+ * constraint — set only on hand-authored schemas Vulniverse
+ * controls (see schemas/extensions/gcve/bcp-05-x-02), never on a
+ * vendored/official one. Vanilla's own MultiStringControlRenderer
+ * (rank 2, @jsonforms/vue-vanilla) matches on options.multi alone,
+ * with no scope exclusion, and renders with the same "text-area"
+ * CSS class as the schema-detected (non-array) case.
+ */
+const isLongTextItems = computed(() => {
+  const itemSchema = control.value.schema as JsonSchema | undefined;
+
+  return itemSchema?.format === "long-text";
+});
+
 const childUiSchema = computed((): UISchemaElement => {
   if (!isObjectItems.value) {
     return {
       type: "Control",
       scope: "#",
+      ...(isLongTextItems.value
+        ? { options: { multi: true } }
+        : {}),
     } as ControlElement;
   }
 
@@ -142,7 +172,15 @@ function labelFor(
 ): string {
   const item = items.value[index];
 
-  if (typeof item === "string" && item.length > 0) {
+  // A long-text item's own textarea, right below the header, already
+  // shows its full value — using that same text as the heading too
+  // just duplicates it. "Item N" gives a clean, short label instead,
+  // exactly like the object-item fallback further down.
+  if (
+    typeof item === "string"
+    && item.length > 0
+    && !isLongTextItems.value
+  ) {
     return item;
   }
 

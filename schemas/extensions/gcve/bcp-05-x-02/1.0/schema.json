@@ -40,17 +40,22 @@
         "assumptions": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 4096,
+            "format": "long-text"
           }
         },
         "fixSummary": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 4096
         },
         "patchSummary": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 4096
         },
         "cvssRationale": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 4096
         },
         "draft": {
           "type": "boolean"

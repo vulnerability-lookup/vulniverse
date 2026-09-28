@@ -362,9 +362,14 @@
   // meant for multi-line prose rather than a stretched single-line
   // input. min-height (not rows, which the renderer doesn't set)
   // gives it real room while resize lets the user grow it further.
+  // field-sizing: content additionally grows the box automatically
+  // as content is typed/pasted in, on browsers that support it
+  // (Chrome/Edge 123+ as of writing) — a no-op elsewhere, where it
+  // just falls back to the min-height/manual-resize behavior above.
   .control > .wrapper > .text-area {
     min-height: 6rem;
     resize: vertical;
+    field-sizing: content;
   }
 
   .control > .wrapper > .input:focus,
