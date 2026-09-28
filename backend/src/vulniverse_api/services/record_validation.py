@@ -19,9 +19,50 @@ SCHEMAS_ROOT = PROJECT_ROOT / "schemas"
 
 MANIFEST_PATH = SCHEMAS_ROOT / "manifest.json"
 
+GCVE_EXTENSION_REGISTRY_PATH = (
+    SCHEMAS_ROOT
+    / "extensions"
+    / "gcve"
+    / "registry.json"
+)
+
 
 class UnknownProfileError(ValueError):
     """Raised for a profile id that isn't declared in schemas/manifest.json."""
+
+
+@lru_cache(maxsize=1)
+def get_gcve_extension_validators() -> dict[str, Validator]:
+    with GCVE_EXTENSION_REGISTRY_PATH.open(
+        encoding="utf-8"
+    ) as registry_file:
+        registry = json.load(registry_file)
+
+    validators: dict[str, Validator] = {}
+
+    for extension_id, config in registry.items():
+        if not isinstance(config, dict):
+            continue
+
+        schema_path = config.get("schema")
+
+        if not isinstance(schema_path, str):
+            continue
+
+        with (SCHEMAS_ROOT / schema_path).open(
+            encoding="utf-8"
+        ) as schema_file:
+            schema = json.load(schema_file)
+
+        validator_class = validator_for(schema)
+        validator_class.check_schema(schema)
+
+        validators[extension_id] = validator_class(
+            schema,
+            format_checker=FormatChecker(),
+        )
+
+    return validators
 
 
 @lru_cache(maxsize=1)
@@ -362,6 +403,7 @@ def validate_gcve_semantics(
     profile_id: str,
 ) -> list[dict[str, Any]]:
     validator = get_gcve_validator(profile_id)
+    extension_validators = get_gcve_extension_validators()
     errors: list[dict[str, Any]] = []
 
     for path, value in find_x_gcve_occurrences(record):
@@ -381,6 +423,50 @@ def validate_gcve_semantics(
                 continue
 
             entry_path = (*path, index)
+
+            extensions = entry.get("extensions")
+
+            if extensions is not None:
+                if not isinstance(extensions, dict):
+                    errors.append({
+                        "path": [
+                            *entry_path,
+                            "extensions",
+                        ],
+                        "schemaPath": [],
+                        "message": (
+                            "extensions must be an object."
+                        ),
+                        "validator": "gcve-extension",
+                        "severity": "error",
+                    })
+                else:
+                    for extension_id, extension_value in extensions.items():
+                        extension_validator = extension_validators.get(
+                            extension_id
+                        )
+
+                        # Unknown extensions remain valid /
+                        # forward-compatible.
+                        if extension_validator is None:
+                            continue
+
+                        for schema_error in extension_validator.iter_errors(
+                            extension_value
+                        ):
+                            for expanded in expand_composite_error(
+                                schema_error
+                            ):
+                                errors.append(
+                                    shape_error(
+                                        expanded,
+                                        path_prefix=(
+                                            *entry_path,
+                                            "extensions",
+                                            extension_id,
+                                        ),
+                                    )
+                                )
             record_type = entry.get("recordType")
             relationships = entry.get("relationships")
 

@@ -9,6 +9,7 @@ import {
 
 import {
   extraGcveEntryEntries,
+  findGcveExtensionSchemas,
   findXGcveOccurrences,
 } from "../gcve";
 
@@ -17,6 +18,10 @@ import type {
 } from "../contracts";
 
 import SupportingMediaPreview from "./SupportingMediaPreview.vue";
+import SchemaValuePreview from "./SchemaValuePreview.vue";
+
+import gcveAuthoringSchema from
+  "@/generated/schemas/gcve-bcp-05-1.7/authoring.schema.json";
 
 type AnyRecord = Record<string, unknown>;
 
@@ -79,6 +84,57 @@ function extraGcveFields(
   extension: GcveExtension,
 ): Array<[string, unknown]> {
   return extraGcveEntryEntries(extension);
+}
+
+/*
+ * schemas/extensions/gcve/registry.json's known extension ids -> real
+ * JSON Schema, embedded into the authoring schema at build time (see
+ * scripts/generate_editor_schemas.py). Only ever computed once —
+ * every gcve profile's x_gcve occurrences share the same registry.
+ */
+const gcveExtensionSchemas = computed(() => {
+  return findGcveExtensionSchemas(gcveAuthoringSchema);
+});
+
+function extensionsOf(
+  extension: GcveExtension,
+): Record<string, unknown> {
+  const extensions = extension.extensions;
+
+  return extensions && typeof extensions === "object" && !Array.isArray(extensions)
+    ? (extensions as Record<string, unknown>)
+    : {};
+}
+
+/*
+ * A registered extension (present in schemas/extensions/gcve/
+ * registry.json) gets real, labeled, recursively-rendered structure
+ * via SchemaValuePreview below — everything else (not yet in the
+ * registry) still needs to be visible somewhere, so it stays in the
+ * existing raw-JSON "extra fields" treatment.
+ */
+function registeredExtensionsOf(
+  extension: GcveExtension,
+): Array<[string, unknown]> {
+  return Object.entries(extensionsOf(extension)).filter(
+    ([id]) => id in gcveExtensionSchemas.value,
+  );
+}
+
+function unrecognizedExtensionsOf(
+  extension: GcveExtension,
+): Array<[string, unknown]> {
+  return Object.entries(extensionsOf(extension)).filter(
+    ([id]) => !(id in gcveExtensionSchemas.value),
+  );
+}
+
+function extensionTitle(
+  extensionId: string,
+): string {
+  const title = gcveExtensionSchemas.value[extensionId]?.title;
+
+  return typeof title === "string" ? title : extensionId;
 }
 
 function gcvePathLabel(
@@ -601,6 +657,42 @@ function isEmptySource(
                 class="col-sm-9"
               >
                 {{ formatSourceValue(value) }}
+              </dd>
+            </template>
+          </dl>
+
+          <div
+            v-for="[extensionId, extensionValue] in registeredExtensionsOf(extension)"
+            :key="extensionId"
+            class="card mt-2"
+          >
+            <div class="card-header small fw-semibold">
+              {{ extensionTitle(extensionId) }}
+            </div>
+
+            <div class="card-body">
+              <SchemaValuePreview
+                :schema="gcveExtensionSchemas[extensionId]"
+                :value="extensionValue"
+              />
+            </div>
+          </div>
+
+          <dl
+            v-if="unrecognizedExtensionsOf(extension).length"
+            class="row mb-0 small mt-2"
+          >
+            <template
+              v-for="[extensionId, extensionValue] in unrecognizedExtensionsOf(extension)"
+              :key="extensionId"
+            >
+              <dt class="col-sm-3 text-secondary">extensions.{{ extensionId }}</dt>
+
+              <dd class="col-sm-9">
+                <details>
+                  <summary class="text-secondary">Show details</summary>
+                  <pre class="preview-json-value mb-0 mt-1">{{ formatSourceValueJson(extensionValue) }}</pre>
+                </details>
               </dd>
             </template>
           </dl>

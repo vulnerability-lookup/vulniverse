@@ -13,10 +13,13 @@ import {
 
 import {
   composePaths,
+  createDefaultValue,
 } from "@jsonforms/core";
 
 import type {
   ControlElement,
+  JsonSchema,
+  UISchemaElement
 } from "@jsonforms/core";
 
 import {
@@ -27,6 +30,147 @@ import {
   extraGcveEntryFields,
   KNOWN_GCVE_ENTRY_KEYS,
 } from "../gcve";
+
+const extensionsSchema = computed((): JsonSchema | undefined => {
+  const properties = control.value.schema?.properties;
+
+  if (!properties) {
+    return undefined;
+  }
+
+  return properties.extensions;
+});
+
+const registeredExtensionIds = computed((): string[] => {
+  return Object.keys(
+    extensionsSchema.value?.properties ?? {},
+  );
+});
+
+function extensionsOf(
+  index: number,
+): Record<string, unknown> {
+  return items.value[index]?.extensions ?? {};
+}
+
+function presentRegisteredExtensions(
+  index: number,
+): string[] {
+  const current = extensionsOf(index);
+
+  return registeredExtensionIds.value.filter(
+    (id) => Object.prototype.hasOwnProperty.call(current, id),
+  );
+}
+
+function availableExtensions(
+  index: number,
+): string[] {
+  const current = extensionsOf(index);
+
+  return registeredExtensionIds.value.filter(
+    (id) => !Object.prototype.hasOwnProperty.call(current, id),
+  );
+}
+
+const selectedExtension = ref<Record<number, string>>({});
+
+function extensionSchema(
+  extensionId: string,
+): JsonSchema | undefined {
+  return extensionsSchema.value?.properties?.[extensionId];
+}
+
+function addExtension(
+  index: number,
+): void {
+  const extensionId = selectedExtension.value[index];
+
+  if (!extensionId) {
+    return;
+  }
+
+  const schema = extensionSchema(extensionId);
+
+  if (!schema) {
+    return;
+  }
+
+  const current = extensionsOf(index);
+
+  handleChange(
+    composePaths(
+      itemPath(index),
+      "extensions",
+    ),
+    {
+      ...current,
+
+      [extensionId]: createDefaultValue(
+        schema,
+        control.value.rootSchema,
+      ),
+    },
+  );
+
+  selectedExtension.value[index] = "";
+}
+
+function removeExtension(
+  index: number,
+  extensionId: string,
+): void {
+  const updated = {
+    ...extensionsOf(index),
+  };
+
+  delete updated[extensionId];
+
+  handleChange(
+    composePaths(
+      itemPath(index),
+      "extensions",
+    ),
+    Object.keys(updated).length > 0
+      ? updated
+      : undefined,
+  );
+}
+
+
+function uiSchemaForExtension(
+  extensionId: string,
+): UISchemaElement {
+  const schema = extensionSchema(extensionId);
+
+  const properties = schema?.properties ?? {};
+
+  return {
+    type: "VerticalLayout",
+    elements: Object.keys(properties).map((key) => ({
+      type: "Control",
+      scope: `#/properties/${key}`,
+    })),
+  };
+}
+
+
+function unknownExtensions(
+  index: number,
+): Record<string, unknown> {
+  const registered = new Set(
+    registeredExtensionIds.value,
+  );
+
+  return Object.fromEntries(
+    Object.entries(
+      extensionsOf(index),
+    ).filter(
+      ([id]) => !registered.has(id),
+    ),
+  );
+}
+
 
 const props = defineProps({
   ...rendererProps<ControlElement>(),
@@ -56,6 +200,7 @@ interface GcveExtensionItem {
     srcId?: string;
   }>;
   language?: string;
+  extensions?: Record<string, unknown>;
 }
 
 const items = computed(() => {
@@ -122,9 +267,21 @@ const extraFieldsError = ref<string | null>(null);
 function extraFieldsOf(
   index: number,
 ): Record<string, unknown> {
-  return extraGcveEntryFields(
+  const extra = extraGcveEntryFields(
     (items.value[index] ?? {}) as Record<string, unknown>,
   );
+
+  // "extensions" is excluded from the generic extra-fields bag (see
+  // KNOWN_GCVE_ENTRY_KEYS) since recognized sub-keys get their own
+  // dedicated UI above — but an *unrecognized* sub-key (not yet in
+  // schemas/extensions/gcve/registry.json) has nowhere else to go, so
+  // it still needs to surface here, or it becomes invisible/
+  // uneditable even though the underlying data is preserved.
+  const unknown = unknownExtensions(index);
+
+  return Object.keys(unknown).length > 0
+    ? { ...extra, extensions: unknown }
+    : extra;
 }
 
 function hasExtraFields(
@@ -177,26 +334,58 @@ function applyExtraFields(
     return;
   }
 
-  // The four known fields stay under their own dedicated controls —
-  // this box only ever contributes the keys it's shown, even if the
-  // user pastes one of those names in too.
+  // The four known fields (plus "extensions" as a whole) stay under
+  // their own dedicated controls — this box only ever contributes the
+  // keys it's shown, even if the user pastes one of those names in
+  // too. "extensions" is handled separately below: this box only
+  // owns the *unrecognized* sub-keys within it, so a registered
+  // extension edited via the dedicated UI above must never be
+  // clobbered by whatever this box last had loaded.
   const current = (items.value[index] ?? {}) as Record<string, unknown>;
 
   const knownFields = Object.fromEntries(
     Object.entries(current).filter(
-      ([key]) => KNOWN_GCVE_ENTRY_KEYS.has(key),
+      ([key]) => KNOWN_GCVE_ENTRY_KEYS.has(key) && key !== "extensions",
     ),
   );
 
+  const parsedObject = parsed as Record<string, unknown>;
+
   const extraFields = Object.fromEntries(
-    Object.entries(parsed as Record<string, unknown>).filter(
+    Object.entries(parsedObject).filter(
       ([key]) => !KNOWN_GCVE_ENTRY_KEYS.has(key),
     ),
   );
 
+  const registeredExtensions = Object.fromEntries(
+    Object.entries(extensionsOf(index)).filter(
+      ([id]) => registeredExtensionIds.value.includes(id),
+    ),
+  );
+
+  const parsedExtensions = parsedObject.extensions;
+
+  const editedUnknownExtensions =
+    parsedExtensions
+    && typeof parsedExtensions === "object"
+    && !Array.isArray(parsedExtensions)
+      ? (parsedExtensions as Record<string, unknown>)
+      : {};
+
+  const mergedExtensions = {
+    ...registeredExtensions,
+    ...editedUnknownExtensions,
+  };
+
   handleChange(
     itemPath(index),
-    { ...knownFields, ...extraFields },
+    {
+      ...knownFields,
+      ...extraFields,
+      ...(Object.keys(mergedExtensions).length > 0
+        ? { extensions: mergedExtensions }
+        : {}),
+    },
   );
 
   editingExtraFieldsIndex.value = null;
@@ -499,6 +688,99 @@ function addEntry(): void {
               @click="removeRelationship(index, relationshipIndex)"
             >
               ✕
+            </button>
+          </div>
+        </div>
+
+
+        <div class="mt-4">
+          <div
+            class="d-flex align-items-center justify-content-between mb-2"
+          >
+            <label class="form-label fw-semibold mb-0">
+              Extensions
+            </label>
+          </div>
+
+          <p
+            v-if="presentRegisteredExtensions(index).length === 0"
+            class="text-secondary small"
+          >
+            No registered GCVE extensions.
+          </p>
+
+          <div
+            v-for="extensionId in presentRegisteredExtensions(index)"
+            :key="extensionId"
+            class="card mb-3"
+          >
+            <div
+              class="card-header d-flex align-items-center justify-content-between"
+            >
+              <span class="fw-semibold">
+                {{ extensionId.toUpperCase() }}
+              </span>
+
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm"
+                :disabled="!control.enabled"
+                @click="removeExtension(index, extensionId)"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div class="card-body">
+              <dispatch-renderer
+                v-if="extensionSchema(extensionId)"
+                :schema="extensionSchema(extensionId)!"
+                :uischema="uiSchemaForExtension(extensionId)"
+                :path="
+                  composePaths(
+                    composePaths(itemPath(index), 'extensions'),
+                    extensionId
+                  )
+                "
+                :enabled="control.enabled"
+                :renderers="control.renderers"
+                :cells="control.cells"
+              />
+            </div>
+          </div>
+
+          <div
+            v-if="availableExtensions(index).length > 0"
+            class="d-flex gap-2"
+          >
+            <select
+              v-model="selectedExtension[index]"
+              class="form-select form-select-sm"
+              :disabled="!control.enabled"
+            >
+              <option value="">
+                Select extension…
+              </option>
+
+              <option
+                v-for="extensionId in availableExtensions(index)"
+                :key="extensionId"
+                :value="extensionId"
+              >
+                {{ extensionId.toUpperCase() }}
+              </option>
+            </select>
+
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-sm text-nowrap"
+              :disabled="
+                !control.enabled
+                || !selectedExtension[index]
+              "
+              @click="addExtension(index)"
+            >
+              + Add extension
             </button>
           </div>
         </div>

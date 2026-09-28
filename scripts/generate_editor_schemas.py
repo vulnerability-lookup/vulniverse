@@ -32,6 +32,107 @@ def load_json(path: Path) -> JsonObject:
     return value
 
 
+def load_gcve_extension_schemas(
+    schemas_root: Path,
+) -> dict[str, JsonObject]:
+    registry_path = (
+        schemas_root
+        / "extensions"
+        / "gcve"
+        / "registry.json"
+    )
+
+    registry = load_json(registry_path)
+
+    result: dict[str, JsonObject] = {}
+
+    for extension_id, config in registry.items():
+        if not isinstance(config, dict):
+            raise GenerationError(
+                f"Invalid GCVE extension configuration: {extension_id}"
+            )
+
+        schema_value = config.get("schema")
+
+        if not isinstance(schema_value, str):
+            raise GenerationError(
+                f"{extension_id} has no schema path."
+            )
+
+        extension_schema = load_json(
+            schemas_root / schema_value
+        )
+
+        # It is going to be embedded inside another JSON Schema,
+        # so don't leave it carrying an independent root $id.
+        extension_schema.pop("$id", None)
+        extension_schema.pop("$schema", None)
+
+        result[extension_id] = extension_schema
+
+    return result
+
+
+def add_gcve_extension_schemas(
+    node: Any,
+    extension_schemas: dict[str, JsonObject],
+) -> None:
+    if isinstance(node, list):
+        for item in node:
+            add_gcve_extension_schemas(
+                item,
+                extension_schemas,
+            )
+        return
+
+    if not isinstance(node, dict):
+        return
+
+    properties = node.get("properties")
+
+    if isinstance(properties, dict):
+        x_gcve = properties.get("x_gcve")
+
+        if isinstance(x_gcve, dict):
+            items = x_gcve.get("items")
+
+            if isinstance(items, dict):
+                item_properties = items.setdefault(
+                    "properties",
+                    {},
+                )
+
+                if isinstance(item_properties, dict):
+                    extensions = item_properties.setdefault(
+                        "extensions",
+                        {
+                            "type": "object",
+                            "title": "GCVE extensions",
+                            "properties": {},
+                            "additionalProperties": True,
+                        },
+                    )
+
+                    extension_properties = extensions.setdefault(
+                        "properties",
+                        {},
+                    )
+
+                    for extension_id, schema in extension_schemas.items():
+                        extension_properties[extension_id] = (
+                            copy.deepcopy(schema)
+                        )
+
+                    # Unknown future extensions must survive.
+                    extensions["additionalProperties"] = True
+
+    for child in node.values():
+        add_gcve_extension_schemas(
+            child,
+            extension_schemas,
+        )
+
+
 def write_json(
     path: Path,
     value: Any,
@@ -580,6 +681,16 @@ def generate(
         authoring_schema["properties"] = deep_merge_properties(
             authoring_schema.get("properties", {}),
             overlay.get("properties", {}),
+        )
+
+    if kind == "gcve":
+        extension_schemas = load_gcve_extension_schemas(
+            schemas_root,
+        )
+
+        add_gcve_extension_schemas(
+            authoring_schema,
+            extension_schemas,
         )
 
     authoring_schema["$schema"] = official_schema.get("$schema")

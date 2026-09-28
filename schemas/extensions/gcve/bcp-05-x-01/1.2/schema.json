@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GCVE BCP-05-X-01",
+  "description": "Vulniverse JSON Schema derived from GCVE BCP-05-X-01 v1.2.",
+  "type": "object",
+  "properties": {
+    "ai_annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": ["record", "field"]
+          },
+          "gna_source": {
+            "type": "integer"
+          },
+          "field_name": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "ai_level": {
+            "type": "string",
+            "enum": [
+              "none",
+              "assisted",
+              "augmented",
+              "generated"
+            ]
+          },
+          "review_status": {
+            "type": "string",
+            "enum": [
+              "none",
+              "partial",
+              "full"
+            ]
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "gna_source": {
+                  "type": "integer"
+                },
+                "version": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "ollama",
+                    "huggingface",
+                    "local",
+                    "other"
+                  ]
+                },
+                "identifier": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              },
+              "required": ["name"],
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "scope",
+          "ai_level"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "scope": {
+                  "const": "field"
+                }
+              }
+            },
+            "then": {
+              "required": ["field_name"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "scope": {
+                  "const": "record"
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "required": ["field_name"]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "ai_level": {
+                  "const": "none"
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["review_status"]
+                  },
+                  {
+                    "required": ["models"]
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": ["ai_annotations"],
+  "additionalProperties": true
+}

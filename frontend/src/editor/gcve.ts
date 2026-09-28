@@ -23,6 +23,7 @@ export const KNOWN_GCVE_ENTRY_KEYS = new Set([
   "recordType",
   "relationships",
   "language",
+  "extensions",
 ]);
 
 export function extraGcveEntryEntries(
@@ -66,6 +67,61 @@ export function findXGcveOccurrences(
   }
 
   return occurrences;
+}
+
+export type JsonSchemaLike = Record<string, unknown>;
+
+/**
+ * Finds the map of registered GCVE extension id -> JSON Schema
+ * embedded in an authoring schema (see
+ * scripts/generate_editor_schemas.py's add_gcve_extension_schemas(),
+ * which injects schemas/extensions/gcve/registry.json's schemas into
+ * every x_gcve occurrence it finds in the schema tree). Walks
+ * generically for the same reason that Python function does: x_gcve
+ * appears at more than one location (record root, containers.cna),
+ * and all of them get the identical injected map, so the first one
+ * found is enough.
+ */
+export function findGcveExtensionSchemas(
+  schemaNode: unknown,
+): Record<string, JsonSchemaLike> {
+  if (Array.isArray(schemaNode)) {
+    for (const item of schemaNode) {
+      const found = findGcveExtensionSchemas(item);
+
+      if (Object.keys(found).length > 0) {
+        return found;
+      }
+    }
+
+    return {};
+  }
+
+  if (schemaNode && typeof schemaNode === "object") {
+    const node = schemaNode as Record<string, unknown>;
+    const properties = node.properties as Record<string, unknown> | undefined;
+    const xGcve = properties?.x_gcve as Record<string, unknown> | undefined;
+    const items = xGcve?.items as Record<string, unknown> | undefined;
+    const itemProperties = items?.properties as Record<string, unknown> | undefined;
+    const extensions = itemProperties?.extensions as Record<string, unknown> | undefined;
+    const extensionProperties = extensions?.properties as
+      | Record<string, JsonSchemaLike>
+      | undefined;
+
+    if (extensionProperties) {
+      return extensionProperties;
+    }
+
+    for (const value of Object.values(node)) {
+      const found = findGcveExtensionSchemas(value);
+
+      if (Object.keys(found).length > 0) {
+        return found;
+      }
+    }
+  }
+
+  return {};
 }
 
 /**

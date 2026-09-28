@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GCVE BCP-05-X-02",
+  "description": "Vulniverse JSON Schema derived from GCVE BCP-05-X-02 v1.0.",
+  "type": "object",
+  "properties": {
+    "x_patch2vuln": {
+      "type": "object",
+      "properties": {
+        "generator": {
+          "type": "string"
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "model": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "patchSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "patchTruncated": {
+          "type": "boolean"
+        },
+        "commit": {
+          "type": ["string", "null"]
+        },
+        "subject": {
+          "type": ["string", "null"]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fixSummary": {
+          "type": "string"
+        },
+        "patchSummary": {
+          "type": "string"
+        },
+        "cvssRationale": {
+          "type": "string"
+        },
+        "draft": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "generator",
+        "generatedAt",
+        "source",
+        "patchSha256",
+        "patchTruncated",
+        "confidence",
+        "assumptions",
+        "fixSummary",
+        "patchSummary",
+        "credits",
+        "cvssRationale",
+        "weaknessRationale",
+        "capecRationale",
+        "draft"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "required": ["x_patch2vuln"],
+  "additionalProperties": true
+}

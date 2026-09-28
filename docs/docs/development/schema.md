@@ -147,4 +147,13 @@ cd backend
 uv run pytest tests/test_record_validation.py
 ```
 
-## Generate UI Layout from Schemas
+## Schema driven Editing in Vulniverse
+
+The Editor supports both CVE and GCVE record editing. The relevant schemas are pulled from the offical repositroies (put links here). GCVE is just an extension to the CVE record schema by providing an extra x_gcve extension field which can be populated with additional data. In addition to that there exists extension to the BCP-05 standard defining the GCVE record structure. As of today two extensions exist:
+
+- BCP-05-X-01
+- BCP-05-X-02
+
+## Schema Creation
+
+The schemas used to display the contents in the frontend are directly generated from the official schemas located at (set path here). They are genereated using the `scripts/generate_editor_schemas.py` script. 
