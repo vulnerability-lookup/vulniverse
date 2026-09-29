@@ -50,7 +50,7 @@ its own backend instead.
   standalone application locally.
 - [Configuration](setup/config.md) — the handful of things that are
   actually configurable today.
-- [Manage schemas](setup/schema.md) — updating to a new upstream CVE or
+- [Manage schemas](development/schema.md) — updating to a new upstream CVE or
   GCVE schema version.
 - [Architecture](development/architecture.md) — how the frontend and
   backend are structured, and how the editor stays embeddable.
