@@ -14,3 +14,5 @@ A repository adapter acts as the integration layer between Vulniverse and the ho
 Vulniverse provides a set of built-in panels and modules that can be enabled by the embedding application. Applications can also extend the editor with custom panels and modules and connect them to host-specific functionality through the repository adapter.
 
 This architecture keeps the editor independent of any specific backend implementation while allowing it to integrate with different vulnerability-management platforms.
+
+## Module Integration

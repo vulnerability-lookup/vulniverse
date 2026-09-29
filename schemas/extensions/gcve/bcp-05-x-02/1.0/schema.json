@@ -53,9 +53,84 @@
           "type": "string",
           "maxLength": 4096
         },
+        "credits": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "lang": {
+                "type": "string",
+                "pattern": "^[A-Za-z]{2,4}([_-][A-Za-z]{4})?([_-]([A-Za-z]{2}|[0-9]{3}))?$"
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "finder",
+                  "reporter",
+                  "analyst",
+                  "coordinator",
+                  "remediation developer",
+                  "remediation reviewer",
+                  "remediation verifier",
+                  "tool",
+                  "sponsor",
+                  "other"
+                ]
+              }
+            },
+            "required": ["lang", "value"],
+            "additionalProperties": true
+          }
+        },
         "cvssRationale": {
           "type": "string",
           "maxLength": 4096
+        },
+        "weaknessRationale": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "cweId": {
+                "type": "string",
+                "pattern": "^CWE-[1-9][0-9]*$"
+              },
+              "rationale": {
+                "type": "string",
+                "maxLength": 4096,
+                "format": "long-text"
+              }
+            },
+            "required": ["cweId", "rationale"],
+            "additionalProperties": true
+          }
+        },
+        "capecRationale": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "capecId": {
+                "type": "string",
+                "pattern": "^CAPEC-[1-9][0-9]{0,4}$"
+              },
+              "rationale": {
+                "type": "string",
+                "maxLength": 4096,
+                "format": "long-text"
+              }
+            },
+            "required": ["capecId", "rationale"],
+            "additionalProperties": true
+          }
         },
         "draft": {
           "type": "boolean"

@@ -129,24 +129,49 @@ function objectEntries(
     </div>
   </template>
 
-  <dl
-    v-else-if="isPlainObject(value)"
-    class="row mb-0 small"
-  >
-    <template
-      v-for="[key, entryValue] in objectEntries(value)"
-      :key="key"
-    >
-      <dt class="col-sm-4 text-secondary">{{ titleFor(key) }}</dt>
-
-      <dd class="col-sm-8">
+  <template v-else-if="isPlainObject(value)">
+    <!--
+      An object with exactly one property (e.g. a GCVE extension's
+      own {ai_annotations: [...]} / {x_patch2vuln: {...}} wrapper) is
+      unwrapped rather than given its own dt/dd row — that single
+      property already carries the extension's *entire* content, so
+      labeling it separately just adds a redundant heading and eats
+      a third of the row's width (col-sm-4) for no real information;
+      the card header above this component already names the
+      extension. A genuinely multi-property object still gets full
+      labeled rows below.
+    -->
+    <template v-if="objectEntries(value).length === 1">
+      <template
+        v-for="[key, entryValue] in objectEntries(value)"
+        :key="key"
+      >
         <SchemaValuePreview
           :schema="propertySchema(key)"
           :value="entryValue"
         />
-      </dd>
+      </template>
     </template>
-  </dl>
+
+    <dl
+      v-else
+      class="row mb-0 small"
+    >
+      <template
+        v-for="[key, entryValue] in objectEntries(value)"
+        :key="key"
+      >
+        <dt class="col-sm-4 text-secondary">{{ titleFor(key) }}</dt>
+
+        <dd class="col-sm-8">
+          <SchemaValuePreview
+            :schema="propertySchema(key)"
+            :value="entryValue"
+          />
+        </dd>
+      </template>
+    </dl>
+  </template>
 
   <span v-else>{{ formatScalar(value) }}</span>
 </template>
