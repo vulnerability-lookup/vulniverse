@@ -64,6 +64,45 @@ const atMinItems = computed(() => {
 });
 
 /*
+ * How many levels of "a card nested inside another card" deep this
+ * instance is — read from whatever the parent (another
+ * ArrayCardRenderer instance, or GcveExtensionRenderer.vue's own
+ * hand-built uischema) put in uischema.options.depth, defaulting to
+ * 0 for a top-level array with no such ancestor. Used purely for a
+ * subtle background tint (see cardBackgroundClass below) so deeply
+ * nested structures (e.g. a GCVE extension's ai_annotations[]
+ * entries, each with their own models[]) are easier to tell apart
+ * at a glance than card borders + indentation alone — not used for
+ * anything else, so a control that never sets this just behaves
+ * exactly as before.
+ */
+const depth = computed(() => {
+  const options = control.value.uischema?.options as { depth?: number } | undefined;
+
+  return options?.depth ?? 0;
+});
+
+/*
+ * Bootstrap's own theme-aware "subtle" background utilities —
+ * correct in both light and dark mode with no custom colors to
+ * maintain. Deliberately colored (not a plain gray body-tint):
+ * measured live, bg-body-secondary's rgb(233,236,239) sits barely
+ * 10 units from the card border's own rgb(222,226,230) — all in
+ * the same neutral gray, so the border all but disappeared into
+ * the fill. Shifting hue (blue for depth 1, cyan for depth 2)
+ * against that same neutral-gray border reads far more clearly
+ * than any two shades of gray can, without the two depths being
+ * mistakable for each other. Depth 0 (a plain, non-nested list)
+ * stays untinted; nesting cycles rather than growing unboundedly
+ * for arbitrarily deep structures.
+ */
+const BACKGROUND_TINT_CLASSES = ["", "bg-body-secondary", "bg-body-tertiary"];
+
+const cardBackgroundClass = computed(() => {
+  return BACKGROUND_TINT_CLASSES[depth.value % BACKGROUND_TINT_CLASSES.length];
+});
+
+/*
  * A property shaped like {type: "array", items: {oneOf: [...]}} is
  * how every "tags" field in the CVE schema is defined (a free
  * "x_"-prefixed extension string, or one of a small fixed enum) —
@@ -156,9 +195,16 @@ const childUiSchema = computed((): UISchemaElement => {
     elements: Object.keys(properties).map((key) => ({
       type: "Control",
       scope: `#/properties/${key}`,
-      ...(isTagsShaped(properties[key])
-        ? { options: { renderer: "vulniverse-tags" } }
-        : {}),
+      options: {
+        // Propagated so a nested array reached through this
+        // property (dispatching to another ArrayCardRenderer
+        // instance) knows it's one level deeper than this one —
+        // see the depth computed above.
+        depth: depth.value + 1,
+        ...(isTagsShaped(properties[key])
+          ? { renderer: "vulniverse-tags" }
+          : {}),
+      },
     })),
   };
 });
@@ -269,6 +315,7 @@ function deleteEntry(
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
       class="card mb-2"
+      :class="cardBackgroundClass"
     >
       <div class="card-header d-flex justify-content-between align-items-center py-2">
         <span class="fw-semibold small">

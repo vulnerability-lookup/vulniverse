@@ -190,6 +190,13 @@ function uiSchemaForExtension(
     elements: Object.keys(properties).map((key) => ({
       type: "Control",
       scope: `#/properties/${key}`,
+      // A nested array reached from here (e.g. ai_annotations[])
+      // dispatches to ArrayCardRenderer, which reads this to know
+      // it's already one level deep — see that component's own
+      // depth/cardBackgroundClass — since this content sits inside
+      // the extension card below, itself one level inside the GCVE
+      // entry card.
+      options: { depth: 1 },
     })),
   };
 }

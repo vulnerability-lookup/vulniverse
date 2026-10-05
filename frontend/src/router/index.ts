@@ -93,6 +93,23 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
+  // github pages mode
+  const isGithubPages =
+    import.meta.env.MODE === "github-pages";
+
+  if (isGithubPages) {
+    const allowedRoutes = ["landing", "try"];
+
+    if (
+      typeof to.name !== "string" ||
+      !allowedRoutes.includes(to.name)
+    ) {
+      return { name: "try" };
+    }
+
+    return true;
+  }
+
   const auth = useAuthStore();
 
   if (!auth.initialized) {

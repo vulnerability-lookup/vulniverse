@@ -70,16 +70,26 @@ export class SandboxRepository implements EditorRepository {
   /**
   * validate Record works as it is stateless
   **/
+  // async validateRecord(
+  //   record: VulnerabilityRecord,
+  //   profile: string,
+  // ): Promise<ValidationResult> {
+  //   return apiRequest<ValidationResult>(
+  //     "/validate",
+  //     {
+  //       method: "POST",
+  //       body: JSON.stringify({ record, profile }),
+  //     },
+  //   );
+  // }
+
   async validateRecord(
-    record: VulnerabilityRecord,
-    profile: string,
+    _record: VulnerabilityRecord,
+    _profile: string,
   ): Promise<ValidationResult> {
-    return apiRequest<ValidationResult>(
-      "/validate",
-      {
-        method: "POST",
-        body: JSON.stringify({ record, profile }),
-      },
+    throw new RepositoryError(
+      "Validation is not available in demo mode.",
+      501,
     );
   }
 

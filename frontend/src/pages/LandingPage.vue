@@ -3,6 +3,9 @@ import { useAuthStore } from "@/stores/auth";
 import vulniverseLogo from "@/assets/vulniverse-logo.png";
 
 const auth = useAuthStore();
+
+const isGithubPages =
+  import.meta.env.MODE === "github-pages";
 </script>
 
 <template>
@@ -28,6 +31,7 @@ const auth = useAuthStore();
             Try the editor
           </RouterLink>
 
+        <template v-if="!isGithubPages">
           <RouterLink
             v-if="!auth.isAuthenticated"
             to="/register"
@@ -43,6 +47,8 @@ const auth = useAuthStore();
           >
             Go to your records
           </RouterLink>
+        </template>
+
         </div>
       </div>
     </div>
