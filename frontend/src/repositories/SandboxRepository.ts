@@ -3,6 +3,7 @@ import type {
   LoadedRecord,
   ValidationResult,
   VulnerabilityRecord,
+  ReferenceListItem,
 } from "@/editor/contracts";
 
 // import {
@@ -105,4 +106,27 @@ export class SandboxRepository implements EditorRepository {
       isDraft: this.isDraft,
     };
   }
+
+  async getReferenceList(
+    kind: "cwe" | "capec",
+  ): Promise<ReferenceListItem[]> {
+    const response = await fetch(
+      `${import.meta.env.BASE_URL}data/references/${kind}.json`,
+    );
+
+    if (!response.ok) {
+      throw new RepositoryError(
+        `Failed to load ${kind.toUpperCase()} reference data.`,
+        response.status,
+      );
+    }
+
+    const result = await response.json() as {
+      items: ReferenceListItem[];
+    };
+
+    return result.items;
+  }
+
+
 }

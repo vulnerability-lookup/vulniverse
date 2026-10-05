@@ -24,6 +24,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Generate CWE and CAPEC reference lists
+        run: python3 scripts/generate_reference_lists.py
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
