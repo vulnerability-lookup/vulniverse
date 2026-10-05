@@ -97,7 +97,7 @@ const SECTIONS: Section[] = [
   {
     id: "affected",
     label: "Affected",
-    fields: ["affected"],
+    fields: ["affected", "cpeApplicability"],
   },
   {
     id: "classification",
@@ -107,7 +107,7 @@ const SECTIONS: Section[] = [
   {
     id: "severity",
     label: "Severity",
-    fields: ["metrics", "cpeApplicability"],
+    fields: ["metrics"],
   },
   {
     id: "guidance",
@@ -168,6 +168,7 @@ function fieldsFor(
  */
 const FIELD_OPTIONS: Record<string, Record<string, unknown>> = {
   affected: { renderer: "vulniverse-affected" },
+  cpeApplicability: { renderer: "vulniverse-cpe-applicability" },
   metrics: { renderer: "vulniverse-metrics" },
   references: { renderer: "vulniverse-references" },
   source: { renderer: "vulniverse-source" },

@@ -78,13 +78,16 @@ const selectedExtension = ref<Record<number, string>>({});
 /*
  * Per-extension fold state, keyed by "entryIndex:extensionId" (a
  * GCVE entry can have more than one registered extension, and a
- * document can have more than one entry). Unlike
- * useCollapsibleItems() above (collapsed by default, newest entry
- * auto-expanded), an extension starts expanded — it's already
- * showing real data the moment it exists, whether just added or
- * loaded from a pasted record — and only collapses on request.
+ * document can have more than one entry). Same collapsed-by-default
+ * idea as useCollapsibleItems() above, kept as its own Set rather than
+ * reusing that composable since this collapses by extensionId within
+ * an entry, not by array index — a freshly-added extension (see
+ * addExtension below) is explicitly expanded so its fields are visible
+ * immediately; everything else (including one just loaded from a
+ * pasted record) starts collapsed to keep a multi-extension entry
+ * scannable, and only expands on request.
  */
-const collapsedExtensions = ref<Set<string>>(new Set());
+const expandedExtensions = ref<Set<string>>(new Set());
 
 function extensionKey(
   index: number,
@@ -97,7 +100,7 @@ function isExtensionExpanded(
   index: number,
   extensionId: string,
 ): boolean {
-  return !collapsedExtensions.value.has(
+  return expandedExtensions.value.has(
     extensionKey(index, extensionId),
   );
 }
@@ -108,10 +111,10 @@ function toggleExtension(
 ): void {
   const key = extensionKey(index, extensionId);
 
-  if (collapsedExtensions.value.has(key)) {
-    collapsedExtensions.value.delete(key);
+  if (expandedExtensions.value.has(key)) {
+    expandedExtensions.value.delete(key);
   } else {
-    collapsedExtensions.value.add(key);
+    expandedExtensions.value.add(key);
   }
 }
 
@@ -152,6 +155,8 @@ function addExtension(
       ),
     },
   );
+
+  expandedExtensions.value.add(extensionKey(index, extensionId));
 
   selectedExtension.value[index] = "";
 }

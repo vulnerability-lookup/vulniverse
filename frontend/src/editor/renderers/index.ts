@@ -16,6 +16,7 @@ import type {
 import { MultiStringControlRenderer } from "@jsonforms/vue-vanilla";
 
 import AffectedRenderer from "./AffectedRenderer.vue";
+import CpeApplicabilityRenderer from "./CpeApplicabilityRenderer.vue";
 import MetricsRenderer from "./MetricsRenderer.vue";
 import ReferencesRenderer from "./ReferencesRenderer.vue";
 import AdpRenderer from "./AdpRenderer.vue";
@@ -129,6 +130,10 @@ export const customRenderers: JsonFormsRendererRegistryEntry[] = [
   {
     renderer: AffectedRenderer,
     tester: rendererOptionIs("vulniverse-affected"),
+  },
+  {
+    renderer: CpeApplicabilityRenderer,
+    tester: rendererOptionIs("vulniverse-cpe-applicability"),
   },
   {
     renderer: MetricsRenderer,
