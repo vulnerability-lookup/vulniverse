@@ -170,6 +170,15 @@
 }
 
 .editor-layout {
+  /*
+   * Containing block for .validation-toast-stack below — anchors the
+   * toast below .editor-header (a sibling, not an ancestor, of this
+   * element) instead of overlapping it, while still staying visible
+   * regardless of scrolling inside .editor-content and never floating
+   * outside this component's own bounds into an embedding host page.
+   */
+  position: relative;
+
   display: grid;
   grid-template-columns:
     minmax(13rem, 17rem)
@@ -227,6 +236,37 @@
   min-height: 0;
   padding: 2rem;
   overflow-y: auto;
+}
+
+/*
+ * Save/validate results as a floating toast stack instead of an inline
+ * banner — previously these sat at the top of .editor-content and
+ * scrolled away with the rest of a long form. Positioned absolute
+ * against .editor-layout (see "position: relative" comment above), so
+ * it stays on top of the sidebar/content regardless of scroll
+ * position, below the header rather than overlapping it, without
+ * needing any sticky/scroll-into-view logic. Each v-if'd .alert inside
+ * is empty/invisible on its own when not shown, so this wrapper never
+ * reserves space it isn't using.
+ */
+.validation-toast-stack {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  left: 1rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+  max-height: calc(100% - 2rem);
+  overflow-y: auto;
+
+  .alert {
+    pointer-events: auto;
+    width: 100%;
+    max-width: 28rem;
+  }
 }
 
 /*

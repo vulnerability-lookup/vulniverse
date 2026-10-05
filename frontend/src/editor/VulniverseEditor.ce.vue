@@ -2,6 +2,7 @@
 import {
   computed,
   onMounted,
+  onUnmounted,
   provide,
   ref,
   toRef,
@@ -159,6 +160,31 @@ watch(state.validationErrors, () => {
 });
 
 const validationSucceeded = ref(false);
+
+const SUCCESS_TOAST_DURATION_MS = 4000;
+let successToastTimeout: ReturnType<typeof setTimeout> | undefined;
+
+/*
+ * Only the success toast auto-dismisses — it's a low-stakes "nothing
+ * to do here" confirmation. Errors/warnings stay until the user
+ * dismisses them (or re-validates), since they're actionable and
+ * shouldn't vanish before being read. Re-validating within the
+ * timeout (succeeded flips true again) restarts the clock rather than
+ * stacking timers.
+ */
+watch(validationSucceeded, (succeeded) => {
+  clearTimeout(successToastTimeout);
+
+  if (succeeded) {
+    successToastTimeout = setTimeout(() => {
+      validationSucceeded.value = false;
+    }, SUCCESS_TOAST_DURATION_MS);
+  }
+});
+
+onUnmounted(() => {
+  clearTimeout(successToastTimeout);
+});
 
 const isRejected = computed(() => {
   return state.record.value?.cveMetadata?.state === "REJECTED";
@@ -610,9 +636,16 @@ onMounted(loadRecord);
       />
 
       <main class="editor-content">
+        <component
+          :is="currentSection"
+          v-bind="sectionProps"
+        />
+      </main>
+
+      <div class="validation-toast-stack">
         <div
           v-if="state.saveError.value"
-          class="alert alert-danger alert-dismissible mb-3"
+          class="alert alert-danger alert-dismissible mb-2 shadow-sm"
           role="alert"
         >
           {{ state.saveError.value.message }}
@@ -627,7 +660,7 @@ onMounted(loadRecord);
 
         <div
           v-if="validationSucceeded"
-          class="alert alert-success alert-dismissible mb-3"
+          class="alert alert-success alert-dismissible mb-2 shadow-sm"
           role="status"
         >
           The record is valid.
@@ -642,7 +675,7 @@ onMounted(loadRecord);
 
         <div
           v-if="blockingErrors.length && !blockingErrorsDismissed"
-          class="alert alert-warning alert-dismissible mb-3"
+          class="alert alert-warning alert-dismissible mb-2 shadow-sm"
           role="alert"
         >
           <button
@@ -676,7 +709,7 @@ onMounted(loadRecord);
 
         <div
           v-if="validationWarnings.length && !validationWarningsDismissed"
-          class="alert alert-info alert-dismissible mb-3"
+          class="alert alert-info alert-dismissible mb-2 shadow-sm"
           role="alert"
         >
           <button
@@ -707,12 +740,7 @@ onMounted(loadRecord);
             </li>
           </ul>
         </div>
-
-        <component
-          :is="currentSection"
-          v-bind="sectionProps"
-        />
-      </main>
+      </div>
     </div>
 
     <div
