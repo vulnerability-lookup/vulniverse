@@ -5,9 +5,9 @@ import type {
   VulnerabilityRecord,
 } from "@/editor/contracts";
 
-import {
-  apiRequest,
-} from "./apiRequest";
+// import {
+//   apiRequest,
+// } from "./apiRequest";
 
 import {
   RepositoryError,
