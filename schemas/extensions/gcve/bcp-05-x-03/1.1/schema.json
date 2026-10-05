@@ -1,0 +1,357 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GCVE BCP-05-X-03 Vulnerability Handling and Disclosure Timeline",
+  "description": "Extension for representing vulnerability handling, coordination, remediation, disclosure, and regulatory notification timelines.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "x_timeline"
+  ],
+  "properties": {
+    "x_timeline": {
+      "title": "Vulnerability Handling and Disclosure Timeline",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "events"
+      ],
+      "properties": {
+        "entities": {
+          "title": "Entities",
+          "description": "Entities participating in or referenced by timeline events.",
+          "type": "array",
+          "items": {
+            "title": "Entity",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "category"
+            ],
+            "properties": {
+              "id": {
+                "title": "Entity ID",
+                "description": "Identifier unique within this x_timeline object.",
+                "type": "string",
+                "minLength": 1
+              },
+              "category": {
+                "title": "Category",
+                "description": "General category of the entity. Suggested values include adversary, coordinator, discoverer, multiplier, other, public, reporting_authority, user, and vendor.",
+                "type": "string",
+                "minLength": 1,
+                "examples": [
+                  "adversary",
+                  "coordinator",
+                  "discoverer",
+                  "multiplier",
+                  "other",
+                  "public",
+                  "reporting_authority",
+                  "user",
+                  "vendor"
+                ]
+              },
+              "name": {
+                "title": "Name",
+                "description": "Human-readable name of the entity.",
+                "type": "string"
+              },
+              "description": {
+                "title": "Description",
+                "description": "Additional non-sensitive information about the entity.",
+                "type": "string"
+              },
+              "references": {
+                "title": "References",
+                "description": "Public references identifying or describing the entity.",
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+
+        "events": {
+          "title": "Handling and Disclosure Events",
+          "description": "Chronological vulnerability handling and disclosure events.",
+          "type": "array",
+          "items": {
+            "title": "Timeline Event",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "timestamp"
+            ],
+            "properties": {
+              "id": {
+                "title": "Event ID",
+                "description": "Identifier unique within this timeline.",
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "title": "Event Type",
+                "description": "Type of vulnerability lifecycle event. Additional event types may be introduced in future revisions.",
+                "type": "string",
+                "minLength": 1,
+                "examples": [
+                  "discovered",
+                  "reported",
+                  "notification-attempted",
+                  "received",
+                  "acknowledged",
+                  "triaged",
+                  "validated",
+                  "rejected",
+                  "disputed",
+                  "identifier-assigned",
+                  "coordination-started",
+                  "affected-party-notified",
+                  "embargo-agreed",
+                  "embargo-extended",
+                  "remediation-started",
+                  "mitigation-available",
+                  "fix-developed",
+                  "fix-available",
+                  "fix-deployed",
+                  "exploit-observed",
+                  "public-disclosure-planned",
+                  "public-disclosure",
+                  "advisory-published",
+                  "advisory-updated",
+                  "case-closed",
+                  "other"
+                ]
+              },
+              "timestamp": {
+                "title": "Timestamp",
+                "description": "ISO 8601 full date or RFC 3339 date-time at which the event occurred.",
+                "type": "string",
+                "examples": [
+                  "2026-09-07",
+                  "2026-09-10T14:20:00Z"
+                ]
+              },
+              "actor": {
+                "title": "Actor",
+                "description": "General role primarily responsible for or associated with the event. This is the legacy lightweight actor representation.",
+                "type": "string",
+                "examples": [
+                  "reporter",
+                  "researcher",
+                  "vendor",
+                  "maintainer",
+                  "coordinator",
+                  "gna",
+                  "cna",
+                  "csirt",
+                  "regulator",
+                  "downstream",
+                  "other"
+                ]
+              },
+              "actorRefs": {
+                "title": "Actor References",
+                "description": "References to entities that performed or initiated the event. Values must reference entities[].id.",
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "recipientRefs": {
+                "title": "Recipient References",
+                "description": "References to entities that received or were directly targeted by the event. Values must reference entities[].id.",
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "referencedEvents": {
+                "title": "Referenced Events",
+                "description": "IDs of earlier or otherwise related events in the same timeline.",
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "description": {
+                "title": "Description",
+                "description": "Human-readable description of the event.",
+                "type": "string"
+              },
+              "references": {
+                "title": "References",
+                "description": "Public references providing supporting information about the event.",
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+
+        "regulatory": {
+          "title": "Regulatory Timeline",
+          "description": "Regulatory assessments and notification timelines associated with the vulnerability.",
+          "type": "array",
+          "items": {
+            "title": "Regulatory Entry",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "framework",
+              "assessment"
+            ],
+            "properties": {
+              "framework": {
+                "title": "Framework",
+                "description": "Regulatory framework or reporting regime.",
+                "type": "string",
+                "minLength": 1,
+                "examples": [
+                  "EU-CRA"
+                ]
+              },
+              "jurisdiction": {
+                "title": "Jurisdiction",
+                "description": "Jurisdiction associated with the framework.",
+                "type": "string",
+                "examples": [
+                  "EU"
+                ]
+              },
+              "assessment": {
+                "title": "Assessment",
+                "description": "Publisher's current assessment of whether the reporting framework applies.",
+                "type": "string",
+                "enum": [
+                  "not-assessed",
+                  "not-applicable",
+                  "potentially-applicable",
+                  "applicable"
+                ]
+              },
+              "trigger": {
+                "title": "Trigger",
+                "description": "Event or condition potentially triggering the reporting requirement.",
+                "type": "string",
+                "examples": [
+                  "actively-exploited-vulnerability"
+                ]
+              },
+              "awarenessAt": {
+                "title": "Awareness At",
+                "description": "Time at which the relevant organization became aware of the condition triggering the obligation.",
+                "type": "string",
+                "examples": [
+                  "2026-09-10T10:00:00Z"
+                ]
+              },
+              "notifications": {
+                "title": "Notifications",
+                "description": "Notifications, reports, or other regulatory milestones.",
+                "type": "array",
+                "items": {
+                  "title": "Regulatory Notification",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "title": "Notification Type",
+                      "description": "Type of notification or regulatory milestone.",
+                      "type": "string",
+                      "minLength": 1,
+                      "examples": [
+                        "early-warning",
+                        "vulnerability-notification",
+                        "final-report"
+                      ]
+                    },
+                    "triggerEvent": {
+                      "title": "Trigger Event",
+                      "description": "ID of an event that starts or materially affects the relevant deadline.",
+                      "type": "string"
+                    },
+                    "dueAt": {
+                      "title": "Due At",
+                      "description": "Applicable deadline calculated by the producer.",
+                      "type": "string",
+                      "examples": [
+                        "2026-09-11T10:00:00Z"
+                      ]
+                    },
+                    "submittedAt": {
+                      "title": "Submitted At",
+                      "description": "Actual submission timestamp.",
+                      "type": "string",
+                      "examples": [
+                        "2026-09-10T15:42:00Z"
+                      ]
+                    },
+                    "status": {
+                      "title": "Status",
+                      "description": "Current processing state of the regulatory submission. Suggested values are pending, submitted, updated, not-required, and withdrawn.",
+                      "type": "string",
+                      "examples": [
+                        "pending",
+                        "submitted",
+                        "updated",
+                        "not-required",
+                        "withdrawn"
+                      ]
+                    },
+                    "channel": {
+                      "title": "Channel",
+                      "description": "Reporting mechanism or platform used.",
+                      "type": "string",
+                      "examples": [
+                        "CRA-SRP"
+                      ]
+                    },
+                    "reference": {
+                      "title": "Reference",
+                      "description": "Non-sensitive identifier or reference for the submission.",
+                      "type": "string"
+                    },
+                    "basis": {
+                      "title": "Basis",
+                      "description": "Human-readable reference to the provision establishing the requirement.",
+                      "type": "string",
+                      "examples": [
+                        "Regulation (EU) 2024/2847 Article 14(2)(a)"
+                      ]
+                    },
+                    "notes": {
+                      "title": "Notes",
+                      "description": "Additional non-sensitive context.",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "notes": {
+                "title": "Notes",
+                "description": "Additional non-sensitive context.",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

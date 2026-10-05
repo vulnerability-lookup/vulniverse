@@ -18,7 +18,7 @@ The `/schema/manifest.json` file contains the definitions of all available profi
 
 ## Pull Upstream Schema Files
 
-New schema files can be fetched from the official sources using the `scripts/update_schmeas.py` script:
+New schema files can be fetched from the official sources using the `scripts/update_schemas.py` script:
 
 ```bash
 python3 scripts/update_schemas.py \

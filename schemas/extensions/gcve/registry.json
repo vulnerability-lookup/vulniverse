@@ -10,5 +10,11 @@
     "version": "1.0",
     "status": "draft",
     "schema": "extensions/gcve/bcp-05-x-02/1.0/schema.json"
+  },
+  "bcp-05-x-03": {
+    "title": "Vulnerability Handling and Disclosure Timeline",
+    "version": "1.1",
+    "status": "draft",
+    "schema": "extensions/gcve/bcp-05-x-03/1.1/schema.json"
   }
 }
