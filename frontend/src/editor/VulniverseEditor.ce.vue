@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  computed,
   onMounted,
   provide,
   ref,
@@ -8,12 +7,7 @@ import {
 } from "vue";
 
 import type {
-  Component,
-} from "vue";
-
-import type {
   EditorModule,
-  EditorModuleContext,
   EditorPanel,
   EditorRepository,
 } from "./contracts";
@@ -21,10 +15,6 @@ import type {
 import {
   useEditorController,
 } from "./core/controller";
-
-import {
-  normalizeError,
-} from "./core/errors";
 
 import {
   editorRepositoryKey,
@@ -48,20 +38,13 @@ import EditorNavigation from
 import RejectDialog from
   "./components/RejectDialog.vue";
 
-import JsonSection from
-  "./sections/JsonSection.vue";
-
-import PreviewSection from
-  "./sections/PreviewSection.vue";
-
-import RejectedRecordSection from
-  "./sections/RejectedRecordSection.vue";
-
-import SchemaFormSection from
-  "./sections/SchemaFormSection.vue";
-
 import EditorNotifications from
   "./components/EditorNotifications.vue";
+
+import {
+  BUILTIN_NAVIGATION_ITEMS,
+  useEditorExtensions,
+} from "./core/extensions";
 
 const props = withDefaults(
   defineProps<{
@@ -171,123 +154,37 @@ provide(
 
 const activeSection = ref("editor");
 
-const BUILTIN_NAVIGATION_ITEMS = [
-  {
-    id: "editor",
-    label: "Editor",
-  },
-  {
-    id: "preview",
-    label: "Preview",
-  },
-  {
-    id: "json",
-    label: "Advanced JSON",
-  },
-];
+const extensions =
+  useEditorExtensions({
+    state,
 
-const BUILTIN_SECTION_COMPONENTS:
-  Record<string, Component> = {
-    json: JsonSection,
-    editor: SchemaFormSection,
-    preview: PreviewSection,
-  };
+    activeSection,
 
-const moduleContext = computed<EditorModuleContext>(() => {
-  return {
-    identifier: state.identifier.value,
-    profile: state.profile.value ?? "cve-5.2.0",
-    record: state.record.value ?? {},
-    isDraft: state.isDraft.value,
-  };
-});
+    panels:
+      toRef(props, "panels"),
 
-const visiblePanels = computed(() => {
-  return props.panels.filter(
-    (panel) => panel.isVisible?.(moduleContext.value) ?? true,
-  );
-});
+    modules:
+      toRef(props, "modules"),
 
-const panelNavigationItems = computed(() => {
-  return visiblePanels.value.map((panel) => ({
-    id: panel.id,
-    label: panel.label,
-  }));
-});
+    isRejected:
+      controller.isRejected,
 
-const sectionComponents = computed<Record<string, Component>>(() => {
-  return {
-    ...BUILTIN_SECTION_COMPONENTS,
-    editor: controller.isRejected.value
-      ? RejectedRecordSection
-      : SchemaFormSection,
-    ...Object.fromEntries(
-      visiblePanels.value.map((panel) => [panel.id, panel.component]),
-    ),
-  };
-});
+    onError(error) {
+      emit(
+        "error",
+        error,
+      );
+    },
+  });
 
-const currentSection = computed(() => {
-  return (
-    sectionComponents.value[activeSection.value] ??
-    SchemaFormSection
-  );
-});
+const {
+  visibleModules,
+  panelNavigationItems,
+  currentSection,
+  sectionProps,
+  runModule,
+} = extensions;
 
-/*
- * Panel components receive `context` as a prop; built-in sections
- * (JsonSection/SchemaFormSection/PreviewSection) don't declare it and
- * read shared state via useEditorContext() instead — binding it
- * unconditionally would leak as a stringified fallthrough attribute
- * onto their root element, so it's only passed for panel-sourced
- * sections.
- */
-const sectionProps = computed(() => {
-  const isPanel = visiblePanels.value.some(
-    (panel) => panel.id === activeSection.value,
-  );
-
-  return isPanel ? { context: moduleContext.value } : {};
-});
-
-const visibleModules = computed(() => {
-  return props.modules
-    .filter((module) => module.isVisible?.(moduleContext.value) ?? true)
-    .map((module) => ({
-      id: module.id,
-      label: module.label,
-      enabled: module.isEnabled?.(moduleContext.value) ?? true,
-    }));
-});
-
-async function handleRunModule(
-  moduleId: string,
-): Promise<void> {
-  const module = props.modules.find(
-    (candidate) => candidate.id === moduleId,
-  );
-
-  if (!module || !state.record.value) {
-    return;
-  }
-
-  state.saving.value = true;
-  state.saveError.value = null;
-
-  try {
-    await module.run(moduleContext.value);
-  } catch (error) {
-    const normalized = normalizeError(
-      error,
-      `Unable to run "${module.label}".`,
-    );
-
-    state.saveError.value = normalized;
-    emit("error", normalized);
-  } finally {
-    state.saving.value = false;
-  }
-}
 
 async function handleDelete(): Promise<void> {
   const identifier = state.identifier.value;
@@ -340,7 +237,7 @@ onMounted(controller.load);
       @unpublish="controller.save(true)"
       @reject="handleRejectClick"
       @delete="handleDelete"
-      @run-module="handleRunModule"
+      @run-module="runModule"
     />
 
     <RejectDialog
