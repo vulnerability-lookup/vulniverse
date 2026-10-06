@@ -23,7 +23,8 @@
       "id": "affected",
       "label": "Affected products",
       "paths": [
-        "containers.cna.affected"
+        "containers.cna.affected",
+        "containers.cna.cpeApplicability"
       ]
     },
     {
@@ -94,6 +95,9 @@
       "renderer": "vulniverse-affected",
       "detail": "GENERATED",
       "showSortButtons": true
+    },
+    "containers.cna.cpeApplicability": {
+      "renderer": "vulniverse-cpe-applicability"
     },
     "containers.cna.metrics": {
       "renderer": "vulniverse-metrics"
