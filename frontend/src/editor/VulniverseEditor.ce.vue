@@ -7,7 +7,7 @@ import {
 } from "vue";
 
 import type {
-  EditorModule,
+  EditorAction,
   EditorPanel,
   EditorRepository,
 } from "./contracts";
@@ -52,13 +52,13 @@ const props = withDefaults(
     mode?: "create" | "edit";
     recordId?: string;
     profile?: string;
-    modules?: EditorModule[];
+    actions?: EditorAction[];
     panels?: EditorPanel[];
   }>(),
   {
     mode: "create",
     profile: "cve-5.2.0",
-    modules: () => [],
+    actions: () => [],
     panels: () => [],
   },
 );
@@ -163,8 +163,8 @@ const extensions =
     panels:
       toRef(props, "panels"),
 
-    modules:
-      toRef(props, "modules"),
+    actions:
+      toRef(props, "actions"),
 
     isRejected:
       controller.isRejected,
@@ -178,11 +178,11 @@ const extensions =
   });
 
 const {
-  visibleModules,
+  visibleActions,
   panelNavigationItems,
   currentSection,
   sectionProps,
-  runModule,
+  runAction,
 } = extensions;
 
 
@@ -228,7 +228,7 @@ onMounted(controller.load);
       :is-rejected="controller.isRejected.value"
       :dirty="state.dirty.value"
       :loading="state.loading.value || state.saving.value"
-      :modules="visibleModules"
+      :actions="visibleActions"
       :can-delete="controller.canDelete.value"
       @reload="controller.load"
       @validate="controller.validate"
@@ -237,7 +237,7 @@ onMounted(controller.load);
       @unpublish="controller.save(true)"
       @reject="handleRejectClick"
       @delete="handleDelete"
-      @run-module="runModule"
+      @run-action="runAction"
     />
 
     <RejectDialog

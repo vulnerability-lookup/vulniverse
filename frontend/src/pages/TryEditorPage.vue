@@ -91,7 +91,7 @@ function handleError(
         mode="create"
         :profile="selectedProfile"
         :panels="[]"
-        :modules="[]"
+        :actions="[]"
         @error="handleError"
       />
     </div>

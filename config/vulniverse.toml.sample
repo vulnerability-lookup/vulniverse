@@ -17,8 +17,8 @@
 # Vulnerability-Lookup), not by the standalone app.
 "gcve-identifier" = false
 
-[modules]
-# Which header-button modules the standalone app shows, keyed by
-# EditorModule.id (see frontend/src/editor/modules/*.ts).
+[actions]
+# Which header-button actions the standalone app shows, keyed by
+# EditorAction.id (see frontend/src/editor/actions/*.ts).
 "download-json" = true
 

@@ -22,12 +22,12 @@ def load_app_config() -> dict[str, dict[str, Any]]:
     path = CONFIG_PATH if CONFIG_PATH.exists() else SAMPLE_CONFIG_PATH
 
     if not path.exists():
-        return {"panels": {}, "modules": {}}
+        return {"panels": {}, "actions": {}}
 
     with path.open("rb") as handle:
         data: dict[str, Any] = tomllib.load(handle)
 
     return {
         "panels": dict(data.get("panels", {})),
-        "modules": dict(data.get("modules", {})),
+        "actions": dict(data.get("actions", {})),
     }

@@ -4,11 +4,11 @@ import {
 } from "vue";
 
 import type {
-  EditorModuleContext,
+  EditorContext,
 } from "../contracts";
 
 const props = defineProps<{
-  context: EditorModuleContext;
+  context: EditorContext;
 }>();
 
 const cna = computed(() => {

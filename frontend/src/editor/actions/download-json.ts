@@ -1,14 +1,14 @@
 import type {
-  EditorModule,
+  EditorAction,
 } from "../contracts";
 
 /**
  * Saves the current record's JSON to a local file. Entirely
  * client-side — no repository/backend involvement — so it's a good
- * template for a new module file: copy this one, change `id`/`label`,
+ * template for a new action file: copy this one, change `id`/`label`,
  * and implement `run()`.
  */
-export const downloadJsonModule: EditorModule = {
+export const downloadJsonAction: EditorAction = {
   id: "download-json",
   label: "Download JSON",
 

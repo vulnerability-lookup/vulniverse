@@ -27,7 +27,7 @@ import type {
 } from "./template-path-catalog";
 
 import type {
-  EditorModuleContext,
+  EditorContext,
   Template,
   TemplateField,
 } from "../contracts";
@@ -40,7 +40,7 @@ import type {
  * stringified DOM attribute.
  */
 defineProps<{
-  context: EditorModuleContext;
+  context: EditorContext;
 }>();
 
 const editor = useEditorContext();

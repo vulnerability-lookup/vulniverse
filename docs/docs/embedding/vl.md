@@ -25,7 +25,7 @@ in Vulniverse:
   `EditorRepository` implementation, `VulnerabilityLookupRepository`.
 - `website/web/static/vulniverse/gcve-reservation-panel.js`,
   `cna-publication-panel.js`, `view-vulnerability-module.js` — VL-specific
-  `EditorPanel`/`EditorModule` implementations (see
+  `EditorPanel`/`EditorAction` implementations (see
   [Architecture](../development/architecture.md) for what those are).
 - `website/web/templates/vulniverse/index.html` — the page template that
   imports all of the above and constructs the `<vulniverse-editor>`
@@ -105,7 +105,7 @@ editor.panels = [
   templatesPanel,
 ];
 
-editor.modules = [
+editor.actions = [
   createViewVulnerabilityModule({ viewUrlBase }),
 ];
 
@@ -121,7 +121,7 @@ A few things worth noting precisely:
   through this editor is authored as GCVE from the start, matching VL's
   own storage constraint mentioned above.
 - The static imports (`vulniverse-editor.js`, `repository.js`, the panel/
-  module scripts) all run to completion — including the custom element's
+  action scripts) all run to completion — including the custom element's
   own `customElements.define(...)` side effect — before the rest of this
   script body executes, so `document.createElement("vulniverse-editor")`
   is guaranteed to already produce a real, upgraded element.
@@ -136,4 +136,4 @@ A few things worth noting precisely:
 This is the entire integration surface. Vulniverse's own code — the
 component tree in `frontend/src/editor/` — has no VL-specific branches
 anywhere; everything described on this page lives on VL's side of the
-`EditorRepository`/`EditorModule`/`EditorPanel` boundary.
+`EditorRepository`/`EditorAction`/`EditorPanel` boundary.

@@ -22,7 +22,7 @@ def test_falls_back_to_sample_file_when_real_config_absent(
 ) -> None:
     sample_path = tmp_path / "vulniverse.toml.sample"
     sample_path.write_text(
-        '[panels]\n"stats" = true\n\n[modules]\n"download-json" = false\n',
+        '[panels]\n"stats" = true\n\n[actions]\n"download-json" = false\n',
     )
 
     monkeypatch.setattr(app_config, "CONFIG_PATH", tmp_path / "vulniverse.toml")
@@ -32,7 +32,7 @@ def test_falls_back_to_sample_file_when_real_config_absent(
 
     assert result == {
         "panels": {"stats": True},
-        "modules": {"download-json": False},
+        "actions": {"download-json": False},
     }
 
 
@@ -62,15 +62,15 @@ def test_empty_tables_when_neither_file_exists(
 
     result = app_config.load_app_config()
 
-    assert result == {"panels": {}, "modules": {}}
+    assert result == {"panels": {}, "actions": {}}
 
 
-def test_capabilities_endpoint_includes_panels_and_modules(client: FlaskClient) -> None:
+def test_capabilities_endpoint_includes_panels_and_actions(client: FlaskClient) -> None:
     response = client.get("/api/v1/capabilities")
 
     assert response.status_code == 200
     body = response.get_json()
     assert "panels" in body
-    assert "modules" in body
+    assert "actions" in body
     assert isinstance(body["panels"], dict)
-    assert isinstance(body["modules"], dict)
+    assert isinstance(body["actions"], dict)

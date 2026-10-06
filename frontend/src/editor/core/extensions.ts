@@ -8,8 +8,8 @@ import type {
 } from "vue";
 
 import type {
-  EditorModule,
-  EditorModuleContext,
+  EditorAction,
+  EditorContext,
   EditorPanel,
 } from "../contracts";
 
@@ -39,7 +39,7 @@ interface EditorExtensionsOptions {
   activeSection: Ref<string>;
 
   panels: Readonly<Ref<EditorPanel[]>>;
-  modules: Readonly<Ref<EditorModule[]>>;
+  actions: Readonly<Ref<EditorAction[]>>;
 
   isRejected: Readonly<Ref<boolean>>;
 
@@ -77,12 +77,12 @@ export function useEditorExtensions(
     state,
     activeSection,
     panels,
-    modules,
+    actions,
     isRejected,
   } = options;
 
   const context =
-    computed<EditorModuleContext>(() => ({
+    computed<EditorContext>(() => ({
       identifier:
         state.identifier.value,
 
@@ -164,39 +164,39 @@ export function useEditorExtensions(
         : {};
     });
 
-  const visibleModules =
+  const visibleActions =
     computed(() =>
-      modules.value
+      actions.value
         .filter(
-          (module) =>
-            module.isVisible?.(
+          (action) =>
+            action.isVisible?.(
               context.value,
             ) ?? true,
         )
         .map(
-          (module) => ({
-            id: module.id,
-            label: module.label,
+          (action) => ({
+            id: action.id,
+            label: action.label,
 
             enabled:
-              module.isEnabled?.(
+              action.isEnabled?.(
                 context.value,
               ) ?? true,
           }),
         ),
     );
 
-  async function runModule(
-    moduleId: string,
+  async function runAction(
+    actionId: string,
   ): Promise<void> {
-    const module =
-      modules.value.find(
+    const action =
+      actions.value.find(
         (candidate) =>
-          candidate.id === moduleId,
+          candidate.id === actionId,
       );
 
     if (
-      !module ||
+      !action ||
       !state.record.value
     ) {
       return;
@@ -206,14 +206,14 @@ export function useEditorExtensions(
     state.saveError.value = null;
 
     try {
-      await module.run(
+      await action.run(
         context.value,
       );
     } catch (error) {
       const normalized =
         normalizeError(
           error,
-          `Unable to run "${module.label}".`,
+          `Unable to run "${action.label}".`,
         );
 
       state.saveError.value =
@@ -236,8 +236,8 @@ export function useEditorExtensions(
     currentSection,
     sectionProps,
 
-    visibleModules,
+    visibleActions,
 
-    runModule,
+    runAction,
   };
 }

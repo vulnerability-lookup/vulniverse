@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type {
-  EditorModuleContext,
+  EditorContext,
 } from "../contracts";
 
 import CnaPublicationPanel from "./CnaPublicationPanel.vue";
 
 const props = defineProps<{
-  context: EditorModuleContext;
+  context: EditorContext;
 }>();
 </script>
 

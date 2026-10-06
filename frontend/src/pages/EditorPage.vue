@@ -18,8 +18,8 @@ import {
 } from "@/repositories/HttpRepository";
 
 import {
-  BUILTIN_MODULES,
-} from "@/editor/modules";
+  BUILTIN_ACTIONS,
+} from "@/editor/actions";
 
 import {
   BUILTIN_PANELS,
@@ -35,18 +35,18 @@ const router = useRouter();
 const repository =
   new HttpRepository("/api/v1");
 
-const enabledModules = ref(BUILTIN_MODULES);
+const enabledActions = ref(BUILTIN_ACTIONS);
 const enabledPanels = ref(BUILTIN_PANELS);
 
 onMounted(async () => {
   try {
     const capabilities = await repository.getCapabilities();
 
-    enabledModules.value = filterEnabled(BUILTIN_MODULES, capabilities.modules);
+    enabledActions.value = filterEnabled(BUILTIN_ACTIONS, capabilities.actions);
     enabledPanels.value = filterEnabled(BUILTIN_PANELS, capabilities.panels);
   } catch (error) {
     console.warn(
-      "Could not load app capabilities, showing all built-in panels/modules:",
+      "Could not load app capabilities, showing all built-in panels/actions:",
       error,
     );
   }
@@ -113,7 +113,7 @@ function handleDeleted(
         :repository="repository"
         mode="edit"
         :record-id="recordId"
-        :modules="enabledModules"
+        :actions="enabledActions"
         :panels="enabledPanels"
         @loaded="handleLoaded"
         @error="handleError"

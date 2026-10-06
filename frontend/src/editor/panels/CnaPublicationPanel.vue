@@ -6,7 +6,7 @@ import {
 } from "vue";
 
 import type {
-  EditorModuleContext,
+  EditorContext,
   GcveExtension,
   PublicationTarget,
 } from "../contracts";
@@ -33,7 +33,7 @@ import {
 const props = defineProps<{
   target: PublicationTarget;
   label: string;
-  context: EditorModuleContext;
+  context: EditorContext;
 }>();
 
 const {

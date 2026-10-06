@@ -14,7 +14,7 @@ import {
 
 import type {
   CnaPublication,
-  EditorModuleContext,
+  EditorContext,
   EditorRepository,
   PublicationTarget,
 } from "../contracts";
@@ -30,7 +30,7 @@ import type {
  */
 export function useCnaPublication(
   target: PublicationTarget,
-  context: EditorModuleContext,
+  context: EditorContext,
 ) {
   const repository = useEditorRepository();
   const requestSave = useEditorSave();

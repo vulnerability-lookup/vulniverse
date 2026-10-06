@@ -14,7 +14,7 @@ embeddable `<vulniverse-editor>` element itself is a separate concern, covered i
 
 ## Config file 
 
-`config/vulniverse.toml` controls which built-in panels/modules the
+`config/vulniverse.toml` controls which built-in panels/actions the
 standalone app shows.
 
   ```bash
@@ -26,7 +26,7 @@ standalone app shows.
   real config file behaves exactly like the sample's own values — nothing
   here is required to get started.
 
-### `[panels]` / `[modules]`
+### `[panels]` / `[actions]`
 
 
 ```toml
@@ -37,7 +37,7 @@ standalone app shows.
 "cve-program"  = true
 "gcve-identifier" = false
 
-[modules]
+[actions]
 "download-json" = true
 ```
 
