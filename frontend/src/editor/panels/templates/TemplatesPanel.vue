@@ -9,7 +9,7 @@ import {
 import {
   useEditorContext,
   useEditorRepository,
-} from "../core/context";
+} from "../../core/context";
 
 import {
   applyTemplateFields,
@@ -20,17 +20,17 @@ import {
 
 import {
   suggestPaths,
-} from "./template-path-catalog";
+} from "./path-catalog";
 
 import type {
   PathSuggestion,
-} from "./template-path-catalog";
+} from "./path-catalog";
 
 import type {
   EditorContext,
   Template,
   TemplateField,
-} from "../contracts";
+} from "../../contracts";
 
 /*
  * Unused directly — this built-in panel reads/writes the record via

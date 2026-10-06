@@ -49,7 +49,7 @@ defineEmits<{
       <hr class="editor-sidebar-divider">
 
       <div class="editor-sidebar-heading text-secondary text-uppercase">
-        Modules
+        Panels
       </div>
 
       <button

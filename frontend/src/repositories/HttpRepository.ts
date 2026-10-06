@@ -15,14 +15,16 @@ import {
 } from "@/editor/contracts";
 
 import {
-  RepositoryError,
-} from "./RepositoryError";
+  EditorRepositoryError,
+} from "@/editor/core/errors";
 
 import {
-  getCsrfToken,
-} from "./csrf";
+  ApiError,
+} from "@/shared/errors";
 
-const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+import {
+  apiRequest,
+} from "./apiRequest";
 
 /*
  * Not part of EditorRepository: listing records is a standalone-app
@@ -264,59 +266,48 @@ export class HttpRepository
     );
   }
 
+  /*
+   * The translation boundary between the generic HTTP world and the
+   * EditorRepository abstraction: apiRequest() only knows about
+   * HTTP/API semantics and throws ApiError, never anything
+   * editor-specific. This wrapper is the one place that interprets an
+   * ApiError for this particular API shape — a 422 with a body.errors
+   * array means the record failed schema validation (RecordValidationError,
+   * an EditorRepository-contract concept, see contracts.ts), anything
+   * else becomes a generic EditorRepositoryError — so every other
+   * EditorRepository method above can stay oblivious to HTTP entirely.
+   */
   private async request<T>(
     path: string,
     init: RequestInit = {},
   ): Promise<T> {
-    const headers = new Headers(init.headers);
+    try {
+      return await apiRequest<T>(path, init, this.apiRoot);
+    } catch (error) {
+      if (!(error instanceof ApiError)) {
+        throw error;
+      }
 
-    headers.set("Accept", "application/json");
+      const body = error.details as
+        | { message?: string; errors?: unknown }
+        | null
+        | undefined;
 
-    if (init.body !== undefined) {
-      headers.set(
-        "Content-Type",
-        "application/json",
-      );
-    }
-
-    const method = (init.method ?? "GET").toUpperCase();
-
-    if (MUTATING_METHODS.has(method)) {
-      headers.set("X-CSRFToken", await getCsrfToken(this.apiRoot));
-    }
-
-    const response = await fetch(
-      `${this.apiRoot}${path}`,
-      {
-        ...init,
-        headers,
-        credentials: "same-origin",
-      },
-    );
-
-    const body = await response
-      .json()
-      .catch(() => null);
-
-    if (!response.ok) {
       if (
-        response.status === 422 &&
+        error.status === 422 &&
         Array.isArray(body?.errors)
       ) {
         throw new RecordValidationError(
-          body.message ?? "The record is not publishable.",
+          body?.message ?? "The record is not publishable.",
           body.errors,
         );
       }
 
-      throw new RepositoryError(
-        body?.message ??
-          `${response.status} ${response.statusText}`,
-        response.status,
-        body,
+      throw new EditorRepositoryError(
+        error.message,
+        error.status,
+        error.details,
       );
     }
-
-    return body as T;
   }
 }

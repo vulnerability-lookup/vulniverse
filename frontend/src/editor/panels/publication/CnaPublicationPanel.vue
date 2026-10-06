@@ -9,20 +9,20 @@ import type {
   EditorContext,
   GcveExtension,
   PublicationTarget,
-} from "../contracts";
+} from "../../contracts";
 
 import {
   useCnaPublication,
-} from "./cna-publication";
+} from "./use-cna-publication";
 
 import {
   recordHasGcveId,
-} from "../gcve";
+} from "../../gcve";
 
 import {
   useEditorContext,
   useEditorSave,
-} from "../core/context";
+} from "../../core/context";
 
 /*
  * Shared by VulnerabilityLookupPanel.vue and CVEProgramPanel.vue — "vl" and

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type {
   EditorContext,
-} from "../contracts";
+} from "../../contracts";
 
 import CnaPublicationPanel from "./CnaPublicationPanel.vue";
 
@@ -12,8 +12,8 @@ const props = defineProps<{
 
 <template>
   <CnaPublicationPanel
-    target="vl"
-    label="Vulnerability-Lookup"
+    target="cve-program"
+    label="the CVE Program"
     :context="props.context"
   />
 </template>

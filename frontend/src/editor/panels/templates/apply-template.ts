@@ -1,6 +1,6 @@
 import type {
   TemplateField,
-} from "../contracts";
+} from "../../contracts";
 
 /*
  * A template's paths are plain dot-separated strings (with optional

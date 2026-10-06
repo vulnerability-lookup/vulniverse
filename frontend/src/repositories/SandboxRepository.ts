@@ -11,8 +11,8 @@ import type {
 // } from "./apiRequest";
 
 import {
-  RepositoryError,
-} from "./RepositoryError";
+  EditorRepositoryError,
+} from "@/editor/core/errors";
 
 const SANDBOX_IDENTIFIER = "sandbox";
 
@@ -37,7 +37,7 @@ export class SandboxRepository implements EditorRepository {
     identifier: string,
   ): Promise<LoadedRecord> {
     if (identifier !== SANDBOX_IDENTIFIER || !this.record) {
-      throw new RepositoryError("No sandbox record yet.", 404);
+      throw new EditorRepositoryError("No sandbox record yet.", 404);
     }
 
     return this.toLoadedRecord();
@@ -88,7 +88,7 @@ export class SandboxRepository implements EditorRepository {
     _record: VulnerabilityRecord,
     _profile: string,
   ): Promise<ValidationResult> {
-    throw new RepositoryError(
+    throw new EditorRepositoryError(
       "Validation is not available in demo mode.",
       501,
     );
@@ -115,7 +115,7 @@ export class SandboxRepository implements EditorRepository {
     );
 
     if (!response.ok) {
-      throw new RepositoryError(
+      throw new EditorRepositoryError(
         `Failed to load ${kind.toUpperCase()} reference data.`,
         response.status,
       );

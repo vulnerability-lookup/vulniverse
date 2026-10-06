@@ -6,25 +6,25 @@ import {
 import {
   useEditorRepository,
   useEditorSave,
-} from "../core/context";
+} from "../../core/context";
 
 import {
-  RepositoryError,
-} from "@/repositories/RepositoryError";
+  EditorRepositoryError,
+} from "../../core/errors";
 
 import type {
   CnaPublication,
   EditorContext,
   EditorRepository,
   PublicationTarget,
-} from "../contracts";
+} from "../../contracts";
 
 /*
  * Backs both VulnerabilityLookupPanel.vue and CVEProgramPanel.vue — "vl"
  * and "cve-program" are the same CVE Services API-shaped protocol at a
  * different host-supplied EditorRepository target, so one composable
  * serves both. Goes through EditorRepository (not a direct fetch), the
- * same way TemplatesSection.vue does — that's what makes this portable
+ * same way TemplatesPanel.vue does — that's what makes this portable
  * to a host whose repository implements these methods against its own
  * backend, and gracefully "not supported here" for one that doesn't.
  */
@@ -43,12 +43,12 @@ export function useCnaPublication(
   const notConfigured = ref(false);
 
   function applyError(err: unknown, fallback: string): void {
-    notConfigured.value = err instanceof RepositoryError && err.status === 409;
+    notConfigured.value = err instanceof EditorRepositoryError && err.status === 409;
 
     let hasUpstreamDetail = false;
 
     if (
-      err instanceof RepositoryError &&
+      err instanceof EditorRepositoryError &&
       err.details &&
       typeof err.details === "object" &&
       "publication" in err.details

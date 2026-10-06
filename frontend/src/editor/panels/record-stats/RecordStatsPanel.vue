@@ -5,7 +5,7 @@ import {
 
 import type {
   EditorContext,
-} from "../contracts";
+} from "../../contracts";
 
 const props = defineProps<{
   context: EditorContext;
@@ -31,8 +31,7 @@ const referencesCount = computed(() => {
 <template>
   <div class="p-3">
     <p class="text-secondary">
-      Example panel module — demonstrates a module contributing its
-      own navigation tab and component, not just a header button.
+      Example panel module
     </p>
 
     <dl class="row">

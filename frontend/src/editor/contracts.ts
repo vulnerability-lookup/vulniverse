@@ -140,7 +140,7 @@ export interface Template {
  * "vl" and "cve-program" are both CVE Services API-shaped publish targets
  * (POST /cve-id, POST|PUT /cve/<id>/cna, POST|PUT /cve/<id>/reject) at a
  * different base URL/credentials — see the "CVE Program"/"Vulnerability-
- * Lookup" panels (editor/panels/CnaPublicationPanel.vue).
+ * Lookup" panels (editor/panels/publication/CnaPublicationPanel.vue).
  */
 export type PublicationTarget = "vl" | "cve-program";
 
