@@ -2,11 +2,9 @@
 import {
   computed,
   onMounted,
-  onUnmounted,
   provide,
   ref,
   toRef,
-  watch,
 } from "vue";
 
 import type {
@@ -61,6 +59,9 @@ import RejectedRecordSection from
 
 import SchemaFormSection from
   "./sections/SchemaFormSection.vue";
+
+import EditorNotifications from
+  "./components/EditorNotifications.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -191,58 +192,6 @@ const BUILTIN_SECTION_COMPONENTS:
     editor: SchemaFormSection,
     preview: PreviewSection,
   };
-
-/*
- * Warnings (e.g. an unrecognized GCVE relationship type) never
- * block saving — only entries with severity "error" (the default,
- * for validators that predate the concept) do. Splitting them keeps
- * a warning-only result from reading as "you can't save this."
- */
-const blockingErrors = computed(() => {
-  return state.validationErrors.value.filter(
-    (error) => (error.severity ?? "error") === "error",
-  );
-});
-
-const validationWarnings = computed(() => {
-  return state.validationErrors.value.filter(
-    (error) => error.severity === "warning",
-  );
-});
-
-const blockingErrorsDismissed = ref(false);
-const validationWarningsDismissed = ref(false);
-
-watch(state.validationErrors, () => {
-  blockingErrorsDismissed.value = false;
-  validationWarningsDismissed.value = false;
-});
-
-const SUCCESS_TOAST_DURATION_MS = 4000;
-let successToastTimeout: ReturnType<typeof setTimeout> | undefined;
-
-/*
- * Only the success toast auto-dismisses — it's a low-stakes "nothing
- * to do here" confirmation. Errors/warnings stay until the user
- * dismisses them (or re-validates), since they're actionable and
- * shouldn't vanish before being read. Re-validating within the
- * timeout (succeeded flips true again) restarts the clock rather than
- * stacking timers.
- */
-watch(state.validationSucceeded, (succeeded) => {
-  clearTimeout(successToastTimeout);
-
-  if (succeeded) {
-    successToastTimeout = setTimeout(() => {
-      state.validationSucceeded.value = false;
-    }, SUCCESS_TOAST_DURATION_MS);
-  }
-});
-
-onUnmounted(() => {
-  clearTimeout(successToastTimeout);
-});
-
 
 const moduleContext = computed<EditorModuleContext>(() => {
   return {
@@ -429,105 +378,7 @@ onMounted(controller.load);
         />
       </main>
 
-      <div class="validation-toast-stack">
-        <div
-          v-if="state.saveError.value"
-          class="alert alert-danger alert-dismissible mb-2 shadow-sm"
-          role="alert"
-        >
-          {{ state.saveError.value.message }}
-
-          <button
-            type="button"
-            class="btn-close"
-            aria-label="Close"
-            @click="state.saveError.value = null"
-          />
-        </div>
-
-        <div
-          v-if="state.validationSucceeded.value"
-          class="alert alert-success alert-dismissible mb-2 shadow-sm"
-          role="status"
-        >
-          The record is valid.
-
-          <button
-            type="button"
-            class="btn-close"
-            aria-label="Close"
-            @click="state.validationSucceeded.value = false"
-          />
-        </div>
-
-        <div
-          v-if="blockingErrors.length && !blockingErrorsDismissed"
-          class="alert alert-warning alert-dismissible mb-2 shadow-sm"
-          role="alert"
-        >
-          <button
-            type="button"
-            class="btn-close"
-            aria-label="Close"
-            @click="blockingErrorsDismissed = true"
-          />
-
-          <p class="mb-2">
-            The record has
-            {{ blockingErrors.length }}
-            validation
-            {{
-              blockingErrors.length === 1
-                ? "error"
-                : "errors"
-            }}.
-          </p>
-
-          <ul class="mb-0">
-            <li
-              v-for="(error, index) in blockingErrors"
-              :key="index"
-            >
-              <code>{{ error.path.join(".") || "record" }}</code>
-              — {{ error.message }}
-            </li>
-          </ul>
-        </div>
-
-        <div
-          v-if="validationWarnings.length && !validationWarningsDismissed"
-          class="alert alert-info alert-dismissible mb-2 shadow-sm"
-          role="alert"
-        >
-          <button
-            type="button"
-            class="btn-close"
-            aria-label="Close"
-            @click="validationWarningsDismissed = true"
-          />
-
-          <p class="mb-2">
-            {{ validationWarnings.length }}
-            validation
-            {{
-              validationWarnings.length === 1
-                ? "warning"
-                : "warnings"
-            }}
-            (won't block saving).
-          </p>
-
-          <ul class="mb-0">
-            <li
-              v-for="(warning, index) in validationWarnings"
-              :key="index"
-            >
-              <code>{{ warning.path.join(".") || "record" }}</code>
-              — {{ warning.message }}
-            </li>
-          </ul>
-        </div>
-      </div>
+      <EditorNotifications />
     </div>
 
     <div
