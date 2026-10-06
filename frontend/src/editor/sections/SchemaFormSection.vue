@@ -14,6 +14,10 @@ import {
 } from "@jsonforms/vue-vanilla";
 
 import {
+  editorAjv,
+} from "../core/ajv";
+
+import {
   customRenderers,
 } from "../renderers";
 
@@ -114,6 +118,7 @@ function handleChange(event: {
     :schema="schema"
     :uischema="uiSchema"
     :renderers="renderers"
+    :ajv="editorAjv"
     validation-mode="ValidateAndShow"
     @change="handleChange"
   />

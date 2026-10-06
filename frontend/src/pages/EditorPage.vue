@@ -2,7 +2,7 @@
 import {
   computed,
   onMounted,
-  ref,
+  shallowRef,
 } from "vue";
 
 import {
@@ -35,8 +35,8 @@ const router = useRouter();
 const repository =
   new HttpRepository("/api/v1");
 
-const enabledActions = ref(BUILTIN_ACTIONS);
-const enabledPanels = ref(BUILTIN_PANELS);
+const enabledActions = shallowRef(BUILTIN_ACTIONS);
+const enabledPanels = shallowRef(BUILTIN_PANELS);
 
 onMounted(async () => {
   try {
