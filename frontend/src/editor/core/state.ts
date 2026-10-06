@@ -7,7 +7,7 @@ import type {
   LoadedRecord,
   ValidationError,
   VulnerabilityRecord,
-} from "./contracts";
+} from "../contracts";
 
 export function useEditorState() {
   const record =

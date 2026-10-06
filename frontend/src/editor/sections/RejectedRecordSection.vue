@@ -9,7 +9,7 @@ import type {
 
 import {
   useEditorContext,
-} from "../use-editor-context";
+} from "../core/context";
 
 /*
  * A rejected record's containers.cna is a different, minimal shape

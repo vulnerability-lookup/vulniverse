@@ -15,7 +15,7 @@ import type {
 
 import type {
   EditorState,
-} from "../use-editor-state";
+} from "./state";
 
 import {
   normalizeError,

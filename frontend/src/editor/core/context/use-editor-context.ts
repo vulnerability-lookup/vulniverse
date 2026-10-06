@@ -4,11 +4,11 @@ import {
 
 import {
   editorStateKey,
-} from "./editor-context";
+} from "./keys";
 
 import type {
   EditorState,
-} from "./use-editor-state";
+} from "../state";
 
 export function useEditorContext(): EditorState {
   const state = inject(editorStateKey);

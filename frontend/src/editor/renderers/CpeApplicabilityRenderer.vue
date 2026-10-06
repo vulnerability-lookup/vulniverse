@@ -22,7 +22,7 @@ import type {
 
 import {
   editorStateKey,
-} from "../editor-context";
+} from "../core/context";
 
 import {
   useCollapsibleItems,

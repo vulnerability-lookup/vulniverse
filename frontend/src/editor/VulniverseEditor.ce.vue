@@ -20,11 +20,11 @@ import {
   editorRepositoryKey,
   editorSaveKey,
   editorStateKey,
-} from "./editor-context";
+} from "./core/context";
 
 import {
   useEditorState,
-} from "./use-editor-state";
+} from "./core/state";
 
 import EditorError from
   "./components/EditorError.vue";

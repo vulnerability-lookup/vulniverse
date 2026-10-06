@@ -5,11 +5,8 @@ import {
 
 import {
   useEditorRepository,
-} from "../use-editor-repository";
-
-import {
   useEditorSave,
-} from "../use-editor-save";
+} from "../core/context";
 
 import {
   RepositoryError,

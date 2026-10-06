@@ -8,11 +8,8 @@ import {
 
 import {
   useEditorContext,
-} from "../use-editor-context";
-
-import {
   useEditorRepository,
-} from "../use-editor-repository";
+} from "../core/context";
 
 import {
   applyTemplateFields,

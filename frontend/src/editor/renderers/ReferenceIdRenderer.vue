@@ -21,7 +21,7 @@ import {
 
 import {
   useEditorRepository,
-} from "../use-editor-repository";
+} from "../core/context";
 
 import {
   loadReferenceList,

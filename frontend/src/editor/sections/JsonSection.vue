@@ -8,7 +8,7 @@ import {
 
 import {
   useEditorContext,
-} from "../use-editor-context";
+} from "../core/context";
 
 import type {
   VulnerabilityRecord,
