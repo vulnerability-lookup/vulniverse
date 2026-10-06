@@ -29,6 +29,7 @@ export function useEditorState() {
   const saving = ref(false);
   const saveError = ref<Error | null>(null);
   const validationErrors = ref<ValidationError[]>([]);
+  const validationSucceeded = ref(false);
 
   const dirty = computed(() => {
     if (
@@ -67,6 +68,7 @@ export function useEditorState() {
     loadError.value = null;
     saveError.value = null;
     validationErrors.value = [];
+    validationSucceeded.value = false;
   }
 
   return {
@@ -80,6 +82,7 @@ export function useEditorState() {
     saving,
     saveError,
     validationErrors,
+    validationSucceeded,
     dirty,
     replaceRecord,
     clear,
