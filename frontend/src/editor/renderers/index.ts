@@ -16,23 +16,29 @@ import type {
 import { MultiStringControlRenderer } from "@jsonforms/vue-vanilla";
 
 import AffectedRenderer from "./AffectedRenderer.vue";
-import CpeApplicabilityRenderer from "./CpeApplicabilityRenderer.vue";
-import MetricsRenderer from "./MetricsRenderer.vue";
 import ReferencesRenderer from "./ReferencesRenderer.vue";
 import AdpRenderer from "./AdpRenderer.vue";
 import SourceRenderer from "./SourceRenderer.vue";
 import TagsRenderer from "./TagsRenderer.vue";
 import ArrayCardRenderer from "./ArrayCardRenderer.vue";
 import BooleanSelectRenderer from "./BooleanSelectRenderer.vue";
-import ReferenceIdRenderer from "./ReferenceIdRenderer.vue";
 import {
   GcveExtensionRenderer,
   GcveTagsRenderer,
 } from "./gcve";
 
 import {
+  CpeApplicabilityRenderer,
+} from "./cpe-applicability";
+
+import {
+  MetricsRenderer,
+} from "./metrics";
+
+import {
+  ReferenceIdRenderer,
   referenceKindForPattern,
-} from "./reference-lookup";
+} from "./reference-id";
 
 /*
  * Any string property whose schema allows at least this many

@@ -22,11 +22,11 @@ import type {
 
 import {
   editorStateKey,
-} from "../core/context";
+} from "../../core/context";
 
 import {
   useCollapsibleItems,
-} from "./use-collapsible-items";
+} from "../use-collapsible-items";
 
 import {
   fromVersionFields,
