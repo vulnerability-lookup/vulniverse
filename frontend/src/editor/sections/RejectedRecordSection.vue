@@ -4,6 +4,7 @@ import {
 } from "vue";
 
 import type {
+  CveRecord,
   Description,
 } from "../contracts";
 
@@ -21,7 +22,10 @@ import {
  * none of which apply here. VulniverseEditor.ce.vue swaps to this
  * section for the "Editor" tab specifically when the record is
  * rejected, instead of extending the generator for a shape this
- * different and this small.
+ * different and this small. This component is only ever used as a
+ * CVE/GCVE profile's rejection.editorComponent (see
+ * profiles/cve-5.2.0.ts), so narrowing the generic EditorDocument to
+ * CveRecord here is safe.
  */
 const editor = useEditorContext();
 
@@ -38,10 +42,13 @@ const editor = useEditorContext();
 /* oxlint-disable vue/no-side-effects-in-computed-properties */
 const cna = computed(() => {
   editor.record.value ??= {};
-  editor.record.value.containers ??= {};
-  editor.record.value.containers.cna ??= {};
 
-  return editor.record.value.containers.cna;
+  const record = editor.record.value as CveRecord;
+
+  record.containers ??= {};
+  record.containers.cna ??= {};
+
+  return record.containers.cna;
 });
 
 const providerMetadata = computed(() => {

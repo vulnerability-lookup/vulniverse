@@ -1,6 +1,6 @@
 /*
  * Turns a raw supportingMedia item ({type, value, base64?}) into a
- * safe-to-render description for PreviewSection, via
+ * safe-to-render description for CvePreviewSection, via
  * SupportingMediaPreview.vue.
  *
  * This content is CNA/ADP-submitted and often third-party — markdown

@@ -46,6 +46,10 @@ import {
   useEditorExtensions,
 } from "./core/extensions";
 
+import {
+  DEFAULT_PROFILE_ID,
+} from "./profiles";
+
 const props = withDefaults(
   defineProps<{
     repository?: EditorRepository;
@@ -57,7 +61,7 @@ const props = withDefaults(
   }>(),
   {
     mode: "create",
-    profile: "cve-5.2.0",
+    profile: DEFAULT_PROFILE_ID,
     actions: () => [],
     panels: () => [],
   },
@@ -230,6 +234,7 @@ onMounted(controller.load);
       :loading="state.loading.value || state.saving.value"
       :actions="visibleActions"
       :can-delete="controller.canDelete.value"
+      :can-reject="controller.canReject.value"
       @reload="controller.load"
       @validate="controller.validate"
       @save="controller.save()"

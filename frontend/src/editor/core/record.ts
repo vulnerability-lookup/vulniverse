@@ -1,70 +1,20 @@
 import type {
   LoadedRecord,
-  VulnerabilityRecord,
 } from "../contracts";
 
+import {
+  getEditorProfile,
+} from "../profiles";
+
 export function createEmptyRecord(
-  profile: string,
+  profileId: string,
 ): LoadedRecord {
+  const profile = getEditorProfile(profileId);
+
   return {
     identifier: "",
-    profile,
+    profile: profile.id,
     isDraft: true,
-    record: {
-      dataType: "CVE_RECORD",
-      dataVersion: "5.2.0",
-      cveMetadata: {},
-      containers: {
-        cna: {
-          descriptions: [],
-          affected: [],
-          references: [],
-        },
-      },
-      ...(profile.startsWith("gcve-")
-        ? { x_gcve: [] }
-        : {}),
-    },
+    record: profile.createEmptyDocument(),
   };
 }
-
-export function rejectRecord(
-  source: VulnerabilityRecord,
-  reason: string,
-  rejectedAt = new Date().toISOString(),
-): VulnerabilityRecord {
-  const previousProviderMetadata =
-    source.containers?.cna?.providerMetadata;
-
-  return {
-    ...source,
-
-    cveMetadata: {
-      ...source.cveMetadata,
-      state: "REJECTED",
-      dateRejected: rejectedAt,
-      dateUpdated: rejectedAt,
-    },
-
-    containers: {
-      ...source.containers,
-
-      // A rejected CNA container has a different schema from a normal
-      // CNA container, so replace it completely.
-      cna: {
-        providerMetadata: {
-          ...previousProviderMetadata,
-          dateUpdated: rejectedAt,
-        },
-
-        rejectedReasons: [
-          {
-            lang: "en",
-            value: reason,
-          },
-        ],
-      },
-    },
-  };
-}
-

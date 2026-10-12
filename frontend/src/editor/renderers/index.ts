@@ -134,55 +134,13 @@ function rendererOptionIs(
   );
 }
 
-export const customRenderers: JsonFormsRendererRegistryEntry[] = [
-  {
-    renderer: AffectedRenderer,
-    tester: rendererOptionIs("vulniverse-affected"),
-  },
-  {
-    renderer: CpeApplicabilityRenderer,
-    tester: rendererOptionIs("vulniverse-cpe-applicability"),
-  },
-  {
-    renderer: MetricsRenderer,
-    tester: rendererOptionIs("vulniverse-metrics"),
-  },
-  {
-    renderer: ReferencesRenderer,
-    tester: rendererOptionIs("vulniverse-references"),
-  },
-  {
-    renderer: AdpRenderer,
-    tester: rendererOptionIs("vulniverse-adp"),
-  },
-  {
-    renderer: GcveExtensionRenderer,
-    tester: rendererOptionIs("vulniverse-gcve-extension"),
-  },
-  {
-    renderer: SourceRenderer,
-    tester: rendererOptionIs("vulniverse-source"),
-  },
-  {
-    renderer: TagsRenderer,
-    tester: rendererOptionIs("vulniverse-tags"),
-  },
-  {
-    renderer: ReferenceIdRenderer,
-    tester: rankWith(4, isReferenceIdControl),
-  },
-  /*
-   * Rank 6 beats ArrayCardRenderer's generic rank 5 for a plain
-   * tags-shaped array with no explicit uischema override — but
-   * never competes with the rank-10 options.renderer path
-   * containers.cna.tags/containers.adp[].tags use, since those are
-   * oneOf-shaped and isGcvePlainTagsControl only matches a plain
-   * string array.
-   */
-  {
-    renderer: GcveTagsRenderer,
-    tester: rankWith(6, isGcvePlainTagsControl),
-  },
+/*
+ * Renderers with no format-specific knowledge at all — generic
+ * schema-shape testers (booleans, long-text strings, any array) that
+ * apply identically regardless of which profile's schema they're
+ * matched against. Every profile includes these.
+ */
+export const COMMON_RENDERERS: JsonFormsRendererRegistryEntry[] = [
   /*
    * Rank 2 beats vanilla's own checkbox-based BooleanControlRenderer
    * (rank 1) for every boolean field — see BooleanSelectRenderer.vue
@@ -209,15 +167,94 @@ export const customRenderers: JsonFormsRendererRegistryEntry[] = [
    * (Descriptions, Credits, Timeline, supportingMedia, versions,
    * changes, ...) and primitive items alike (Cpes, Modules,
    * Program Files, Platforms, ...) — same card look and add/
-   * remove buttons as the three named renderers above, minus
-   * their field-specific curation. schemaTypeIs('array') is
-   * exactly what vanilla's own ArrayListRenderer tests for, so
-   * this covers its entire scope; rank 5 beats it (rank 2) but
-   * loses to the three named renderers (rank 10) wherever those
-   * apply instead.
+   * remove buttons as the named CVE renderers below, minus their
+   * field-specific curation. schemaTypeIs('array') is exactly what
+   * vanilla's own ArrayListRenderer tests for, so this covers its
+   * entire scope; rank 5 beats it (rank 2) but loses to the rank-10
+   * named renderers wherever those apply instead.
    */
   {
     renderer: ArrayCardRenderer,
     tester: rankWith(5, schemaTypeIs("array")),
   },
+];
+
+/*
+ * CVE Record Format 5.2.0-specific renderers — matched by schema
+ * shape/pattern or by an options.renderer tag that only ever appears
+ * in the CVE authoring schema's own layout config. A non-CVE-shaped
+ * profile (e.g. a future CSAF one) should not include these.
+ */
+export const CVE_RENDERERS: JsonFormsRendererRegistryEntry[] = [
+  {
+    renderer: AffectedRenderer,
+    tester: rendererOptionIs("vulniverse-affected"),
+  },
+  {
+    renderer: CpeApplicabilityRenderer,
+    tester: rendererOptionIs("vulniverse-cpe-applicability"),
+  },
+  {
+    renderer: MetricsRenderer,
+    tester: rendererOptionIs("vulniverse-metrics"),
+  },
+  {
+    renderer: ReferencesRenderer,
+    tester: rendererOptionIs("vulniverse-references"),
+  },
+  {
+    renderer: AdpRenderer,
+    tester: rendererOptionIs("vulniverse-adp"),
+  },
+  {
+    renderer: SourceRenderer,
+    tester: rendererOptionIs("vulniverse-source"),
+  },
+  {
+    renderer: TagsRenderer,
+    tester: rendererOptionIs("vulniverse-tags"),
+  },
+  {
+    renderer: ReferenceIdRenderer,
+    tester: rankWith(4, isReferenceIdControl),
+  },
+];
+
+/*
+ * GCVE-BCP-05-specific renderers. isGcvePlainTagsControl in
+ * particular matches by bare schema shape (a plain string array with
+ * no oneOf/enum) rather than by path, which is only safe to assume
+ * within a GCVE-shaped document — kept out of CVE_RENDERERS/
+ * COMMON_RENDERERS so a future non-GCVE profile can't have one of its
+ * own plain string arrays misrendered as a GCVE tags control.
+ */
+export const GCVE_RENDERERS: JsonFormsRendererRegistryEntry[] = [
+  {
+    renderer: GcveExtensionRenderer,
+    tester: rendererOptionIs("vulniverse-gcve-extension"),
+  },
+  /*
+   * Rank 6 beats ArrayCardRenderer's generic rank 5 for a plain
+   * tags-shaped array with no explicit uischema override — but
+   * never competes with the rank-10 options.renderer path
+   * containers.cna.tags/containers.adp[].tags use, since those are
+   * oneOf-shaped and isGcvePlainTagsControl only matches a plain
+   * string array.
+   */
+  {
+    renderer: GcveTagsRenderer,
+    tester: rankWith(6, isGcvePlainTagsControl),
+  },
+];
+
+/*
+ * Kept for compatibility — nothing in the editor itself uses this
+ * anymore (SchemaFormSection.vue reads renderers off the active
+ * profile instead, see profiles/*.ts), but an external consumer may
+ * still import it.
+ */
+export const customRenderers: JsonFormsRendererRegistryEntry[] = [
+  ...COMMON_RENDERERS,
+  ...CVE_RENDERERS,
+  ...GCVE_RENDERERS,
 ];

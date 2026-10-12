@@ -1,24 +1,10 @@
-import cveFieldPaths from "@/generated/schemas/cve-5.2.0/field-paths.json";
-
-/*
- * A single static catalog (the base CVE 5.2.0 profile) regardless of
- * which profile the current record actually uses — the Templates
- * section isn't otherwise profile-aware, and GCVE only adds an
- * `x_gcve` extension on top of the same CVE shape, so this still
- * covers the vast majority of useful suggestions. Worst case for a
- * GCVE-only field: no suggestion offered, same as today — typing
- * the path by hand always still works.
- */
+import {
+  getEditorProfile,
+} from "../../profiles";
 
 export interface PathSuggestion {
   path: string;
   title: string | null;
-}
-
-interface RawFieldPath {
-  path: string;
-  title: string | null;
-  type: string;
 }
 
 /*
@@ -36,23 +22,28 @@ function toConcretePath(
   return path.replace(/\[]/g, ".0");
 }
 
-const CATALOG: PathSuggestion[] = (cveFieldPaths as RawFieldPath[]).map(
-  (field) => ({
-    path: toConcretePath(field.path),
-    title: field.title,
-  }),
-);
-
 /**
  * Ranks exact-prefix matches first, then any other substring match
  * on the path or title, capped at `limit` so a broad query (e.g. a
  * single common letter) doesn't dump the whole catalog into the
- * dropdown.
+ * dropdown. Reads the active profile's own field catalog — a path
+ * suggestion is only meaningful relative to the schema the record
+ * currently being edited actually uses.
  */
 export function suggestPaths(
+  profileId: string,
   query: string,
   limit = 20,
 ): PathSuggestion[] {
+  const profile = getEditorProfile(profileId);
+
+  const catalog: PathSuggestion[] = profile.fieldPaths.map(
+    (field) => ({
+      path: toConcretePath(field.path),
+      title: field.title,
+    }),
+  );
+
   const term = query.trim().toLowerCase();
 
   if (!term) {
@@ -62,7 +53,7 @@ export function suggestPaths(
   const startsWith: PathSuggestion[] = [];
   const contains: PathSuggestion[] = [];
 
-  for (const entry of CATALOG) {
+  for (const entry of catalog) {
     if (entry.path.toLowerCase().startsWith(term)) {
       startsWith.push(entry);
     } else if (

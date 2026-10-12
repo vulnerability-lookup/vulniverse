@@ -3,8 +3,8 @@ export {
 } from "./JsonSection.vue";
 
 export {
-  default as PreviewSection,
-} from "./preview/PreviewSection.vue";
+  default as GenericPreviewSection,
+} from "./GenericPreviewSection.vue";
 
 export {
   default as RejectedRecordSection,

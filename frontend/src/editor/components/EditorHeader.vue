@@ -5,6 +5,7 @@ import { displayIdentifier } from "../identifier";
 
 defineProps<{
   canDelete: boolean;
+  canReject: boolean;
   identifier: string | null;
   profile: string | null;
   isDraft: boolean;
@@ -192,7 +193,7 @@ defineEmits<{
           </button>
         </template>
 
-        <template v-if="identifier && !isRejected">
+        <template v-if="identifier && canReject && !isRejected">
           <div
             class="vr d-none d-md-block"
             aria-hidden="true"

@@ -4,6 +4,7 @@ import {
 } from "vue";
 
 import type {
+  CveRecord,
   EditorContext,
 } from "../../contracts";
 
@@ -11,8 +12,14 @@ const props = defineProps<{
   context: EditorContext;
 }>();
 
+/*
+ * This example panel is CVE/GCVE-shaped (reads containers.cna
+ * directly) — safe only because it's always used against one of
+ * those two profiles today. A future non-CVE-shaped profile adding
+ * this panel would need its own stats panel instead.
+ */
 const cna = computed(() => {
-  return props.context.record.containers?.cna;
+  return (props.context.record as CveRecord).containers?.cna;
 });
 
 const descriptionsCount = computed(() => {

@@ -23,7 +23,12 @@ import {
   normalizeError,
 } from "./errors";
 
-import { createEmptyRecord, rejectRecord } from "./record";
+import { createEmptyRecord } from "./record";
+
+import {
+  DEFAULT_PROFILE_ID,
+  getEditorProfile,
+} from "../profiles";
 
 interface EditorControllerOptions {
   state: EditorState;
@@ -51,12 +56,34 @@ export function useEditorController(
     profile,
   } = options;
 
-  const isRejected = computed(
+  const activeProfile = computed(
     () =>
-      state.record.value
-        ?.cveMetadata
-        ?.state === "REJECTED",
+      getEditorProfile(
+        state.profile.value ??
+          profile.value ??
+          DEFAULT_PROFILE_ID,
+      ),
   );
+
+  const isRejected = computed(() => {
+    if (!state.record.value) {
+      return false;
+    }
+
+    return (
+      activeProfile.value.rejection?.isRejected(
+        state.record.value,
+      ) ?? false
+    );
+  });
+
+  const canReject = computed(() => {
+    return Boolean(
+      state.record.value
+        && activeProfile.value.rejection
+        && !isRejected.value,
+    );
+  });
 
   const canDelete = computed(
     () => Boolean(repository.value?.deleteRecord),
@@ -142,7 +169,7 @@ export function useEditorController(
         await repository.value.validateRecord(
           state.record.value,
           state.profile.value ??
-            "cve-5.2.0",
+            DEFAULT_PROFILE_ID,
         );
 
       state.validationErrors.value =
@@ -181,7 +208,7 @@ export function useEditorController(
 
     const currentProfile =
       state.profile.value ??
-      "cve-5.2.0";
+      DEFAULT_PROFILE_ID;
 
     try {
       const saved =
@@ -278,7 +305,15 @@ export function useEditorController(
       return;
     }
 
-    state.record.value = rejectRecord(
+    const rejection = activeProfile.value.rejection;
+
+    if (!rejection) {
+      throw new Error(
+        `Profile ${activeProfile.value.id} does not support rejection.`,
+      );
+    }
+
+    state.record.value = rejection.reject(
       state.record.value,
       reason,
     );
@@ -311,6 +346,7 @@ export function useEditorController(
 
   return {
     isRejected,
+    canReject,
     canDelete,
 
     load,

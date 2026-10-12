@@ -6,6 +6,7 @@ import {
 } from "vue";
 
 import type {
+  CveRecord,
   EditorContext,
   GcveExtension,
   PublicationTarget,
@@ -104,7 +105,7 @@ const reservedIdApplied = computed(() => {
   const reservedId = publication.value?.cveId;
 
   return !reservedId
-    || editor.record.value?.cveMetadata?.[targetIdField.value] === reservedId;
+    || (editor.record.value as CveRecord | null)?.cveMetadata?.[targetIdField.value] === reservedId;
 });
 
 const canReserve = computed(() => {
@@ -164,7 +165,7 @@ function applyReservedId(): boolean {
   }
 
   const reservedId = publication.value.cveId;
-  const record = editor.record.value;
+  const record = editor.record.value as CveRecord;
 
   record.cveMetadata ??= {};
   record.cveMetadata[targetIdField.value] = reservedId;

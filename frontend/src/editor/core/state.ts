@@ -4,17 +4,17 @@ import {
 } from "vue";
 
 import type {
+  EditorDocument,
   LoadedRecord,
   ValidationError,
-  VulnerabilityRecord,
 } from "../contracts";
 
 export function useEditorState() {
   const record =
-    ref<VulnerabilityRecord | null>(null);
+    ref<EditorDocument | null>(null);
 
   const originalRecord =
-    ref<VulnerabilityRecord | null>(null);
+    ref<EditorDocument | null>(null);
 
   const identifier =
     ref<string | null>(null);

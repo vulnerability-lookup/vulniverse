@@ -22,11 +22,15 @@ import {
 } from "./errors";
 
 import {
+  GenericPreviewSection,
   JsonSection,
-  PreviewSection,
-  RejectedRecordSection,
   SchemaFormSection,
 } from "../sections";
+
+import {
+  DEFAULT_PROFILE_ID,
+  getEditorProfile,
+} from "../profiles";
 
 interface EditorExtensionsOptions {
   state: EditorState;
@@ -61,7 +65,6 @@ const BUILTIN_SECTION_COMPONENTS:
   Record<string, Component> = {
     json: JsonSection,
     editor: SchemaFormSection,
-    preview: PreviewSection,
   };
 
 
@@ -76,6 +79,13 @@ export function useEditorExtensions(
     isRejected,
   } = options;
 
+  const activeProfile =
+    computed(() =>
+      getEditorProfile(
+        state.profile.value ?? DEFAULT_PROFILE_ID,
+      ),
+    );
+
   const context =
     computed<EditorContext>(() => ({
       identifier:
@@ -83,7 +93,7 @@ export function useEditorExtensions(
 
       profile:
         state.profile.value ??
-        "cve-5.2.0",
+        DEFAULT_PROFILE_ID,
 
       record:
         state.record.value ??
@@ -116,23 +126,33 @@ export function useEditorExtensions(
     const sectionComponents =
     computed<
       Record<string, Component>
-    >(() => ({
-      ...BUILTIN_SECTION_COMPONENTS,
+    >(() => {
+      const profile = activeProfile.value;
 
-      editor:
-        isRejected.value
-          ? RejectedRecordSection
-          : SchemaFormSection,
+      const editorComponent =
+        isRejected.value && profile.rejection?.editorComponent
+          ? profile.rejection.editorComponent
+          : SchemaFormSection;
 
-      ...Object.fromEntries(
-        visiblePanels.value.map(
-          (panel) => [
-            panel.id,
-            panel.component,
-          ],
+      const previewComponent =
+        profile.previewComponent ?? GenericPreviewSection;
+
+      return {
+        ...BUILTIN_SECTION_COMPONENTS,
+
+        editor: editorComponent,
+        preview: previewComponent,
+
+        ...Object.fromEntries(
+          visiblePanels.value.map(
+            (panel) => [
+              panel.id,
+              panel.component,
+            ],
+          ),
         ),
-      ),
-    }));
+      };
+    });
 
   const currentSection =
     computed(() =>

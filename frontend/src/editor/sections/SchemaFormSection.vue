@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   computed,
-  shallowRef,
   toRaw,
 } from "vue";
 
@@ -18,28 +17,8 @@ import {
 } from "../core/ajv";
 
 import {
-  customRenderers,
-} from "../renderers";
-
-import type {
-  JsonSchema,
-  UISchemaElement,
-} from "@jsonforms/core";
-
-import cveAuthoringSchema from
-  "@/generated/schemas/cve-5.2.0/authoring.schema.json";
-
-import cveUiSchema from
-  "@/generated/schemas/cve-5.2.0/ui.schema.json";
-
-import gcveAuthoringSchema from
-  "@/generated/schemas/gcve-bcp-05-1.7/authoring.schema.json";
-
-import gcveUiSchema from
-  "@/generated/schemas/gcve-bcp-05-1.7/ui.schema.json";
-
-import {
   DEFAULT_PROFILE_ID,
+  getEditorProfile,
 } from "../profiles";
 
 import {
@@ -47,48 +26,32 @@ import {
 } from "../core/context";
 
 import type {
-  VulnerabilityRecord,
+  EditorDocument,
 } from "../contracts";
 
 const editor = useEditorContext();
 
-/*
- * Vite needs statically-resolvable import paths, so this is a
- * two-entry literal map rather than a profile-keyed dynamic import —
- * appropriate for exactly the two profiles Vulniverse generates
- * schemas for today. Add an entry here (and a matching generated
- * schema pair) if a third profile is ever wired up.
- */
-const SCHEMA_PAIRS: Record<
-  string,
-  { schema: JsonSchema; uiSchema: UISchemaElement }
-> = {
-  "cve-5.2.0": {
-    schema: cveAuthoringSchema as JsonSchema,
-    uiSchema: cveUiSchema as UISchemaElement,
-  },
-  "gcve-bcp-05-1.7": {
-    schema: gcveAuthoringSchema as JsonSchema,
-    uiSchema: gcveUiSchema as UISchemaElement,
-  },
-};
-
-const activePair = computed(() => {
-  return (
-    SCHEMA_PAIRS[editor.profile.value ?? DEFAULT_PROFILE_ID]
-    ?? SCHEMA_PAIRS[DEFAULT_PROFILE_ID]!
+const activeProfile = computed(() => {
+  return getEditorProfile(
+    editor.profile.value ?? DEFAULT_PROFILE_ID,
   );
 });
 
-const schema = computed(() => activePair.value.schema);
-const uiSchema = computed(() => activePair.value.uiSchema);
+const schema = computed(() => activeProfile.value.schema);
+const uiSchema = computed(() => activeProfile.value.uiSchema);
 
-const renderers = shallowRef(
-  Object.freeze([
-    ...customRenderers,
-    ...vanillaRenderers,
-  ]),
-);
+/*
+ * Object.freeze opts this array out of Vue's reactivity proxying
+ * entirely (reactive() skips non-extensible objects) — without it,
+ * every renderer registry entry's component reference would get
+ * wrapped, which is exactly the "Vue made a component reactive"
+ * warning class markRaw() exists to avoid elsewhere (see
+ * profiles/*.ts's previewComponent/editorComponent).
+ */
+const renderers = computed(() => Object.freeze([
+  ...activeProfile.value.renderers,
+  ...vanillaRenderers,
+]));
 
 const formData = computed(() => {
   /*
@@ -105,7 +68,7 @@ const formData = computed(() => {
 });
 
 function handleChange(event: {
-  data: VulnerabilityRecord;
+  data: EditorDocument;
   errors?: unknown[];
 }): void {
   editor.record.value = event.data;

@@ -26,6 +26,10 @@ import type {
   PathSuggestion,
 } from "./path-catalog";
 
+import {
+  DEFAULT_PROFILE_ID,
+} from "../../profiles";
+
 import type {
   EditorContext,
   Template,
@@ -112,7 +116,10 @@ function pathSuggestionsFor(
     return [];
   }
 
-  return suggestPaths(draftFields.value[index]?.path ?? "");
+  return suggestPaths(
+    editor.profile.value ?? DEFAULT_PROFILE_ID,
+    draftFields.value[index]?.path ?? "",
+  );
 }
 
 function selectPathSuggestion(

@@ -2,6 +2,9 @@ import type {
   Component,
 } from "vue";
 
+export type EditorDocument =
+  Record<string, unknown>;
+
 export interface Description {
   lang: string;
   value: string;
@@ -67,7 +70,7 @@ export interface RecordContainers {
   [key: string]: unknown;
 }
 
-export interface VulnerabilityRecord {
+export interface CveRecord {
   dataType?: string;
   dataVersion?: string;
   cveMetadata?: CveMetadata;
@@ -81,10 +84,14 @@ export interface VulnerabilityRecord {
   [key: string]: unknown;
 }
 
+// ONLY for transition
+export type VulnerabilityRecord =
+  CveRecord;
+
 export interface LoadedRecord {
   identifier: string;
   profile: string;
-  record: VulnerabilityRecord;
+  record: EditorDocument;
   isDraft: boolean;
 }
 
@@ -164,20 +171,20 @@ export interface EditorRepository {
   ): Promise<LoadedRecord>;
 
   createRecord(
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord>;
 
   updateRecord(
     identifier: string,
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord>;
 
   validateRecord(
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
   ): Promise<ValidationResult>;
 
@@ -259,7 +266,7 @@ export interface EditorRepository {
 export interface EditorContext {
   identifier: string | null;
   profile: string;
-  record: VulnerabilityRecord;
+  record: EditorDocument;
   isDraft: boolean;
 }
 
