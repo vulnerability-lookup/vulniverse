@@ -1,6 +1,6 @@
 import type {
   GcveExtension,
-  VulnerabilityRecord,
+  CveRecord
 } from "../contracts";
 
 
@@ -75,7 +75,7 @@ export function findXGcveOccurrences(
 
 
 export function recordHasGcveId(
-  record: VulnerabilityRecord,
+  record: CveRecord,
 ): boolean {
   if (
     typeof record.cveMetadata

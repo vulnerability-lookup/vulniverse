@@ -1,5 +1,6 @@
 import type {
   CnaPublication,
+  EditorDocument,
   EditorRepository,
   LoadedRecord,
   PublicationTarget,
@@ -7,7 +8,6 @@ import type {
   Template,
   TemplateField,
   ValidationResult,
-  VulnerabilityRecord,
 } from "@/editor/contracts";
 
 import {
@@ -87,7 +87,7 @@ export class HttpRepository
   }
 
   async createRecord(
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
@@ -106,7 +106,7 @@ export class HttpRepository
 
   async updateRecord(
     identifier: string,
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
@@ -124,7 +124,7 @@ export class HttpRepository
   }
 
   async validateRecord(
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
   ): Promise<ValidationResult> {
     return this.request<ValidationResult>(

@@ -41,7 +41,7 @@ export type {
   EditorAction,
   EditorPanel,
   EditorRepository,
-  VulnerabilityRecord,
+  EditorDocument,
 } from "./editor/contracts";
 
 export {

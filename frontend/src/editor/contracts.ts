@@ -84,10 +84,6 @@ export interface CveRecord {
   [key: string]: unknown;
 }
 
-// ONLY for transition
-export type VulnerabilityRecord =
-  CveRecord;
-
 export interface LoadedRecord {
   identifier: string;
   profile: string;

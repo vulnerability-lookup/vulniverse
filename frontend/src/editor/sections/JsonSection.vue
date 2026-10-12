@@ -11,7 +11,7 @@ import {
 } from "../core/context";
 
 import type {
-  VulnerabilityRecord,
+  EditorDocument
 } from "../contracts";
 
 const editor = useEditorContext();
@@ -240,7 +240,7 @@ function apply(): void {
     }
 
     editor.record.value =
-      parsed as VulnerabilityRecord;
+      parsed as EditorDocument;
 
     parseError.value = null;
   } catch (error) {

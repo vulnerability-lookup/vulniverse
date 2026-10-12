@@ -12,7 +12,7 @@ import type {
 
 
 export const DEFAULT_PROFILE_ID =
-  "gcve-bcp-05-1";
+  "gcve-bcp-05-1.7";
 
 
 export const EDITOR_PROFILES:
