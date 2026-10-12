@@ -20,13 +20,15 @@ import CpeApplicabilityRenderer from "./CpeApplicabilityRenderer.vue";
 import MetricsRenderer from "./MetricsRenderer.vue";
 import ReferencesRenderer from "./ReferencesRenderer.vue";
 import AdpRenderer from "./AdpRenderer.vue";
-import GcveExtensionRenderer from "./GcveExtensionRenderer.vue";
 import SourceRenderer from "./SourceRenderer.vue";
 import TagsRenderer from "./TagsRenderer.vue";
-import GcveTagsRenderer from "./GcveTagsRenderer.vue";
 import ArrayCardRenderer from "./ArrayCardRenderer.vue";
 import BooleanSelectRenderer from "./BooleanSelectRenderer.vue";
 import ReferenceIdRenderer from "./ReferenceIdRenderer.vue";
+import {
+  GcveExtensionRenderer,
+  GcveTagsRenderer,
+} from "./gcve";
 
 import {
   referenceKindForPattern,

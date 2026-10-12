@@ -24,12 +24,14 @@ import type {
 
 import {
   useCollapsibleItems,
-} from "./use-collapsible-items";
+} from "../use-collapsible-items";
 
 import {
   extraGcveEntryFields,
   KNOWN_GCVE_ENTRY_KEYS,
-} from "../gcve";
+  RECORD_TYPE_PRESETS,
+  RELATIONSHIP_TYPE_PRESETS,
+} from "../../gcve";
 
 const extensionsSchema = computed((): JsonSchema | undefined => {
   const properties = control.value.schema?.properties;
@@ -263,36 +265,6 @@ const { isExpanded, toggle } = useCollapsibleItems(
   computed(() => items.value.length),
 );
 
-// recordType values GCVE-BCP-05 names explicitly. Shown as one-
-// click presets, not a hard enum — unknown values are still valid.
-const RECORD_TYPE_PRESETS = [
-  "creation",
-  "update",
-  "analysis",
-  "metadata",
-  "reference",
-  "comment",
-  "statement",
-  "remediation",
-  "deprecation",
-  "detection",
-  "translation",
-];
-
-// BCP-05's recommended VXREF-derived relationship types, mirroring
-// backend/.../record_validation.py's RECOMMENDED_RELATIONSHIP_TYPES
-// — unknown values are allowed but the backend warns about them.
-const RELATIONSHIP_TYPE_PRESETS = [
-  "possibly_related",
-  "related",
-  "not equal",
-  "equal",
-  "superset",
-  "subset",
-  "overlap",
-  "opposes",
-  "not_applicable",
-];
 
 function itemPath(
   index: number,
