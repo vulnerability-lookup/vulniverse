@@ -21,17 +21,12 @@ import {
   normalizeError,
 } from "./errors";
 
-import JsonSection from
-  "../sections/JsonSection.vue";
-
-import PreviewSection from
-  "../sections/PreviewSection.vue";
-
-import RejectedRecordSection from
-  "../sections/RejectedRecordSection.vue";
-
-import SchemaFormSection from
-  "../sections/SchemaFormSection.vue";
+import {
+  JsonSection,
+  PreviewSection,
+  RejectedRecordSection,
+  SchemaFormSection,
+} from "../sections";
 
 interface EditorExtensionsOptions {
   state: EditorState;
