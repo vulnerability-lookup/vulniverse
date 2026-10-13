@@ -19,7 +19,7 @@ import type {
 
 import {
   useCollapsibleItems,
-} from "./use-collapsible-items";
+} from "../common/use-collapsible-items";
 
 const props = defineProps({
   ...rendererProps<ControlElement>(),

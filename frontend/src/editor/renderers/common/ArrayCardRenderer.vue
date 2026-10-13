@@ -102,38 +102,6 @@ const cardBackgroundClass = computed(() => {
   return BACKGROUND_TINT_CLASSES[depth.value % BACKGROUND_TINT_CLASSES.length];
 });
 
-/*
- * A property shaped like {type: "array", items: {oneOf: [...]}} is
- * how every "tags" field in the CVE schema is defined (a free
- * "x_"-prefixed extension string, or one of a small fixed enum) —
- * confirmed to be exactly 3 occurrences in the whole schema
- * (reference.tags, cnaPublishedContainer.tags, adpContainer.tags),
- * all the same concept. Flattening it as a plain Control would fall
- * through to JSONForms' generic oneOf picker (confusing "oneOf-0"/
- * "oneOf-1" labels); routing it to TagsRenderer instead works no
- * matter how deeply this property is nested — e.g.
- * problemTypes[].descriptions[].references[].tags, reached only by
- * this renderer flattening itself recursively — since TagsRenderer
- * derives its known values straight from this same schema shape
- * rather than needing a per-path config entry.
- */
-function isTagsShaped(
-  propertySchema: JsonSchema | undefined,
-): boolean {
-  const schema = propertySchema as Record<string, unknown> | undefined;
-
-  if (!schema || schema.type !== "array") {
-    return false;
-  }
-
-  const items = schema.items;
-
-  return (
-    !!items
-    && typeof items === "object"
-    && Array.isArray((items as Record<string, unknown>).oneOf)
-  );
-}
 
 /*
  * @jsonforms/core's Generate.uiSchema — what findUISchema falls
@@ -196,14 +164,7 @@ const childUiSchema = computed((): UISchemaElement => {
       type: "Control",
       scope: `#/properties/${key}`,
       options: {
-        // Propagated so a nested array reached through this
-        // property (dispatching to another ArrayCardRenderer
-        // instance) knows it's one level deeper than this one —
-        // see the depth computed above.
         depth: depth.value + 1,
-        ...(isTagsShaped(properties[key])
-          ? { renderer: "vulniverse-tags" }
-          : {}),
       },
     })),
   };

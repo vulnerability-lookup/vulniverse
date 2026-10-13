@@ -1,7 +1,7 @@
 import type {
   EditorRepository,
   ReferenceListItem,
-} from "../../contracts";
+} from "../../../contracts";
 
 export const CWE_ID_PATTERN = "^CWE-[1-9][0-9]*$";
 export const CAPEC_ID_PATTERN = "^CAPEC-[1-9][0-9]{0,4}$";

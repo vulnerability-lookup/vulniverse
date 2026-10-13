@@ -21,7 +21,7 @@ import {
 
 import {
   useEditorRepository,
-} from "../../core/context";
+} from "../../../core/context";
 
 import {
   loadReferenceList,
@@ -30,7 +30,7 @@ import {
 
 import type {
   ReferenceListItem,
-} from "../../contracts";
+} from "../../../contracts";
 
 const props = defineProps({
   ...rendererProps<ControlElement>(),
