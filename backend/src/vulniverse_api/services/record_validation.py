@@ -13,29 +13,20 @@ from jsonschema.exceptions import ValidationError
 from jsonschema.protocols import Validator
 from jsonschema.validators import validator_for
 
-PROJECT_ROOT = Path(__file__).parents[4]
-
-SCHEMAS_ROOT = PROJECT_ROOT / "schemas"
-
-MANIFEST_PATH = SCHEMAS_ROOT / "manifest.json"
-
-GCVE_EXTENSION_REGISTRY_PATH = (
-    SCHEMAS_ROOT
-    / "extensions"
-    / "gcve"
-    / "registry.json"
+from .profiles import (
+    SCHEMAS_ROOT,
+    UnknownProfileError,
+    resolve_profile,
+    known_profiles
 )
 
 
-class UnknownProfileError(ValueError):
-    """Raised for a profile id that isn't declared in schemas/manifest.json."""
+GCVE_EXTENSION_REGISTRY_PATH = SCHEMAS_ROOT / "extensions" / "gcve" / "registry.json"
 
 
 @lru_cache(maxsize=1)
 def get_gcve_extension_validators() -> dict[str, Validator]:
-    with GCVE_EXTENSION_REGISTRY_PATH.open(
-        encoding="utf-8"
-    ) as registry_file:
+    with GCVE_EXTENSION_REGISTRY_PATH.open(encoding="utf-8") as registry_file:
         registry = json.load(registry_file)
 
     validators: dict[str, Validator] = {}
@@ -49,9 +40,7 @@ def get_gcve_extension_validators() -> dict[str, Validator]:
         if not isinstance(schema_path, str):
             continue
 
-        with (SCHEMAS_ROOT / schema_path).open(
-            encoding="utf-8"
-        ) as schema_file:
+        with (SCHEMAS_ROOT / schema_path).open(encoding="utf-8") as schema_file:
             schema = json.load(schema_file)
 
         validator_class = validator_for(schema)
@@ -63,27 +52,6 @@ def get_gcve_extension_validators() -> dict[str, Validator]:
         )
 
     return validators
-
-
-@lru_cache(maxsize=1)
-def load_manifest() -> dict[str, Any]:
-    with MANIFEST_PATH.open(encoding="utf-8") as manifest_file:
-        return json.load(manifest_file)
-
-
-def resolve_profile(profile_id: str) -> dict[str, Any]:
-    profiles = load_manifest().get("profiles", {})
-
-    profile = profiles.get(profile_id)
-
-    if not isinstance(profile, dict):
-        raise UnknownProfileError(profile_id)
-
-    return profile
-
-
-def known_profiles() -> set[str]:
-    return set(load_manifest().get("profiles", {}))
 
 
 def deep_merge_properties(
@@ -112,58 +80,158 @@ def deep_merge_properties(
     return merged
 
 
-def load_overlay(profile_id: str) -> dict[str, Any] | None:
-    """
-    Profile-specific schema overlay, e.g. schemas/overlays/<profile_id>.json.
-    Looked up by filename convention (not a manifest field) because
-    schemas/manifest.json gets regenerated wholesale by
-    scripts/update_schemas.py — a manifest-declared pointer wouldn't
-    survive that. See CLAUDE.md's note on schemas/overlays/.
-    """
-    overlay_path = SCHEMAS_ROOT / "overlays" / f"{profile_id}.json"
+def apply_schema_overlay(
+    schema: dict[str, Any],
+    profile: dict[str, Any],
+) -> dict[str, Any]:
+    overlay_config = profile.get("schemaOverlay")
 
-    if not overlay_path.exists():
-        return None
+    if overlay_config is None:
+        return schema
 
-    with overlay_path.open(encoding="utf-8") as overlay_file:
-        return json.load(overlay_file)
+    if not isinstance(
+        overlay_config,
+        dict,
+    ):
+        raise ValueError("schemaOverlay must be an object.")
+
+    overlay_path = overlay_config.get("path")
+
+    if not isinstance(
+        overlay_path,
+        str,
+    ):
+        raise ValueError("schemaOverlay.path must be a string.")
+
+    with (SCHEMAS_ROOT / overlay_path).open(
+        encoding="utf-8",
+    ) as overlay_file:
+        overlay = json.load(overlay_file)
+
+    if not isinstance(
+        overlay,
+        dict,
+    ):
+        raise ValueError("Schema overlay root must be an object.")
+
+    apply_to = overlay_config.get(
+        "applyTo",
+        "root",
+    )
+
+    if apply_to == "root":
+        return deep_merge_properties(
+            schema,
+            overlay,
+        )
+
+    if apply_to == "rootOneOfBranches":
+        branches = schema.get("oneOf")
+
+        if not isinstance(
+            branches,
+            list,
+        ):
+            raise ValueError(
+                "schemaOverlay.applyTo=rootOneOfBranches requires a root oneOf."
+            )
+
+        result = copy.deepcopy(schema)
+
+        result_branches = result["oneOf"]
+
+        for index, branch in enumerate(result_branches):
+            if not isinstance(
+                branch,
+                dict,
+            ):
+                continue
+
+            result_branches[index] = deep_merge_properties(
+                branch,
+                overlay,
+            )
+
+        return result
+
+    raise ValueError(f"Unsupported schemaOverlay.applyTo value: {apply_to!r}")
 
 
 @lru_cache(maxsize=8)
-def get_cve_validator(profile_id: str) -> Validator:
+def get_profile_validator(
+    profile_id: str,
+) -> Validator:
     profile = resolve_profile(profile_id)
 
     base_schema_path = profile.get("baseSchema")
 
-    if not isinstance(base_schema_path, str):
-        raise UnknownProfileError(profile_id)
+    if not isinstance(
+        base_schema_path,
+        str,
+    ):
+        raise ValueError(f"Profile {profile_id!r} has no baseSchema.")
 
     with (SCHEMAS_ROOT / base_schema_path).open(
         encoding="utf-8",
     ) as schema_file:
         schema = json.load(schema_file)
 
-    overlay = load_overlay(profile_id)
+    if not isinstance(
+        schema,
+        dict,
+    ):
+        raise ValueError(f"Schema for {profile_id!r} is not an object.")
 
-    if overlay:
-        overlay_properties = overlay.get("properties", {})
-
-        # Merge into every root oneOf branch (Published/Rejected) so
-        # the overlaid property is legal regardless of which branch a
-        # submitted record actually matches. cve-5.2.0 has no overlay
-        # file, so its compiled validator is unaffected.
-        for branch in schema.get("oneOf") or [schema]:
-            branch["properties"] = deep_merge_properties(
-                branch.get("properties", {}),
-                overlay_properties,
-            )
+    schema = apply_schema_overlay(
+        schema,
+        profile,
+    )
 
     validator_class = validator_for(schema)
+
     validator_class.check_schema(schema)
 
     return validator_class(
         schema,
         format_checker=FormatChecker(),
+    )
+
+
+def preferred_root_branch(
+    profile: dict[str, Any],
+) -> tuple[str, int] | None:
+    validation = profile.get("validation")
+
+    if not isinstance(
+        validation,
+        dict,
+    ):
+        return None
+
+    preferred = validation.get("preferredRootBranch")
+
+    if not isinstance(
+        preferred,
+        dict,
+    ):
+        return None
+
+    keyword = preferred.get("keyword")
+
+    index = preferred.get("index")
+
+    if not isinstance(
+        keyword,
+        str,
+    ) or not isinstance(
+        index,
+        int,
+    ):
+        return None
+
+    return (
+        keyword,
+        index,
     )
 
 
@@ -294,10 +362,7 @@ def expand_composite_error(
     non_miss_keys = [
         key
         for key, branch_errors in branches.items()
-        if not any(
-            is_discriminator_miss(sub_error)
-            for sub_error in branch_errors
-        )
+        if not any(is_discriminator_miss(sub_error) for sub_error in branch_errors)
     ]
 
     if non_miss_keys:
@@ -428,23 +493,21 @@ def validate_gcve_semantics(
 
             if extensions is not None:
                 if not isinstance(extensions, dict):
-                    errors.append({
-                        "path": [
-                            *entry_path,
-                            "extensions",
-                        ],
-                        "schemaPath": [],
-                        "message": (
-                            "extensions must be an object."
-                        ),
-                        "validator": "gcve-extension",
-                        "severity": "error",
-                    })
+                    errors.append(
+                        {
+                            "path": [
+                                *entry_path,
+                                "extensions",
+                            ],
+                            "schemaPath": [],
+                            "message": ("extensions must be an object."),
+                            "validator": "gcve-extension",
+                            "severity": "error",
+                        }
+                    )
                 else:
                     for extension_id, extension_value in extensions.items():
-                        extension_validator = extension_validators.get(
-                            extension_id
-                        )
+                        extension_validator = extension_validators.get(extension_id)
 
                         # Unknown extensions remain valid /
                         # forward-compatible.
@@ -454,9 +517,7 @@ def validate_gcve_semantics(
                         for schema_error in extension_validator.iter_errors(
                             extension_value
                         ):
-                            for expanded in expand_composite_error(
-                                schema_error
-                            ):
+                            for expanded in expand_composite_error(schema_error):
                                 errors.append(
                                     shape_error(
                                         expanded,
@@ -470,35 +531,32 @@ def validate_gcve_semantics(
             record_type = entry.get("recordType")
             relationships = entry.get("relationships")
 
-            if (
-                record_type in MANDATORY_RELATIONSHIP_RECORD_TYPES
-                and not relationships
-            ):
-                errors.append({
-                    "path": [*entry_path, "relationships"],
-                    "schemaPath": [],
-                    "message": (
-                        f"recordType {record_type!r} requires a "
-                        "non-empty relationships array."
-                    ),
-                    "validator": "gcve-bcp-05",
-                    "severity": "error",
-                })
+            if record_type in MANDATORY_RELATIONSHIP_RECORD_TYPES and not relationships:
+                errors.append(
+                    {
+                        "path": [*entry_path, "relationships"],
+                        "schemaPath": [],
+                        "message": (
+                            f"recordType {record_type!r} requires a "
+                            "non-empty relationships array."
+                        ),
+                        "validator": "gcve-bcp-05",
+                        "severity": "error",
+                    }
+                )
 
-            if (
-                record_type == "translation"
-                and not entry.get("language")
-            ):
-                errors.append({
-                    "path": [*entry_path, "language"],
-                    "schemaPath": [],
-                    "message": (
-                        "recordType 'translation' requires a "
-                        "language field."
-                    ),
-                    "validator": "gcve-bcp-05",
-                    "severity": "error",
-                })
+            if record_type == "translation" and not entry.get("language"):
+                errors.append(
+                    {
+                        "path": [*entry_path, "language"],
+                        "schemaPath": [],
+                        "message": (
+                            "recordType 'translation' requires a language field."
+                        ),
+                        "validator": "gcve-bcp-05",
+                        "severity": "error",
+                    }
+                )
 
             if not isinstance(relationships, list):
                 continue
@@ -513,25 +571,26 @@ def validate_gcve_semantics(
 
                 if (
                     relationship_type is not None
-                    and relationship_type
-                    not in RECOMMENDED_RELATIONSHIP_TYPES
+                    and relationship_type not in RECOMMENDED_RELATIONSHIP_TYPES
                 ):
-                    errors.append({
-                        "path": [
-                            *entry_path,
-                            "relationships",
-                            relationship_index,
-                            "type",
-                        ],
-                        "schemaPath": [],
-                        "message": (
-                            f"{relationship_type!r} is not one of "
-                            "the BCP-05 recommended relationship "
-                            "types."
-                        ),
-                        "validator": "gcve-bcp-05",
-                        "severity": "warning",
-                    })
+                    errors.append(
+                        {
+                            "path": [
+                                *entry_path,
+                                "relationships",
+                                relationship_index,
+                                "type",
+                            ],
+                            "schemaPath": [],
+                            "message": (
+                                f"{relationship_type!r} is not one of "
+                                "the BCP-05 recommended relationship "
+                                "types."
+                            ),
+                            "validator": "gcve-bcp-05",
+                            "severity": "warning",
+                        }
+                    )
 
     return errors
 
@@ -551,36 +610,42 @@ def validate_record(
     record: dict[str, Any],
     profile_id: str,
 ) -> list[dict[str, Any]]:
-    if profile_id not in known_profiles():
-        raise UnknownProfileError(profile_id)
+    profile = resolve_profile(profile_id)
 
-    validator = get_cve_validator(profile_id)
+    validator = get_profile_validator(profile_id)
+
+    tie_break_key = preferred_root_branch(profile)
 
     base_errors: list[ValidationError] = []
 
     for error in validator.iter_errors(record):
-        # Every profile shares the same root oneOf (Published then
-        # Rejected) from the base CVE schema, so ("oneOf", 0) —
-        # Published — is always the right tie-break to prefer when
-        # cveMetadata.state hasn't been set at all yet (e.g. a
-        # freshly created draft).
         base_errors.extend(
-            expand_composite_error(error, tie_break_key=("oneOf", 0)),
+            expand_composite_error(
+                error,
+                tie_break_key=tie_break_key,
+            )
         )
 
     errors = [shape_error(error) for error in base_errors]
 
-    semantic_validator_id = resolve_profile(profile_id).get(
-        "semanticValidator",
-    )
+    semantic_validator_id = profile.get("semanticValidator")
+
     semantic_validator = (
         SEMANTIC_VALIDATORS.get(semantic_validator_id)
-        if isinstance(semantic_validator_id, str)
+        if isinstance(
+            semantic_validator_id,
+            str,
+        )
         else None
     )
 
     if semantic_validator:
-        errors.extend(semantic_validator(record, profile_id))
+        errors.extend(
+            semantic_validator(
+                record,
+                profile_id,
+            )
+        )
 
     errors.sort(key=lambda error: error["path"])
 

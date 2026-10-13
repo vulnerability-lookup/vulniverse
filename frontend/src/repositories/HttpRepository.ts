@@ -158,10 +158,12 @@ export class HttpRepository
     return result.items;
   }
 
-  async listTemplates(): Promise<Template[]> {
+  async listTemplates(
+    profile: string,
+  ): Promise<Template[]> {
     const result = await this.request<{
-      templates: Array<{ id: number; name: string; fields: TemplateField[] }>;
-    }>("/templates");
+      templates: Array<{ id: number; profile: string; name: string; fields: TemplateField[] }>;
+    }>(`/templates?profile=${encodeURIComponent(profile)}`);
 
     return result.templates.map((template) => ({
       ...template,
@@ -170,14 +172,15 @@ export class HttpRepository
   }
 
   async saveTemplate(
+    profile: string,
     name: string,
     fields: TemplateField[],
   ): Promise<Template> {
-    const result = await this.request<{ id: number; name: string; fields: TemplateField[] }>(
+    const result = await this.request<{ id: number; profile: string; name: string; fields: TemplateField[] }>(
       "/templates",
       {
         method: "POST",
-        body: JSON.stringify({ name, fields }),
+        body: JSON.stringify({ profile, name, fields }),
       },
     );
 
@@ -189,7 +192,7 @@ export class HttpRepository
     name: string,
     fields: TemplateField[],
   ): Promise<Template> {
-    const result = await this.request<{ id: number; name: string; fields: TemplateField[] }>(
+    const result = await this.request<{ id: number; profile: string; name: string; fields: TemplateField[] }>(
       `/templates/${encodeURIComponent(id)}`,
       {
         method: "PUT",

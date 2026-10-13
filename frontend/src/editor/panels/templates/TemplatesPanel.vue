@@ -66,7 +66,9 @@ async function loadTemplates(): Promise<void> {
   actionError.value = null;
 
   try {
-    templates.value = await repository.value.listTemplates();
+    templates.value = await repository.value.listTemplates(
+      editor.profile.value ?? DEFAULT_PROFILE_ID,
+    );
     loadState.value = "loaded";
   } catch (error) {
     loadState.value = "error";
@@ -249,7 +251,11 @@ async function submitDraft(): Promise<void> {
         return;
       }
 
-      await repository.value.saveTemplate(name, fields);
+      await repository.value.saveTemplate(
+        editor.profile.value ?? DEFAULT_PROFILE_ID,
+        name,
+        fields,
+      );
       statusMessage.value = "Template saved.";
     }
 

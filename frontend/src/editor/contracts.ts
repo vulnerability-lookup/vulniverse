@@ -135,6 +135,7 @@ export interface TemplateField {
 
 export interface Template {
   id: string;
+  profile: string;
   name: string;
   fields: TemplateField[];
 }
@@ -204,10 +205,18 @@ export interface EditorRepository {
    * no per-user storage at all), in which case the Templates
    * section shows a "not supported here" message instead of the
    * create/apply UI — nothing else in the editor depends on this.
+   * Templates belong to the profile they were captured from (a CVE
+   * path like containers.cna.affected.0.vendor makes no sense
+   * offered against a differently-shaped profile), so listing/
+   * creating both take the active profile explicitly rather than
+   * returning/accepting every template regardless of shape.
    */
-  listTemplates?(): Promise<Template[]>;
+  listTemplates?(
+    profile: string,
+  ): Promise<Template[]>;
 
   saveTemplate?(
+    profile: string,
     name: string,
     fields: TemplateField[],
   ): Promise<Template>;

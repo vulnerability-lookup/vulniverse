@@ -7,10 +7,12 @@ def create_template(
     client: FlaskClient,
     name: str = "Acme Widget",
     fields: list[dict] | None = None,
+    profile: str = "cve-5.2.0",
 ):
     return client.post(
         "/api/v1/templates",
         json={
+            "profile": profile,
             "name": name,
             "fields": fields if fields is not None else [
                 {"path": "containers.cna.affected.0.vendor", "value": "Acme"},
@@ -20,6 +22,13 @@ def create_template(
     )
 
 
+def list_templates(
+    client: FlaskClient,
+    profile: str = "cve-5.2.0",
+):
+    return client.get(f"/api/v1/templates?profile={profile}")
+
+
 def test_create_template_returns_201_with_id(client: FlaskClient) -> None:
     response = create_template(client)
 
@@ -27,12 +36,31 @@ def test_create_template_returns_201_with_id(client: FlaskClient) -> None:
 
     body = response.get_json()
 
+    assert body["profile"] == "cve-5.2.0"
     assert body["name"] == "Acme Widget"
     assert body["fields"] == [
         {"path": "containers.cna.affected.0.vendor", "value": "Acme"},
         {"path": "containers.cna.affected.0.product", "value": "Widget"},
     ]
     assert isinstance(body["id"], int)
+
+
+def test_create_template_requires_profile(client: FlaskClient) -> None:
+    response = client.post(
+        "/api/v1/templates",
+        json={
+            "name": "Acme Widget",
+            "fields": [{"path": "vendor", "value": "Acme"}],
+        },
+    )
+
+    assert response.status_code == 400
+
+
+def test_create_template_rejects_unknown_profile(client: FlaskClient) -> None:
+    response = create_template(client, profile="not-a-real-profile")
+
+    assert response.status_code == 400
 
 
 def test_create_template_requires_non_empty_name(client: FlaskClient) -> None:
@@ -54,7 +82,7 @@ def test_create_template_requires_a_json_object(client: FlaskClient) -> None:
 def test_create_template_rejects_non_list_fields(client: FlaskClient) -> None:
     response = client.post(
         "/api/v1/templates",
-        json={"name": "Bad", "fields": "not a list"},
+        json={"profile": "cve-5.2.0", "name": "Bad", "fields": "not a list"},
     )
 
     assert response.status_code == 400
@@ -63,7 +91,7 @@ def test_create_template_rejects_non_list_fields(client: FlaskClient) -> None:
 def test_create_template_rejects_field_without_path(client: FlaskClient) -> None:
     response = client.post(
         "/api/v1/templates",
-        json={"name": "Bad", "fields": [{"value": "Acme"}]},
+        json={"profile": "cve-5.2.0", "name": "Bad", "fields": [{"value": "Acme"}]},
     )
 
     assert response.status_code == 400
@@ -72,7 +100,7 @@ def test_create_template_rejects_field_without_path(client: FlaskClient) -> None
 def test_create_template_rejects_field_without_value(client: FlaskClient) -> None:
     response = client.post(
         "/api/v1/templates",
-        json={"name": "Bad", "fields": [{"path": "vendor"}]},
+        json={"profile": "cve-5.2.0", "name": "Bad", "fields": [{"path": "vendor"}]},
     )
 
     assert response.status_code == 400
@@ -91,14 +119,37 @@ def test_create_template_allows_falsy_values(client: FlaskClient) -> None:
     assert response.status_code == 201
 
 
+def test_list_templates_requires_profile(client: FlaskClient) -> None:
+    response = client.get("/api/v1/templates")
+
+    assert response.status_code == 400
+
+
 def test_list_templates_orders_by_name(client: FlaskClient) -> None:
     create_template(client, name="Zebra Tool")
     create_template(client, name="Acme Widget")
 
-    response = client.get("/api/v1/templates")
+    response = list_templates(client)
     names = [template["name"] for template in response.get_json()["templates"]]
 
     assert names == ["Acme Widget", "Zebra Tool"]
+
+
+def test_list_templates_filters_by_profile(client: FlaskClient) -> None:
+    create_template(client, name="CVE Template", profile="cve-5.2.0")
+    create_template(client, name="GCVE Template", profile="gcve-bcp-05-1.7")
+
+    cve_names = [
+        template["name"]
+        for template in list_templates(client, profile="cve-5.2.0").get_json()["templates"]
+    ]
+    gcve_names = [
+        template["name"]
+        for template in list_templates(client, profile="gcve-bcp-05-1.7").get_json()["templates"]
+    ]
+
+    assert cve_names == ["CVE Template"]
+    assert gcve_names == ["GCVE Template"]
 
 
 def test_update_template_changes_name_and_fields(client: FlaskClient) -> None:
@@ -122,7 +173,7 @@ def test_update_template_changes_name_and_fields(client: FlaskClient) -> None:
         {"path": "containers.cna.affected.0.vendor", "value": "NewCo"},
     ]
 
-    listed = client.get("/api/v1/templates").get_json()["templates"]
+    listed = list_templates(client).get_json()["templates"]
 
     assert len(listed) == 1
     assert listed[0]["name"] == "Renamed Tool"
@@ -166,7 +217,7 @@ def test_delete_template_removes_it(client: FlaskClient) -> None:
 
     assert response.status_code == 200
 
-    remaining = client.get("/api/v1/templates").get_json()["templates"]
+    remaining = list_templates(client).get_json()["templates"]
 
     assert remaining == []
 

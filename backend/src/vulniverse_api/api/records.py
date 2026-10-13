@@ -11,8 +11,10 @@ from ..extensions import db
 from ..models import CnaPublication, VulnerabilityRecord
 from ..services.record_validation import (
     find_x_gcve_occurrences,
-    known_profiles,
     validate_record,
+)
+from ..services.record_validation import (
+    known_profiles,
 )
 from . import api_bp
 
