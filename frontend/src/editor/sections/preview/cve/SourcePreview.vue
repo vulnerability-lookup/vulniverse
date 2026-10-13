@@ -16,7 +16,7 @@ import {
   formatValue,
   formatValueJson,
   isComplexValue,
-} from "./utils";
+} from "../common/utils";
 
 
 defineProps<{

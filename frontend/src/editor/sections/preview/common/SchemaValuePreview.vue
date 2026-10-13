@@ -1,18 +1,4 @@
 <script setup lang="ts">
-/**
- * Recursively renders any JSON value (from a GCVE extension, whose
- * real shape now lives in schemas/extensions/gcve/registry.json — see
- * gcve.ts's findGcveExtensionSchemas()) as labeled fields instead of
- * a raw JSON dump, going as deep as the data actually goes.
- *
- * Driven by the *value*, not the schema: a field the schema doesn't
- * describe (e.g. bcp-05-x-02's required-but-undefined credits/
- * weaknessRationale/capecRationale — see gcve-bcp-05-x-02/1.0/
- * schema.json) still renders as labeled structure, just with a
- * humanized key instead of a schema-derived title. The schema is
- * only ever used for nicer titles/enum-aware bits when present, never
- * as a gate on whether something is shown at all.
- */
 type AnyRecord = Record<string, unknown>;
 type AnySchema = Record<string, unknown> | undefined;
 

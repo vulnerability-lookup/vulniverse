@@ -15,9 +15,7 @@ from helper.json import load_json_object, write_json
 
 JsonObject = dict[str, Any]
 
-console = Console(
-    "vulniverse-schema-generator"
-)
+console = Console("vulniverse-schema-generator")
 
 
 class GenerationError(ScriptError):
@@ -27,16 +25,9 @@ class GenerationError(ScriptError):
 def load_gcve_extension_schemas(
     schemas_root: Path,
 ) -> dict[str, JsonObject]:
-    registry_path = (
-        schemas_root
-        / "extensions"
-        / "gcve"
-        / "registry.json"
-    )
+    registry_path = schemas_root / "extensions" / "gcve" / "registry.json"
 
-    registry = load_json_object(
-        registry_path
-    )
+    registry = load_json_object(registry_path)
 
     result: dict[
         str,
@@ -49,28 +40,18 @@ def load_gcve_extension_schemas(
             dict,
         ):
             raise GenerationError(
-                "Invalid GCVE extension configuration: "
-                f"{extension_id}"
+                f"Invalid GCVE extension configuration: {extension_id}"
             )
 
-        schema_value = config.get(
-            "schema"
-        )
+        schema_value = config.get("schema")
 
         if not isinstance(
             schema_value,
             str,
         ):
-            raise GenerationError(
-                f"{extension_id} has no schema path."
-            )
+            raise GenerationError(f"{extension_id} has no schema path.")
 
-        extension_schema = (
-            load_json_object(
-                schemas_root
-                / schema_value
-            )
-        )
+        extension_schema = load_json_object(schemas_root / schema_value)
 
         # The schema is embedded below another root schema.
         extension_schema.pop(
@@ -83,11 +64,41 @@ def load_gcve_extension_schemas(
             None,
         )
 
-        result[
-            extension_id
-        ] = extension_schema
+        result[extension_id] = extension_schema
 
     return result
+
+
+def write_gcve_frontend_extension_schemas(
+    project_root: Path,
+    schemas_root: Path,
+) -> None:
+    """
+    Generate the frontend's profile-independent GCVE extension
+    schema registry.
+
+    The same registered extension schemas are used both when
+    augmenting GCVE authoring schemas and when rendering extension
+    values in the read-only preview.
+    """
+
+    extension_schemas = load_gcve_extension_schemas(schemas_root)
+
+    output_path = (
+        project_root
+        / "frontend"
+        / "src"
+        / "generated"
+        / "gcve"
+        / "extension-schemas.json"
+    )
+
+    write_json(
+        output_path,
+        extension_schemas,
+    )
+
+    console.info("Generated GCVE extension schema bundle.")
 
 
 def add_gcve_extension_schemas(
@@ -115,51 +126,41 @@ def add_gcve_extension_schemas(
     ):
         return
 
-    properties = node.get(
-        "properties"
-    )
+    properties = node.get("properties")
 
     if isinstance(
         properties,
         dict,
     ):
-        x_gcve = properties.get(
-            "x_gcve"
-        )
+        x_gcve = properties.get("x_gcve")
 
         if isinstance(
             x_gcve,
             dict,
         ):
-            items = x_gcve.get(
-                "items"
-            )
+            items = x_gcve.get("items")
 
             if isinstance(
                 items,
                 dict,
             ):
-                item_properties = (
-                    items.setdefault(
-                        "properties",
-                        {},
-                    )
+                item_properties = items.setdefault(
+                    "properties",
+                    {},
                 )
 
                 if isinstance(
                     item_properties,
                     dict,
                 ):
-                    extensions = (
-                        item_properties.setdefault(
-                            "extensions",
-                            {
-                                "type": "object",
-                                "title": "GCVE extensions",
-                                "properties": {},
-                                "additionalProperties": True,
-                            },
-                        )
+                    extensions = item_properties.setdefault(
+                        "extensions",
+                        {
+                            "type": "object",
+                            "title": "GCVE extensions",
+                            "properties": {},
+                            "additionalProperties": True,
+                        },
                     )
 
                     if not isinstance(
@@ -170,11 +171,9 @@ def add_gcve_extension_schemas(
                             "GCVE extensions schema is not an object."
                         )
 
-                    extension_properties = (
-                        extensions.setdefault(
-                            "properties",
-                            {},
-                        )
+                    extension_properties = extensions.setdefault(
+                        "properties",
+                        {},
                     )
 
                     if not isinstance(
@@ -189,16 +188,10 @@ def add_gcve_extension_schemas(
                         extension_id,
                         schema,
                     ) in extension_schemas.items():
-                        extension_properties[
-                            extension_id
-                        ] = copy.deepcopy(
-                            schema
-                        )
+                        extension_properties[extension_id] = copy.deepcopy(schema)
 
                     # Unknown future extensions must survive.
-                    extensions[
-                        "additionalProperties"
-                    ] = True
+                    extensions["additionalProperties"] = True
 
     for child in node.values():
         add_gcve_extension_schemas(
@@ -212,11 +205,7 @@ def augment_gcve_extensions(
     schemas_root: Path,
     _profile: JsonObject,
 ) -> None:
-    extension_schemas = (
-        load_gcve_extension_schemas(
-            schemas_root
-        )
-    )
+    extension_schemas = load_gcve_extension_schemas(schemas_root)
 
     add_gcve_extension_schemas(
         authoring_schema,
@@ -238,24 +227,19 @@ EDITOR_AUGMENTERS: dict[
     str,
     EditorAugmenter,
 ] = {
-    "gcve-extensions":
-        augment_gcve_extensions,
+    "gcve-extensions": augment_gcve_extensions,
 }
 
 
 def decode_pointer_token(
     token: str,
 ) -> str:
-    return (
-        token
-        .replace(
-            "~1",
-            "/",
-        )
-        .replace(
-            "~0",
-            "~",
-        )
+    return token.replace(
+        "~1",
+        "/",
+    ).replace(
+        "~0",
+        "~",
     )
 
 
@@ -266,60 +250,38 @@ def resolve_json_pointer(
     if pointer == "#":
         return document
 
-    if not pointer.startswith(
-        "#/"
-    ):
-        raise GenerationError(
-            "Only local JSON references are supported: "
-            f"{pointer}"
-        )
+    if not pointer.startswith("#/"):
+        raise GenerationError(f"Only local JSON references are supported: {pointer}")
 
     current = document
 
-    for raw_token in (
-        pointer[2:].split("/")
-    ):
-        token = decode_pointer_token(
-            raw_token
-        )
+    for raw_token in pointer[2:].split("/"):
+        token = decode_pointer_token(raw_token)
 
         if isinstance(
             current,
             dict,
         ):
             if token not in current:
-                raise GenerationError(
-                    "Reference does not exist: "
-                    f"{pointer}"
-                )
+                raise GenerationError(f"Reference does not exist: {pointer}")
 
-            current = current[
-                token
-            ]
+            current = current[token]
 
         elif isinstance(
             current,
             list,
         ):
             try:
-                current = current[
-                    int(token)
-                ]
+                current = current[int(token)]
 
             except (
                 ValueError,
                 IndexError,
             ) as error:
-                raise GenerationError(
-                    "Invalid list reference: "
-                    f"{pointer}"
-                ) from error
+                raise GenerationError(f"Invalid list reference: {pointer}") from error
 
         else:
-            raise GenerationError(
-                "Reference cannot be traversed: "
-                f"{pointer}"
-            )
+            raise GenerationError(f"Reference cannot be traversed: {pointer}")
 
     return current
 
@@ -355,50 +317,36 @@ def dereference(
         node,
         dict,
     ):
-        return copy.deepcopy(
-            node
-        )
+        return copy.deepcopy(node)
 
-    reference = node.get(
-        "$ref"
-    )
+    reference = node.get("$ref")
 
     if isinstance(
         reference,
         str,
     ):
-        if not reference.startswith(
-            "#/"
-        ):
+        if not reference.startswith("#/"):
             return {
-                key:
-                    dereference(
-                        value,
-                        root,
-                        active_refs,
-                    )
-
-                for key, value
-                in node.items()
+                key: dereference(
+                    value,
+                    root,
+                    active_refs,
+                )
+                for key, value in node.items()
             }
 
         if reference in active_refs:
-            return copy.deepcopy(
-                node
-            )
+            return copy.deepcopy(node)
 
-        referenced_node = (
-            resolve_json_pointer(
-                root,
-                reference,
-            )
+        referenced_node = resolve_json_pointer(
+            root,
+            reference,
         )
 
         expanded = dereference(
             referenced_node,
             root,
-            active_refs
-            + (reference,),
+            active_refs + (reference,),
         )
 
         if not isinstance(
@@ -407,17 +355,13 @@ def dereference(
         ):
             return expanded
 
-        result = copy.deepcopy(
-            expanded
-        )
+        result = copy.deepcopy(expanded)
 
         for key, value in node.items():
             if key == "$ref":
                 continue
 
-            result[
-                key
-            ] = dereference(
+            result[key] = dereference(
                 value,
                 root,
                 active_refs,
@@ -426,15 +370,12 @@ def dereference(
         return result
 
     return {
-        key:
-            dereference(
-                value,
-                root,
-                active_refs,
-            )
-
-        for key, value
-        in node.items()
+        key: dereference(
+            value,
+            root,
+            active_refs,
+        )
+        for key, value in node.items()
     }
 
 
@@ -485,17 +426,13 @@ def select_variant(
     official_schema: JsonObject,
     title: str,
 ) -> JsonObject:
-    variants = official_schema.get(
-        "oneOf"
-    )
+    variants = official_schema.get("oneOf")
 
     if not isinstance(
         variants,
         list,
     ):
-        raise GenerationError(
-            "Official schema has no root oneOf variants."
-        )
+        raise GenerationError("Official schema has no root oneOf variants.")
 
     for candidate in variants:
         if (
@@ -503,9 +440,7 @@ def select_variant(
                 candidate,
                 dict,
             )
-            and candidate.get(
-                "title"
-            ) == title
+            and candidate.get("title") == title
         ):
             expanded = dereference(
                 candidate,
@@ -516,15 +451,11 @@ def select_variant(
                 expanded,
                 dict,
             ):
-                raise GenerationError(
-                    "Expanded schema variant is not an object."
-                )
+                raise GenerationError("Expanded schema variant is not an object.")
 
             return expanded
 
-    raise GenerationError(
-        f"Schema variant was not found: {title}"
-    )
+    raise GenerationError(f"Schema variant was not found: {title}")
 
 
 def schema_for_data_path(
@@ -536,18 +467,14 @@ def schema_for_data_path(
     if not data_path:
         return schema
 
-    for part in data_path.split(
-        "."
-    ):
+    for part in data_path.split("."):
         if not isinstance(
             current,
             dict,
         ):
             return None
 
-        properties = current.get(
-            "properties"
-        )
+        properties = current.get("properties")
 
         if not isinstance(
             properties,
@@ -555,9 +482,7 @@ def schema_for_data_path(
         ):
             return None
 
-        current = properties.get(
-            part
-        )
+        current = properties.get(part)
 
         if current is None:
             return None
@@ -575,23 +500,17 @@ def schema_for_data_path(
 def scope_for_data_path(
     data_path: str,
 ) -> str:
-    parts = data_path.split(
-        "."
-    )
+    parts = data_path.split(".")
 
     return "#/" + "/".join(
         item
-
         for part in parts
-
         for item in (
             "properties",
-            part
-            .replace(
+            part.replace(
                 "~",
                 "~0",
-            )
-            .replace(
+            ).replace(
                 "/",
                 "~1",
             ),
@@ -604,23 +523,11 @@ def humanize(
 ) -> str:
     result: list[str] = []
 
-    for index, character in enumerate(
-        value
-    ):
-        if (
-            index > 0
-            and character.isupper()
-            and not value[
-                index - 1
-            ].isupper()
-        ):
-            result.append(
-                " "
-            )
+    for index, character in enumerate(value):
+        if index > 0 and character.isupper() and not value[index - 1].isupper():
+            result.append(" ")
 
-        result.append(
-            character
-        )
+        result.append(character)
 
     return (
         "".join(result)
@@ -640,24 +547,17 @@ def make_control(
         Any,
     ],
 ) -> JsonObject | None:
-    field_schema = (
-        schema_for_data_path(
-            schema,
-            data_path,
-        )
+    field_schema = schema_for_data_path(
+        schema,
+        data_path,
     )
 
     if field_schema is None:
         return None
 
-    final_part = (
-        data_path
-        .split(".")[-1]
-    )
+    final_part = data_path.split(".")[-1]
 
-    title = field_schema.get(
-        "title"
-    )
+    title = field_schema.get("title")
 
     label = (
         title
@@ -665,41 +565,27 @@ def make_control(
             title,
             str,
         )
-        else humanize(
-            final_part
-        )
+        else humanize(final_part)
     )
 
     control: JsonObject = {
         "type": "Control",
-        "scope":
-            scope_for_data_path(
-                data_path
-            ),
+        "scope": scope_for_data_path(data_path),
         "label": label,
     }
 
-    configured_options = (
-        control_options.get(
-            data_path,
-            {},
-        )
+    configured_options = control_options.get(
+        data_path,
+        {},
     )
 
     options: JsonObject = {}
 
-    if (
-        field_schema.get(
-            "type"
-        ) == "array"
-    ):
+    if field_schema.get("type") == "array":
         options.update(
             {
-                "detail":
-                    "GENERATED",
-
-                "showSortButtons":
-                    True,
+                "detail": "GENERATED",
+                "showSortButtons": True,
             }
         )
 
@@ -707,16 +593,10 @@ def make_control(
         configured_options,
         dict,
     ):
-        options.update(
-            copy.deepcopy(
-                configured_options
-            )
-        )
+        options.update(copy.deepcopy(configured_options))
 
     if options:
-        control[
-            "options"
-        ] = options
+        control["options"] = options
 
     return control
 
@@ -725,19 +605,15 @@ def property_names_at_path(
     schema: JsonObject,
     data_path: str,
 ) -> list[str]:
-    object_schema = (
-        schema_for_data_path(
-            schema,
-            data_path,
-        )
+    object_schema = schema_for_data_path(
+        schema,
+        data_path,
     )
 
     if object_schema is None:
         return []
 
-    properties = object_schema.get(
-        "properties"
-    )
+    properties = object_schema.get("properties")
 
     if not isinstance(
         properties,
@@ -745,22 +621,16 @@ def property_names_at_path(
     ):
         return []
 
-    return sorted(
-        properties
-    )
+    return sorted(properties)
 
 
 def collect_field_catalog(
     schema: JsonObject,
     path: str = "",
 ) -> list[JsonObject]:
-    fields: list[
-        JsonObject
-    ] = []
+    fields: list[JsonObject] = []
 
-    properties = schema.get(
-        "properties"
-    )
+    properties = schema.get("properties")
 
     if not isinstance(
         properties,
@@ -768,9 +638,7 @@ def collect_field_catalog(
     ):
         return fields
 
-    required = schema.get(
-        "required"
-    )
+    required = schema.get("required")
 
     required_names = (
         set(required)
@@ -788,15 +656,9 @@ def collect_field_catalog(
         ):
             continue
 
-        child_path = (
-            f"{path}.{name}"
-            if path
-            else name
-        )
+        child_path = f"{path}.{name}" if path else name
 
-        field_type = child.get(
-            "type"
-        )
+        field_type = child.get("type")
 
         if not isinstance(
             field_type,
@@ -816,40 +678,14 @@ def collect_field_catalog(
 
         fields.append(
             {
-                "path":
-                    child_path,
-
-                "scope":
-                    scope_for_data_path(
-                        child_path
-                    ),
-
-                "type":
-                    field_type,
-
-                "required":
-                    name
-                    in required_names,
-
-                "title":
-                    child.get(
-                        "title"
-                    ),
-
-                "description":
-                    child.get(
-                        "description"
-                    ),
-
-                "enum":
-                    child.get(
-                        "enum"
-                    ),
-
-                "format":
-                    child.get(
-                        "format"
-                    ),
+                "path": child_path,
+                "scope": scope_for_data_path(child_path),
+                "type": field_type,
+                "required": name in required_names,
+                "title": child.get("title"),
+                "description": child.get("description"),
+                "enum": child.get("enum"),
+                "format": child.get("format"),
             }
         )
 
@@ -862,28 +698,16 @@ def collect_field_catalog(
             )
 
         elif field_type == "array":
-            items = child.get(
-                "items"
-            )
+            items = child.get("items")
 
-            if (
-                isinstance(
-                    items,
-                    dict,
-                )
-                and (
-                    items.get(
-                        "type"
-                    ) == "object"
-                    or "properties"
-                    in items
-                )
-            ):
+            if isinstance(
+                items,
+                dict,
+            ) and (items.get("type") == "object" or "properties" in items):
                 fields.extend(
                     collect_field_catalog(
                         items,
-                        child_path
-                        + "[]",
+                        child_path + "[]",
                     )
                 )
 
@@ -891,9 +715,7 @@ def collect_field_catalog(
 
 
 def frontend_path_catalog(
-    field_catalog: list[
-        JsonObject
-    ],
+    field_catalog: list[JsonObject],
 ) -> list[JsonObject]:
     """
     Return only scalar field information required by Templates path
@@ -902,28 +724,13 @@ def frontend_path_catalog(
 
     return [
         {
-            "path":
-                field[
-                    "path"
-                ],
-
-            "title":
-                field.get(
-                    "title"
-                ),
-
-            "type":
-                field[
-                    "type"
-                ],
+            "path": field["path"],
+            "title": field.get("title"),
+            "type": field["type"],
         }
-
-        for field
-        in field_catalog
-
-        if field[
-            "type"
-        ] not in (
+        for field in field_catalog
+        if field["type"]
+        not in (
             "object",
             "array",
             "unknown",
@@ -939,38 +746,25 @@ def deep_merge(
     Recursively merge an overlay without replacing sibling properties.
     """
 
-    merged = copy.deepcopy(
-        base
-    )
+    merged = copy.deepcopy(base)
 
     for key, value in overlay.items():
-        existing = merged.get(
-            key
-        )
+        existing = merged.get(key)
 
-        if (
-            isinstance(
-                existing,
-                dict,
-            )
-            and isinstance(
-                value,
-                dict,
-            )
+        if isinstance(
+            existing,
+            dict,
+        ) and isinstance(
+            value,
+            dict,
         ):
-            merged[
-                key
-            ] = deep_merge(
+            merged[key] = deep_merge(
                 existing,
                 value,
             )
 
         else:
-            merged[
-                key
-            ] = copy.deepcopy(
-                value
-            )
+            merged[key] = copy.deepcopy(value)
 
     return merged
 
@@ -979,9 +773,7 @@ def merge_layout(
     base: JsonObject,
     extra: JsonObject,
 ) -> JsonObject:
-    result = copy.deepcopy(
-        base
-    )
+    result = copy.deepcopy(base)
 
     base_sections = result.get(
         "sections",
@@ -993,23 +785,16 @@ def merge_layout(
         [],
     )
 
-    if (
-        not isinstance(
-            base_sections,
-            list,
-        )
-        or not isinstance(
-            extra_sections,
-            list,
-        )
+    if not isinstance(
+        base_sections,
+        list,
+    ) or not isinstance(
+        extra_sections,
+        list,
     ):
-        raise GenerationError(
-            "Layout sections must be arrays."
-        )
+        raise GenerationError("Layout sections must be arrays.")
 
-    result[
-        "sections"
-    ] = [
+    result["sections"] = [
         *base_sections,
         *extra_sections,
     ]
@@ -1024,23 +809,16 @@ def merge_layout(
         [],
     )
 
-    if (
-        not isinstance(
-            base_hidden,
-            list,
-        )
-        or not isinstance(
-            extra_hidden,
-            list,
-        )
+    if not isinstance(
+        base_hidden,
+        list,
+    ) or not isinstance(
+        extra_hidden,
+        list,
     ):
-        raise GenerationError(
-            "Layout hiddenPaths must be arrays."
-        )
+        raise GenerationError("Layout hiddenPaths must be arrays.")
 
-    result[
-        "hiddenPaths"
-    ] = [
+    result["hiddenPaths"] = [
         *base_hidden,
         *extra_hidden,
     ]
@@ -1055,23 +833,16 @@ def merge_layout(
         {},
     )
 
-    if (
-        not isinstance(
-            base_options,
-            dict,
-        )
-        or not isinstance(
-            extra_options,
-            dict,
-        )
+    if not isinstance(
+        base_options,
+        dict,
+    ) or not isinstance(
+        extra_options,
+        dict,
     ):
-        raise GenerationError(
-            "Layout controlOptions must be objects."
-        )
+        raise GenerationError("Layout controlOptions must be objects.")
 
-    result[
-        "controlOptions"
-    ] = {
+    result["controlOptions"] = {
         **base_options,
         **extra_options,
     }
@@ -1083,24 +854,15 @@ def load_editor_layout(
     schemas_root: Path,
     editor_config: JsonObject,
 ) -> JsonObject:
-    layout_value = (
-        editor_config.get(
-            "layout"
-        )
-    )
+    layout_value = editor_config.get("layout")
 
     if not isinstance(
         layout_value,
         str,
     ):
-        raise GenerationError(
-            "Profile editor configuration has no layout."
-        )
+        raise GenerationError("Profile editor configuration has no layout.")
 
-    layout = load_json_object(
-        schemas_root
-        / layout_value
-    )
+    layout = load_json_object(schemas_root / layout_value)
 
     extras = editor_config.get(
         "layoutExtras",
@@ -1111,23 +873,16 @@ def load_editor_layout(
         extras,
         list,
     ):
-        raise GenerationError(
-            "editor.layoutExtras must be an array."
-        )
+        raise GenerationError("editor.layoutExtras must be an array.")
 
     for extra_value in extras:
         if not isinstance(
             extra_value,
             str,
         ):
-            raise GenerationError(
-                "editor.layoutExtras entries must be strings."
-            )
+            raise GenerationError("editor.layoutExtras entries must be strings.")
 
-        extra = load_json_object(
-            schemas_root
-            / extra_value
-        )
+        extra = load_json_object(schemas_root / extra_value)
 
         layout = merge_layout(
             layout,
@@ -1147,9 +902,7 @@ def create_authoring_schema(
     JsonObject,
     str | None,
 ]:
-    variant = editor_config.get(
-        "variant"
-    )
+    variant = editor_config.get("variant")
 
     if variant is None:
         expanded = dereference(
@@ -1161,9 +914,7 @@ def create_authoring_schema(
             expanded,
             dict,
         ):
-            raise GenerationError(
-                "Expanded root schema is not an object."
-            )
+            raise GenerationError("Expanded root schema is not an object.")
 
         authoring_schema = expanded
 
@@ -1171,100 +922,66 @@ def create_authoring_schema(
         variant,
         str,
     ):
-        authoring_schema = (
-            select_variant(
-                official_schema,
-                variant,
-            )
+        authoring_schema = select_variant(
+            official_schema,
+            variant,
         )
 
     else:
-        raise GenerationError(
-            "editor.variant must be a string when present."
-        )
+        raise GenerationError("editor.variant must be a string when present.")
 
-    strip_nested_ids(
-        authoring_schema
-    )
+    strip_nested_ids(authoring_schema)
 
-    overlay_config = profile.get(
-        "schemaOverlay"
-    )
+    overlay_config = profile.get("schemaOverlay")
 
     if overlay_config is not None:
         if not isinstance(
             overlay_config,
             dict,
         ):
-            raise GenerationError(
-                "schemaOverlay must be an object."
-            )
+            raise GenerationError("schemaOverlay must be an object.")
 
-        overlay_value = (
-            overlay_config.get(
-                "path"
-            )
-        )
+        overlay_value = overlay_config.get("path")
 
         if not isinstance(
             overlay_value,
             str,
         ):
-            raise GenerationError(
-                "schemaOverlay.path must be a string."
-            )
+            raise GenerationError("schemaOverlay.path must be a string.")
 
-        overlay = load_json_object(
-            schemas_root
-            / overlay_value
-        )
+        overlay = load_json_object(schemas_root / overlay_value)
 
         # Backend validation may apply the same overlay to each root
         # oneOf branch. The editor schema has already selected or
         # expanded its root, so here the overlay belongs directly on
         # the resulting authoring schema.
-        authoring_schema = (
-            deep_merge(
-                authoring_schema,
-                overlay,
-            )
+        authoring_schema = deep_merge(
+            authoring_schema,
+            overlay,
         )
 
-    augmenter_ids = (
-        editor_config.get(
-            "augmenters",
-            [],
-        )
+    augmenter_ids = editor_config.get(
+        "augmenters",
+        [],
     )
 
     if not isinstance(
         augmenter_ids,
         list,
     ):
-        raise GenerationError(
-            "editor.augmenters must be an array."
-        )
+        raise GenerationError("editor.augmenters must be an array.")
 
     for augmenter_id in augmenter_ids:
         if not isinstance(
             augmenter_id,
             str,
         ):
-            raise GenerationError(
-                "Editor augmenter IDs must be strings."
-            )
+            raise GenerationError("Editor augmenter IDs must be strings.")
 
-        augmenter = (
-            EDITOR_AUGMENTERS.get(
-                augmenter_id
-            )
-        )
+        augmenter = EDITOR_AUGMENTERS.get(augmenter_id)
 
         if augmenter is None:
-            raise GenerationError(
-                "Unknown editor augmenter: "
-                f"{augmenter_id}"
-            )
+            raise GenerationError(f"Unknown editor augmenter: {augmenter_id}")
 
         augmenter(
             authoring_schema,
@@ -1287,92 +1004,63 @@ def build_ui_schema(
     JsonObject,
     list[str],
 ]:
-    sections = layout_config.get(
-        "sections"
-    )
+    sections = layout_config.get("sections")
 
     if not isinstance(
         sections,
         list,
     ):
-        raise GenerationError(
-            "Layout sections must be an array."
-        )
+        raise GenerationError("Layout sections must be an array.")
 
-    hidden_values = (
-        layout_config.get(
-            "hiddenPaths",
-            [],
-        )
+    hidden_values = layout_config.get(
+        "hiddenPaths",
+        [],
     )
 
     if not isinstance(
         hidden_values,
         list,
     ):
-        raise GenerationError(
-            "Layout hiddenPaths must be an array."
-        )
+        raise GenerationError("Layout hiddenPaths must be an array.")
 
     hidden_paths = {
         value
-
-        for value
-        in hidden_values
-
+        for value in hidden_values
         if isinstance(
             value,
             str,
         )
     }
 
-    control_options = (
-        layout_config.get(
-            "controlOptions",
-            {},
-        )
+    control_options = layout_config.get(
+        "controlOptions",
+        {},
     )
 
     if not isinstance(
         control_options,
         dict,
     ):
-        raise GenerationError(
-            "Layout controlOptions must be an object."
-        )
+        raise GenerationError("Layout controlOptions must be an object.")
 
-    categories: list[
-        JsonObject
-    ] = []
+    categories: list[JsonObject] = []
 
-    configured_paths: set[
-        str
-    ] = set()
+    configured_paths: set[str] = set()
 
-    missing_paths: list[
-        str
-    ] = []
+    missing_paths: list[str] = []
 
     for section in sections:
         if not isinstance(
             section,
             dict,
         ):
-            raise GenerationError(
-                "Layout section must be an object."
-            )
+            raise GenerationError("Layout section must be an object.")
 
-        section_id = section.get(
-            "id"
-        )
+        section_id = section.get("id")
 
-        section_label = section.get(
-            "label"
-        )
+        section_label = section.get("label")
 
-        paths = section.get(
-            "paths"
-        )
+        paths = section.get("paths")
 
         if (
             not isinstance(
@@ -1388,26 +1076,18 @@ def build_ui_schema(
                 list,
             )
         ):
-            raise GenerationError(
-                "Invalid section configuration."
-            )
+            raise GenerationError("Invalid section configuration.")
 
-        controls: list[
-            JsonObject
-        ] = []
+        controls: list[JsonObject] = []
 
         for value in paths:
             if not isinstance(
                 value,
                 str,
             ):
-                raise GenerationError(
-                    "Section paths must be strings."
-                )
+                raise GenerationError("Section paths must be strings.")
 
-            configured_paths.add(
-                value
-            )
+            configured_paths.add(value)
 
             if value in hidden_paths:
                 continue
@@ -1419,42 +1099,25 @@ def build_ui_schema(
             )
 
             if control is None:
-                missing_paths.append(
-                    value
-                )
+                missing_paths.append(value)
 
                 continue
 
-            controls.append(
-                control
-            )
+            controls.append(control)
 
         if controls:
             categories.append(
                 {
-                    "type":
-                        "Category",
-
-                    "id":
-                        section_id,
-
-                    "label":
-                        section_label,
-
-                    "elements":
-                        controls,
+                    "type": "Category",
+                    "id": section_id,
+                    "label": section_label,
+                    "elements": controls,
                 }
             )
 
-    automatic_root = (
-        editor_config.get(
-            "autoAdditionalPropertiesFrom"
-        )
-    )
+    automatic_root = editor_config.get("autoAdditionalPropertiesFrom")
 
-    automatically_added: list[
-        str
-    ] = []
+    automatically_added: list[str] = []
 
     if automatic_root is not None:
         if not isinstance(
@@ -1462,27 +1125,16 @@ def build_ui_schema(
             str,
         ):
             raise GenerationError(
-                "editor.autoAdditionalPropertiesFrom "
-                "must be a string when present."
+                "editor.autoAdditionalPropertiesFrom must be a string when present."
             )
 
-        for property_name in (
-            property_names_at_path(
-                authoring_schema,
-                automatic_root,
-            )
+        for property_name in property_names_at_path(
+            authoring_schema,
+            automatic_root,
         ):
-            path = (
-                f"{automatic_root}."
-                f"{property_name}"
-            )
+            path = f"{automatic_root}.{property_name}"
 
-            if (
-                path
-                in configured_paths
-                or path
-                in hidden_paths
-            ):
+            if path in configured_paths or path in hidden_paths:
                 continue
 
             control = make_control(
@@ -1492,49 +1144,35 @@ def build_ui_schema(
             )
 
             if control is not None:
-                automatically_added.append(
-                    path
-                )
+                automatically_added.append(path)
 
     if automatically_added:
         controls = [
             control
-
-            for path
-            in automatically_added
-
+            for path in automatically_added
             if (
                 control := make_control(
                     authoring_schema,
                     path,
                     control_options,
                 )
-            ) is not None
+            )
+            is not None
         ]
 
         categories.append(
             {
-                "type":
-                    "Category",
-
-                "id":
-                    "additional",
-
-                "label":
-                    "Additional fields",
-
-                "elements":
-                    controls,
+                "type": "Category",
+                "id": "additional",
+                "label": "Additional fields",
+                "elements": controls,
             }
         )
 
     return (
         {
-            "type":
-                "Categorization",
-
-            "elements":
-                categories,
+            "type": "Categorization",
+            "elements": categories,
         },
         missing_paths,
     )
@@ -1544,29 +1182,21 @@ def resolve_profile(
     manifest: JsonObject,
     profile_id: str,
 ) -> JsonObject:
-    profiles = manifest.get(
-        "profiles"
-    )
+    profiles = manifest.get("profiles")
 
     if not isinstance(
         profiles,
         dict,
     ):
-        raise GenerationError(
-            "manifest.json has no profiles object."
-        )
+        raise GenerationError("manifest.json has no profiles object.")
 
-    profile = profiles.get(
-        profile_id
-    )
+    profile = profiles.get(profile_id)
 
     if not isinstance(
         profile,
         dict,
     ):
-        raise GenerationError(
-            f"Unknown schema profile: {profile_id}"
-        )
+        raise GenerationError(f"Unknown schema profile: {profile_id}")
 
     return profile
 
@@ -1576,63 +1206,38 @@ def generate(
     profile_id: str,
     strict: bool,
 ) -> None:
-    schemas_root = (
-        project_root
-        / "schemas"
-    )
+    schemas_root = project_root / "schemas"
 
-    manifest = load_json_object(
-        schemas_root
-        / "manifest.json"
-    )
+    manifest = load_json_object(schemas_root / "manifest.json")
 
     profile = resolve_profile(
         manifest,
         profile_id,
     )
 
-    base_schema_value = (
-        profile.get(
-            "baseSchema"
-        )
-    )
+    base_schema_value = profile.get("baseSchema")
 
     if not isinstance(
         base_schema_value,
         str,
     ):
-        raise GenerationError(
-            f"{profile_id} has no baseSchema."
-        )
+        raise GenerationError(f"{profile_id} has no baseSchema.")
 
-    editor_config = profile.get(
-        "editor"
-    )
+    editor_config = profile.get("editor")
 
     if not isinstance(
         editor_config,
         dict,
     ):
-        raise GenerationError(
-            f"{profile_id} has no editor configuration."
-        )
+        raise GenerationError(f"{profile_id} has no editor configuration.")
 
-    official_path = (
-        schemas_root
-        / base_schema_value
-    )
+    official_path = schemas_root / base_schema_value
 
-    official_schema = (
-        load_json_object(
-            official_path
-        )
-    )
+    official_schema = load_json_object(official_path)
 
-    layout_config = (
-        load_editor_layout(
-            schemas_root,
-            editor_config,
-        )
+    layout_config = load_editor_layout(
+        schemas_root,
+        editor_config,
     )
 
     (
@@ -1645,23 +1250,13 @@ def generate(
         editor_config=editor_config,
     )
 
-    authoring_schema[
-        "$schema"
-    ] = official_schema.get(
-        "$schema"
+    authoring_schema["$schema"] = official_schema.get("$schema")
+
+    authoring_schema["$id"] = (
+        f"https://vulniverse.invalid/schemas/{profile_id}/authoring.schema.json"
     )
 
-    authoring_schema[
-        "$id"
-    ] = (
-        "https://vulniverse.invalid/"
-        f"schemas/{profile_id}/"
-        "authoring.schema.json"
-    )
-
-    label = profile.get(
-        "label"
-    )
+    label = profile.get("label")
 
     if not isinstance(
         label,
@@ -1669,19 +1264,9 @@ def generate(
     ):
         label = profile_id
 
-    variant_suffix = (
-        f" {variant}"
-        if variant
-        else ""
-    )
+    variant_suffix = f" {variant}" if variant else ""
 
-    authoring_schema[
-        "title"
-    ] = (
-        f"Vulniverse {label}"
-        f"{variant_suffix} "
-        "authoring schema"
-    )
+    authoring_schema["title"] = f"Vulniverse {label}{variant_suffix} authoring schema"
 
     (
         ui_schema,
@@ -1692,76 +1277,62 @@ def generate(
         editor_config=editor_config,
     )
 
-    field_catalog = (
-        collect_field_catalog(
-            authoring_schema
-        )
-    )
+    field_catalog = collect_field_catalog(authoring_schema)
 
     frontend_directory = (
-        project_root
-        / "frontend"
-        / "src"
-        / "generated"
-        / "schemas"
-        / profile_id
+        project_root / "frontend" / "src" / "generated" / "schemas" / profile_id
     )
 
     write_json(
-        frontend_directory
-        / "authoring.schema.json",
+        frontend_directory / "authoring.schema.json",
         authoring_schema,
     )
 
     write_json(
-        frontend_directory
-        / "ui.schema.json",
+        frontend_directory / "ui.schema.json",
         ui_schema,
     )
 
     write_json(
-        frontend_directory
-        / "field-paths.json",
-        frontend_path_catalog(
-            field_catalog
-        ),
+        frontend_directory / "field-paths.json",
+        frontend_path_catalog(field_catalog),
     )
 
-    console.info(
-        f"Generated editor schema for {profile_id}."
+    augmenter_ids = editor_config.get(
+        "augmenters",
+        [],
     )
 
-    if missing_paths:
-        console.warning(
-            "Configured layout paths were not present:"
+    if (
+        isinstance(
+            augmenter_ids,
+            list,
+        )
+        and "gcve-extensions" in augmenter_ids
+    ):
+        write_gcve_frontend_extension_schemas(
+            project_root,
+            schemas_root,
         )
 
-        for path in sorted(
-            set(
-                missing_paths
-            )
-        ):
-            console.warning(
-                f"  - {path}"
-            )
+    console.info(f"Generated editor schema for {profile_id}.")
+
+    if missing_paths:
+        console.warning("Configured layout paths were not present:")
+
+        for path in sorted(set(missing_paths)):
+            console.warning(f"  - {path}")
 
         if strict:
-            raise GenerationError(
-                "Schema generation found missing paths."
-            )
+            raise GenerationError("Schema generation found missing paths.")
 
 
 def parse_arguments() -> argparse.Namespace:
-    project_root = (
-        Path(__file__)
-        .resolve()
-        .parents[1]
-    )
+    project_root = Path(__file__).resolve().parents[1]
 
     parser = argparse.ArgumentParser(
         description=(
-            "Generate Vulniverse editor schemas "
-            "from a configured schema profile."
+            "Generate Vulniverse editor schemas from a configured schema profile."
         )
     )
 
@@ -1769,27 +1340,21 @@ def parse_arguments() -> argparse.Namespace:
         "--project-root",
         type=Path,
         default=project_root,
-        help=(
-            "Vulniverse repository root."
-        ),
+        help=("Vulniverse repository root."),
     )
 
     parser.add_argument(
         "--profile",
         default=None,
         help=(
-            "Profile ID from schemas/manifest.json. "
-            "Defaults to currentProfiles.cve."
+            "Profile ID from schemas/manifest.json. Defaults to currentProfiles.cve."
         ),
     )
 
     parser.add_argument(
         "--strict",
         action="store_true",
-        help=(
-            "Fail if configured layout paths "
-            "do not exist in the schema."
-        ),
+        help=("Fail if configured layout paths do not exist in the schema."),
     )
 
     return parser.parse_args()
@@ -1798,51 +1363,29 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     args = parse_arguments()
 
-    project_root = (
-        args.project_root
-        .expanduser()
-        .resolve()
-    )
+    project_root = args.project_root.expanduser().resolve()
 
     if args.profile:
-        profile_id = (
-            args.profile
-        )
+        profile_id = args.profile
 
     else:
-        manifest = load_json_object(
-            project_root
-            / "schemas"
-            / "manifest.json"
-        )
+        manifest = load_json_object(project_root / "schemas" / "manifest.json")
 
-        current_profiles = (
-            manifest.get(
-                "currentProfiles"
-            )
-        )
+        current_profiles = manifest.get("currentProfiles")
 
         if not isinstance(
             current_profiles,
             dict,
         ):
-            raise GenerationError(
-                "No currentProfiles object in manifest."
-            )
+            raise GenerationError("No currentProfiles object in manifest.")
 
-        profile_id = (
-            current_profiles.get(
-                "cve"
-            )
-        )
+        profile_id = current_profiles.get("cve")
 
         if not isinstance(
             profile_id,
             str,
         ):
-            raise GenerationError(
-                "No current CVE profile configured."
-            )
+            raise GenerationError("No current CVE profile configured.")
 
     generate(
         project_root,
@@ -1855,13 +1398,9 @@ def main() -> int:
 
 if __name__ == "__main__":
     try:
-        raise SystemExit(
-            main()
-        )
+        raise SystemExit(main())
 
     except ScriptError as error:
-        console.error(
-            str(error)
-        )
+        console.error(str(error))
 
         raise SystemExit(2)

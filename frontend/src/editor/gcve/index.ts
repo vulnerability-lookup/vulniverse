@@ -16,7 +16,7 @@ export type {
 
 
 export {
-  findGcveExtensionSchemas,
+  GCVE_EXTENSION_SCHEMAS,
 } from "./schemas";
 
 export type {

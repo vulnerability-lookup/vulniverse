@@ -1,45 +1,31 @@
 <script setup lang="ts">
 import {
+  GCVE_EXTENSION_SCHEMAS,
   extraGcveEntryEntries,
-  findGcveExtensionSchemas,
-} from "../../gcve";
+} from "../../../gcve";
 
 import type {
   GcveOccurrence,
-} from "../../gcve";
+} from "../../../gcve";
 
 import type {
   GcveExtension,
-} from "../../contracts";
-
-import gcveAuthoringSchema from
-  "@/generated/schemas/gcve-bcp-05-1.7/authoring.schema.json";
+} from "../../../contracts";
 
 import SchemaValuePreview from
-  "./SchemaValuePreview.vue";
+  "../common/SchemaValuePreview.vue";
 
 import {
   formatValue,
   formatValueJson,
   isComplexValue,
-} from "./utils";
+} from "../common/utils";
 
 
 defineProps<{
-  occurrences: GcveOccurrence[];
+  occurrences:
+    GcveOccurrence[];
 }>();
-
-
-/*
- * The generated authoring schema contains the schemas registered in
- * schemas/extensions/gcve/registry.json for every x_gcve occurrence.
- * All occurrences share the same extension map, so discovering it
- * once is sufficient.
- */
-const gcveExtensionSchemas =
-  findGcveExtensionSchemas(
-    gcveAuthoringSchema,
-  );
 
 
 function extraGcveFields(
@@ -59,8 +45,8 @@ function extensionsOf(
 
   return (
     extensions
-    && typeof extensions ===
-      "object"
+    && typeof extensions
+      === "object"
     && !Array.isArray(
       extensions,
     )
@@ -74,17 +60,20 @@ function extensionsOf(
 
 
 /*
- * Registered extensions get their schema-driven recursive preview.
- * Unknown extension IDs are still preserved and displayed as JSON.
+ * Registered extensions get a schema-driven recursive preview.
+ * Unknown extension IDs remain visible as their raw JSON value.
  */
 function registeredExtensionsOf(
   extension: GcveExtension,
 ): Array<[string, unknown]> {
   return Object.entries(
-    extensionsOf(extension),
+    extensionsOf(
+      extension,
+    ),
   ).filter(
     ([id]) =>
-      id in gcveExtensionSchemas,
+      id
+      in GCVE_EXTENSION_SCHEMAS,
   );
 }
 
@@ -93,10 +82,15 @@ function unrecognizedExtensionsOf(
   extension: GcveExtension,
 ): Array<[string, unknown]> {
   return Object.entries(
-    extensionsOf(extension),
+    extensionsOf(
+      extension,
+    ),
   ).filter(
     ([id]) =>
-      !(id in gcveExtensionSchemas),
+      !(
+        id
+        in GCVE_EXTENSION_SCHEMAS
+      ),
   );
 }
 
@@ -105,12 +99,12 @@ function extensionTitle(
   extensionId: string,
 ): string {
   const title =
-    gcveExtensionSchemas[
+    GCVE_EXTENSION_SCHEMAS[
       extensionId
     ]?.title;
 
-  return typeof title ===
-    "string"
+  return typeof title
+    === "string"
     ? title
     : extensionId;
 }
@@ -126,7 +120,6 @@ function pathLabel(
     : path.join(".");
 }
 </script>
-
 
 <template>
   <div
@@ -343,7 +336,7 @@ function pathLabel(
           <div class="card-body">
             <SchemaValuePreview
               :schema="
-                gcveExtensionSchemas[
+                GCVE_EXTENSION_SCHEMAS[
                   extensionId
                 ]
               "
