@@ -1,18 +1,14 @@
 import type {
+  EditorDocument,
   EditorRepository,
   LoadedRecord,
-  ValidationResult,
-  VulnerabilityRecord,
   ReferenceListItem,
+  ValidationResult,
 } from "@/editor/contracts";
 
-// import {
-//   apiRequest,
-// } from "./apiRequest";
-
 import {
-  RepositoryError,
-} from "./RepositoryError";
+  EditorRepositoryError,
+} from "@/editor/core/errors";
 
 const SANDBOX_IDENTIFIER = "sandbox";
 
@@ -20,8 +16,8 @@ const SANDBOX_IDENTIFIER = "sandbox";
  * Deep-clones a record into a genuinely plain object graph — mirrors
  * what a real network round-trip does
  */
-function cloneRecord(record: VulnerabilityRecord): VulnerabilityRecord {
-  return JSON.parse(JSON.stringify(record)) as VulnerabilityRecord;
+function cloneRecord(record: EditorDocument): EditorDocument {
+  return JSON.parse(JSON.stringify(record)) as EditorDocument;
 }
 
 /**
@@ -29,7 +25,7 @@ function cloneRecord(record: VulnerabilityRecord): VulnerabilityRecord {
  * lives in memory for the lifetime of the page, gone on refresh.
  */
 export class SandboxRepository implements EditorRepository {
-  private record: VulnerabilityRecord | null = null;
+  private record: EditorDocument | null = null;
   private profile = "cve-5.2.0";
   private isDraft = true;
 
@@ -37,14 +33,14 @@ export class SandboxRepository implements EditorRepository {
     identifier: string,
   ): Promise<LoadedRecord> {
     if (identifier !== SANDBOX_IDENTIFIER || !this.record) {
-      throw new RepositoryError("No sandbox record yet.", 404);
+      throw new EditorRepositoryError("No sandbox record yet.", 404);
     }
 
     return this.toLoadedRecord();
   }
 
   async createRecord(
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
@@ -57,7 +53,7 @@ export class SandboxRepository implements EditorRepository {
 
   async updateRecord(
     _identifier: string,
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
@@ -68,35 +64,15 @@ export class SandboxRepository implements EditorRepository {
     return this.toLoadedRecord();
   }
 
-  /**
-  * validate Record works as it is stateless
-  **/
-  // async validateRecord(
-  //   record: VulnerabilityRecord,
-  //   profile: string,
-  // ): Promise<ValidationResult> {
-  //   return apiRequest<ValidationResult>(
-  //     "/validate",
-  //     {
-  //       method: "POST",
-  //       body: JSON.stringify({ record, profile }),
-  //     },
-  //   );
-  // }
-
   async validateRecord(
-    _record: VulnerabilityRecord,
+    _record: EditorDocument,
     _profile: string,
   ): Promise<ValidationResult> {
-    throw new RepositoryError(
+    throw new EditorRepositoryError(
       "Validation is not available in demo mode.",
       501,
     );
   }
-
-  // async deleteRecord(): Promise<void> {
-  //   this.record = null;
-  // }
 
   private toLoadedRecord(): LoadedRecord {
     return {
@@ -115,7 +91,7 @@ export class SandboxRepository implements EditorRepository {
     );
 
     if (!response.ok) {
-      throw new RepositoryError(
+      throw new EditorRepositoryError(
         `Failed to load ${kind.toUpperCase()} reference data.`,
         response.status,
       );

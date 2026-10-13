@@ -57,7 +57,7 @@ def capabilities() -> dict:
             "publication": True,
         },
         "panels": app_config["panels"],
-        "modules": app_config["modules"],
+        "actions": app_config["actions"],
     }
 
 

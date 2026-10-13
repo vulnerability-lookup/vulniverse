@@ -9,13 +9,13 @@ configures when embedding the editor, whether that host is
 [Vulnerability-Lookup](vl.md) or something else entirely.
 `config/vulniverse.toml` (see [Configuration](../setup/config.md)) has no
 effect here — it's a standalone-app-only concern; a host decides its own
-`panels`/`modules` directly, in its own code.
+`panels`/`actions` directly, in its own code.
 
 ## Steps to embed it
 
 `frontend/src/editor/` has zero host-specific branches anywhere — every
 step below lives entirely on the host's side of the
-`EditorRepository`/`EditorPanel`/`EditorModule` boundary. See
+`EditorRepository`/`EditorPanel`/`EditorAction` boundary. See
 [Embedding: Vulnerability-Lookup](vl.md) for a fully worked example of
 all of these steps together.
 
@@ -53,15 +53,15 @@ all of these steps together.
    editor.repository = new MyRepository({ /* ... */ });
    ```
    `mode`/`profile`/`record-id` are plain HTML attributes (strings only).
-   `repository` (and `panels`/`modules` below) are always assigned as JS
+   `repository` (and `panels`/`actions` below) are always assigned as JS
    properties after `createElement` — never as attribute strings, since
    they're objects/arrays, not strings.
 
-5. **(Optional) Add panels and modules** — see [`panels` and
-   `modules`](#panels-and-modules) below:
+5. **(Optional) Add panels and actions** — see [`panels` and
+   `actions`](#panels-and-actions) below:
    ```js
    editor.panels = [myCustomPanel, templatesPanel];
-   editor.modules = [myCustomModule];
+   editor.actions = [myCustomAction];
    ```
 
 6. **Listen for events** — see [Events](#events) below:
@@ -96,7 +96,7 @@ all of these steps together.
 | `record-id` | `string` | Required when `mode="edit"`. |
 | `profile` | `string` | Defaults to `"cve-5.2.0"`. |
 | `repository` | `EditorRepository` | Set from JavaScript (`editor.repository = ...`), not an HTML attribute — see below. |
-| `modules` | `EditorModule[]` | Optional extra header buttons. |
+| `actions` | `EditorAction[]` | Optional extra header buttons. |
 | `panels` | `EditorPanel[]` | Optional extra sidebar tabs — see note below. |
 
 ## `repository`
@@ -133,7 +133,7 @@ its *own* `EditorRepository` (as Vulnerability-Lookup does) defines its own
 equivalent constructor options instead, talking to whatever backend it
 already has; see [Embedding: Vulnerability-Lookup](vl.md).
 
-## `panels` and `modules`
+## `panels` and `actions`
 
 ```js
 editor.panels = [
@@ -141,13 +141,13 @@ editor.panels = [
   templatesPanel, // reused straight from Vulniverse's own bundle
 ];
 
-editor.modules = [
-  myCustomModule, // your own object shaped like EditorModule
+editor.actions = [
+  myCustomAction, // your own object shaped like EditorAction
 ];
 ```
 
-`EditorPanel`/`EditorModule` (`frontend/src/editor/contracts.ts`) are just
-plain object shapes — nothing requires a panel or module to originate from
+`EditorPanel`/`EditorAction` (`frontend/src/editor/contracts.ts`) are just
+plain object shapes — nothing requires a panel or action to originate from
 Vulniverse, so mixing host-authored and Vulniverse-authored entries in the
 same array is expected. There's no config file and no
 capabilities-filtering step for an embedded host (that machinery —

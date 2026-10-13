@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 
 import { apiRequest } from "@/repositories/apiRequest";
-import { RepositoryError } from "@/repositories/RepositoryError";
+import { ApiError } from "@/shared/errors";
 import { HttpRepository } from "@/repositories/HttpRepository";
 import type { PublicationTarget } from "@/editor/contracts";
 
@@ -110,7 +110,7 @@ async function onSave(target: PublicationTarget): Promise<void> {
     configured[target] = saved;
     forms[target] = { ...saved, cveApiKey: "" };
   } catch (err) {
-    errors[target] = err instanceof RepositoryError
+    errors[target] = err instanceof ApiError
       ? err.message
       : "Unable to save credential.";
   } finally {

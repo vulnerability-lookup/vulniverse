@@ -2,7 +2,7 @@
 import { onMounted, ref } from "vue";
 
 import { apiRequest } from "@/repositories/apiRequest";
-import { RepositoryError } from "@/repositories/RepositoryError";
+import { ApiError } from "@/shared/errors";
 import { useAuthStore } from "@/stores/auth";
 
 interface AdminUser {
@@ -51,7 +51,7 @@ async function updateUser(
 
     Object.assign(user, updated);
   } catch (error) {
-    actionError.value = error instanceof RepositoryError
+    actionError.value = error instanceof ApiError
       ? error.message
       : "Unable to update this user.";
   } finally {

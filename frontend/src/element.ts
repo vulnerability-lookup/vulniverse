@@ -38,10 +38,10 @@ if (!customElements.get("vulniverse-editor")) {
 }
 
 export type {
-  EditorModule,
+  EditorAction,
   EditorPanel,
   EditorRepository,
-  VulnerabilityRecord,
+  EditorDocument,
 } from "./editor/contracts";
 
 export {

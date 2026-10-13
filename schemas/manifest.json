@@ -3,7 +3,6 @@
     "cve": "cve-5.2.0",
     "gcve": "gcve-bcp-05-1.7"
   },
-  "generatedAt": "2026-08-17T09:51:25Z",
   "profiles": {
     "cve-5.0": {
       "baseSchema": "upstream/cve/5.0/CVE_Record_Format_bundled.json",
@@ -19,22 +18,60 @@
     },
     "cve-5.2.0": {
       "baseSchema": "upstream/cve/5.2.0/CVE_Record_Format_bundled.json",
+      "editor": {
+        "autoAdditionalPropertiesFrom": "containers.cna",
+        "layout": "editor/cve.layout.json",
+        "variant": "Published"
+      },
+      "identifier": {
+        "strategy": "cve"
+      },
       "kind": "cve",
-      "sourceMetadata": "upstream/cve/5.2.0/SOURCE.json",
+      "label": "CVE 5.2.0",
+      "validation": {
+        "preferredRootBranch": {
+          "index": 0,
+          "keyword": "oneOf"
+        }
+      },
       "version": "5.2.0"
     },
     "gcve-bcp-05-1.7": {
       "baseProfile": "cve-5.2.0",
       "baseSchema": "upstream/cve/5.2.0/CVE_Record_Format_bundled.json",
       "bcp": "GCVE-BCP-05",
+      "editor": {
+        "augmenters": [
+          "gcve-extensions"
+        ],
+        "autoAdditionalPropertiesFrom": "containers.cna",
+        "layout": "editor/cve.layout.json",
+        "layoutExtras": [
+          "editor/gcve.layout-extra.json"
+        ],
+        "variant": "Published"
+      },
       "extensionSchemas": [
         "upstream/gcve/bcp-05/1.7/gcve-bcp-05.schema.json"
       ],
+      "identifier": {
+        "strategy": "gcve"
+      },
       "kind": "gcve",
+      "label": "GCVE-BCP-05 1.7",
+      "schemaOverlay": {
+        "applyTo": "rootOneOfBranches",
+        "path": "overlays/gcve-bcp-05-1.7.json"
+      },
       "semanticValidator": "gcve-bcp-05",
-      "sourceMetadata": "upstream/gcve/bcp-05/1.7/SOURCE.json",
+      "validation": {
+        "preferredRootBranch": {
+          "index": 0,
+          "keyword": "oneOf"
+        }
+      },
       "version": "1.7"
     }
   },
-  "schemaManifestVersion": 1
+  "schemaManifestVersion": 2
 }

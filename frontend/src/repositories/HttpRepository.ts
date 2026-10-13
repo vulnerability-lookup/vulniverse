@@ -1,5 +1,6 @@
 import type {
   CnaPublication,
+  EditorDocument,
   EditorRepository,
   LoadedRecord,
   PublicationTarget,
@@ -7,7 +8,6 @@ import type {
   Template,
   TemplateField,
   ValidationResult,
-  VulnerabilityRecord,
 } from "@/editor/contracts";
 
 import {
@@ -15,14 +15,16 @@ import {
 } from "@/editor/contracts";
 
 import {
-  RepositoryError,
-} from "./RepositoryError";
+  EditorRepositoryError,
+} from "@/editor/core/errors";
 
 import {
-  getCsrfToken,
-} from "./csrf";
+  ApiError,
+} from "@/shared/errors";
 
-const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+import {
+  apiRequest,
+} from "./apiRequest";
 
 /*
  * Not part of EditorRepository: listing records is a standalone-app
@@ -38,15 +40,15 @@ export interface RecordSummary {
 }
 
 /*
- * Not part of EditorRepository either: which panels/modules the
+ * Not part of EditorRepository either: which panels/actions the
  * standalone app shows is a deployment-config concern
  * (config/vulniverse.toml), not something an embedding host needs —
- * a host authors its own panels/modules directly, see
- * editor/panels/index.ts and editor/modules/index.ts.
+ * a host authors its own panels/actions directly, see
+ * editor/panels/index.ts and editor/actions/index.ts.
  */
 export interface AppCapabilities {
   panels: Record<string, boolean>;
-  modules: Record<string, boolean>;
+  actions: Record<string, boolean>;
 }
 
 export class HttpRepository
@@ -67,12 +69,12 @@ export class HttpRepository
   async getCapabilities(): Promise<AppCapabilities> {
     const result = await this.request<{
       panels?: Record<string, boolean>;
-      modules?: Record<string, boolean>;
+      actions?: Record<string, boolean>;
     }>("/capabilities");
 
     return {
       panels: result.panels ?? {},
-      modules: result.modules ?? {},
+      actions: result.actions ?? {},
     };
   }
 
@@ -85,7 +87,7 @@ export class HttpRepository
   }
 
   async createRecord(
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
@@ -104,7 +106,7 @@ export class HttpRepository
 
   async updateRecord(
     identifier: string,
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
@@ -122,7 +124,7 @@ export class HttpRepository
   }
 
   async validateRecord(
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
   ): Promise<ValidationResult> {
     return this.request<ValidationResult>(
@@ -156,10 +158,12 @@ export class HttpRepository
     return result.items;
   }
 
-  async listTemplates(): Promise<Template[]> {
+  async listTemplates(
+    profile: string,
+  ): Promise<Template[]> {
     const result = await this.request<{
-      templates: Array<{ id: number; name: string; fields: TemplateField[] }>;
-    }>("/templates");
+      templates: Array<{ id: number; profile: string; name: string; fields: TemplateField[] }>;
+    }>(`/templates?profile=${encodeURIComponent(profile)}`);
 
     return result.templates.map((template) => ({
       ...template,
@@ -168,14 +172,15 @@ export class HttpRepository
   }
 
   async saveTemplate(
+    profile: string,
     name: string,
     fields: TemplateField[],
   ): Promise<Template> {
-    const result = await this.request<{ id: number; name: string; fields: TemplateField[] }>(
+    const result = await this.request<{ id: number; profile: string; name: string; fields: TemplateField[] }>(
       "/templates",
       {
         method: "POST",
-        body: JSON.stringify({ name, fields }),
+        body: JSON.stringify({ profile, name, fields }),
       },
     );
 
@@ -187,7 +192,7 @@ export class HttpRepository
     name: string,
     fields: TemplateField[],
   ): Promise<Template> {
-    const result = await this.request<{ id: number; name: string; fields: TemplateField[] }>(
+    const result = await this.request<{ id: number; profile: string; name: string; fields: TemplateField[] }>(
       `/templates/${encodeURIComponent(id)}`,
       {
         method: "PUT",
@@ -264,59 +269,48 @@ export class HttpRepository
     );
   }
 
+  /*
+   * The translation boundary between the generic HTTP world and the
+   * EditorRepository abstraction: apiRequest() only knows about
+   * HTTP/API semantics and throws ApiError, never anything
+   * editor-specific. This wrapper is the one place that interprets an
+   * ApiError for this particular API shape — a 422 with a body.errors
+   * array means the record failed schema validation (RecordValidationError,
+   * an EditorRepository-contract concept, see contracts.ts), anything
+   * else becomes a generic EditorRepositoryError — so every other
+   * EditorRepository method above can stay oblivious to HTTP entirely.
+   */
   private async request<T>(
     path: string,
     init: RequestInit = {},
   ): Promise<T> {
-    const headers = new Headers(init.headers);
+    try {
+      return await apiRequest<T>(path, init, this.apiRoot);
+    } catch (error) {
+      if (!(error instanceof ApiError)) {
+        throw error;
+      }
 
-    headers.set("Accept", "application/json");
+      const body = error.details as
+        | { message?: string; errors?: unknown }
+        | null
+        | undefined;
 
-    if (init.body !== undefined) {
-      headers.set(
-        "Content-Type",
-        "application/json",
-      );
-    }
-
-    const method = (init.method ?? "GET").toUpperCase();
-
-    if (MUTATING_METHODS.has(method)) {
-      headers.set("X-CSRFToken", await getCsrfToken(this.apiRoot));
-    }
-
-    const response = await fetch(
-      `${this.apiRoot}${path}`,
-      {
-        ...init,
-        headers,
-        credentials: "same-origin",
-      },
-    );
-
-    const body = await response
-      .json()
-      .catch(() => null);
-
-    if (!response.ok) {
       if (
-        response.status === 422 &&
+        error.status === 422 &&
         Array.isArray(body?.errors)
       ) {
         throw new RecordValidationError(
-          body.message ?? "The record is not publishable.",
+          body?.message ?? "The record is not publishable.",
           body.errors,
         );
       }
 
-      throw new RepositoryError(
-        body?.message ??
-          `${response.status} ${response.statusText}`,
-        response.status,
-        body,
+      throw new EditorRepositoryError(
+        error.message,
+        error.status,
+        error.details,
       );
     }
-
-    return body as T;
   }
 }
