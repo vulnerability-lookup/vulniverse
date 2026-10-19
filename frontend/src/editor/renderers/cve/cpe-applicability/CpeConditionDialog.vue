@@ -4,14 +4,38 @@ import {
 } from "vue";
 
 import {
+  useEditorRepository,
+} from "../../../core/context";
+
+import {
+  useCpeSearch,
+} from "../../../cpe";
+
+import {
   fromVersionFields,
   toVersionFields,
 } from "./cpe-applicability";
 
 import type {
+  CpeSuggestion,
+} from "../../../contracts";
+
+import type {
   CpeMatch,
   VersionConstraintUi,
 } from "./cpe-applicability";
+
+const repository = useEditorRepository();
+
+const {
+  results: cpeSuggestions,
+  open: showCpeSuggestions,
+  onQueryChange: onCriteriaQueryChange,
+  hide: hideCpeSuggestions,
+  reset: resetCpeSuggestions,
+} = useCpeSearch<CpeSuggestion>(
+  (term) => repository.value?.searchCpes?.({ q: term }) ?? Promise.resolve([]),
+);
 
 const emit = defineEmits<{
   apply: [
@@ -49,6 +73,7 @@ function open(
   criteria.value = initial?.criteria ?? "";
   matchCriteriaId.value = initial?.matchCriteriaId ?? "";
   showAdvanced.value = Boolean(initial?.matchCriteriaId);
+  resetCpeSuggestions();
 
   const constraint = initial ? fromVersionFields(initial) : { mode: "any" as const };
 
@@ -64,6 +89,28 @@ function open(
 
 function close(): void {
   dialog.value?.close();
+}
+
+function onCriteriaInput(
+  event: Event,
+): void {
+  criteria.value = (event.target as HTMLInputElement).value;
+  onCriteriaQueryChange(criteria.value);
+}
+
+function onCriteriaFocus(): void {
+  showCpeSuggestions.value = true;
+}
+
+function onCriteriaBlur(): void {
+  hideCpeSuggestions();
+}
+
+function selectCpeSuggestion(
+  suggestion: CpeSuggestion,
+): void {
+  criteria.value = suggestion.cpe;
+  hideCpeSuggestions();
 }
 
 function handleSubmit(): void {
@@ -170,17 +217,46 @@ defineExpose({
           CPE
         </label>
 
-        <input
-          id="cpe-criteria"
-          v-model="criteria"
-          class="form-control mb-1"
-          required
-          placeholder="cpe:2.3:a:vendor:product:*:*:*:*:*:*:*:*"
-        >
+        <div class="reference-id-control mb-1">
+          <input
+            id="cpe-criteria"
+            :value="criteria"
+            class="form-control"
+            required
+            autocomplete="off"
+            placeholder="cpe:2.3:a:vendor:product:*:*:*:*:*:*:*:*"
+            @input="onCriteriaInput"
+            @focus="onCriteriaFocus"
+            @blur="onCriteriaBlur"
+          >
+
+          <ul
+            v-if="showCpeSuggestions && cpeSuggestions.length"
+            class="reference-id-suggestions"
+          >
+            <li
+              v-for="suggestion in cpeSuggestions"
+              :key="suggestion.id"
+            >
+              <button
+                type="button"
+                class="reference-id-suggestion"
+                @mousedown.prevent="selectCpeSuggestion(suggestion)"
+              >
+                <span class="fw-semibold">{{ suggestion.cpe }}</span>
+
+                <span
+                  v-if="suggestion.title"
+                  class="text-secondary"
+                > — {{ suggestion.title }}</span>
+              </button>
+            </li>
+          </ul>
+        </div>
 
         <p class="form-text mb-3">
-          Entered manually — this editor has no CPE dictionary/search to
-          pick from yet.
+          Start typing to search the CPE dictionary, or enter a CPE string
+          manually.
         </p>
 
         <label class="form-label">Version constraint</label>

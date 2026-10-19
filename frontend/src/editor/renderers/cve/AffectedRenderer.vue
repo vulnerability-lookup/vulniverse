@@ -7,6 +7,7 @@ import {
   DispatchRenderer,
   rendererProps,
   useJsonFormsArrayControl,
+  useJsonFormsControl,
 } from "@jsonforms/vue";
 
 import {
@@ -21,6 +22,10 @@ import {
   useCollapsibleItems,
 } from "../common/use-collapsible-items";
 
+import {
+  CpeVendorField,
+} from "../../cpe";
+
 const props = defineProps({
   ...rendererProps<ControlElement>(),
 });
@@ -30,6 +35,15 @@ const {
   addItem,
   removeItems,
 } = useJsonFormsArrayControl(props);
+
+/*
+ * Only needed for the vendor field's live-search autocomplete below
+ * (CpeVendorField), which writes directly via handleChange +
+ * composePaths rather than through DispatchRenderer like every other
+ * field in this renderer — the same handleChange-on-the-side pattern
+ * GcveExtensionRenderer.vue uses for its own nested writes.
+ */
+const { handleChange } = useJsonFormsControl(props);
 
 const items = computed(() => {
   return (control.value.data ?? []) as Array<
@@ -51,10 +65,33 @@ const { isExpanded, toggle } = useCollapsibleItems(
  * avoids that path entirely; the fields themselves still go
  * through the normal String/Enum/Array renderers, unchanged.
  */
+/*
+ * "vendor" is rendered separately below via CpeVendorField (a
+ * live-search autocomplete), not through dispatch-renderer like
+ * every other field here.
+ */
 const primaryFields = [
-  "vendor",
   "product",
 ];
+
+function vendorPath(
+  index: number,
+): string {
+  return composePaths(
+    itemPath(index),
+    "vendor",
+  );
+}
+
+function onVendorUpdate(
+  index: number,
+  value: string,
+): void {
+  handleChange(
+    vendorPath(index),
+    value || undefined,
+  );
+}
 
 const detailFields = [
   "packageName",
@@ -162,6 +199,23 @@ function addAffected(): void {
         class="card-body"
       >
         <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label
+              :for="`${control.id}-${index}-vendor`"
+              class="form-label"
+            >
+              Vendor
+            </label>
+
+            <CpeVendorField
+              :id="`${control.id}-${index}-vendor`"
+              :model-value="(item.vendor as string) ?? ''"
+              input-class="form-control"
+              :disabled="!control.enabled"
+              @update:model-value="(value) => onVendorUpdate(index, value)"
+            />
+          </div>
+
           <div
             v-for="key in primaryFields"
             :key="key"
