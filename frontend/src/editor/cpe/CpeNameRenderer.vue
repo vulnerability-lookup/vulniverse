@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import {
+  inject,
   ref,
   watch,
 } from "vue";
 
 import type {
   ControlElement,
+} from "@jsonforms/core";
+
+import {
+  Resolve,
 } from "@jsonforms/core";
 
 import {
@@ -19,6 +24,7 @@ import {
 } from "@jsonforms/vue-vanilla";
 
 import {
+  editorStateKey,
   useEditorRepository,
 } from "../core/context";
 
@@ -56,6 +62,32 @@ const {
 
 const repository = useEditorRepository();
 
+const editorState = inject(editorStateKey, null);
+
+/*
+ * This control only knows its own string value and path (e.g.
+ * "containers.cna.affected.0.cpes.0") — vendor/product live on the
+ * sibling affected[] entry two path segments up. Reading them this
+ * way (inject the live record + Resolve.data) mirrors
+ * CpeApplicabilityRenderer.vue's "generate from affected products"
+ * lookup, the established pattern for a renderer that needs more
+ * than its own control value.
+ */
+function parentAffectedEntry(): Record<string, unknown> | undefined {
+  if (!editorState) {
+    return undefined;
+  }
+
+  const parentPath = control.value.path
+    .split(".")
+    .slice(0, -2)
+    .join(".");
+
+  const entry = Resolve.data(editorState.record.value, parentPath);
+
+  return entry && typeof entry === "object" ? entry as Record<string, unknown> : undefined;
+}
+
 const query = ref(
   typeof control.value.data === "string" ? control.value.data : "",
 );
@@ -80,7 +112,14 @@ const {
   show,
   hide,
 } = useCpeSearch<CpeSuggestion>(
-  (term) => repository.value?.searchCpes?.({ q: term }) ?? Promise.resolve([]),
+  (term) => {
+    const entry = parentAffectedEntry();
+
+    const vendorQ = typeof entry?.vendor === "string" ? entry.vendor : undefined;
+    const productQ = typeof entry?.product === "string" ? entry.product : undefined;
+
+    return repository.value?.searchCpes?.({ q: term, vendorQ, productQ }) ?? Promise.resolve([]);
+  },
 );
 
 function onInput(
