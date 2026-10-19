@@ -160,6 +160,27 @@ def search_vendors(
     )
 
 
+def search_products(
+    q: str,
+    *,
+    page: int = 1,
+    per_page: int = 25,
+) -> JsonPayload:
+    params: dict[
+        str,
+        str | int,
+    ] = {
+        "q": q.strip(),
+        "page": page,
+        "per_page": per_page,
+    }
+
+    return _get(
+        "/products",
+        params,
+    )
+
+
 def search_cpes(
     q: str | None = None,
     vendor_q: str | None = None,

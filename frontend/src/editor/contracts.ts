@@ -168,6 +168,12 @@ export interface CpeVendorSuggestion {
   title?: string | null;
 }
 
+export interface CpeProductSuggestion {
+  id: string;
+  name: string;
+  title?: string | null;
+}
+
 export interface CpeSearchParams {
   q?: string;
   vendorQ?: string;
@@ -232,6 +238,10 @@ export interface EditorRepository {
   searchCpeVendors?(
     q: string
   ): Promise<CpeVendorSuggestion[]>;
+
+  searchCpeProducts?(
+    q: string
+  ): Promise<CpeProductSuggestion[]>;
 
   searchCpes?(
     params:  CpeSearchParams,

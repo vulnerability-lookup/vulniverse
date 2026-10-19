@@ -7,6 +7,7 @@ from flask import request
 
 from ..services.cpe_search import (
     search_cpes,
+    search_products,
     search_vendors,
 )
 from . import api_bp
@@ -97,6 +98,34 @@ def cpe_vendors() -> tuple[
     except httpx.HTTPError as error:
         return {
             "message": "Could not search CPE vendors.",
+            "detail": str(error),
+        }, 502
+
+    return result, 200
+
+
+@api_bp.get("/cpe/products")
+def cpe_products() -> tuple[
+    dict[str, Any] | list[Any],
+    int,
+]:
+    q = _text_arg("q")
+
+    if not _is_search_term(q):
+        return [], 200
+
+    assert q is not None  # narrowed by _is_search_term above
+
+    try:
+        result = search_products(
+            q,
+            page=_page(),
+            per_page=_per_page(),
+        )
+
+    except httpx.HTTPError as error:
+        return {
+            "message": "Could not search CPE products.",
             "detail": str(error),
         }, 502
 

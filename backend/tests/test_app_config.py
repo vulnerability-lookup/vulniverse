@@ -53,6 +53,56 @@ def test_prefers_real_config_over_sample(
     assert result["panels"] == {"vl": False}
 
 
+def test_panel_table_with_enabled_key_is_flattened_to_bool(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    real_path = tmp_path / "vulniverse.toml"
+    real_path.write_text(
+        "[panels.stats]\nenabled = false\n\n"
+        '[panels.patch2vuln]\nenabled = true\nexecutable = "/opt/patch2vuln.py"\n',
+    )
+
+    monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
+    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+
+    result = app_config.load_app_config()
+
+    # Only `enabled` is a capability; patch2vuln's own config (executable,
+    # ollama_host, ...) never reaches this result.
+    assert result["panels"] == {"stats": False, "patch2vuln": True}
+
+
+def test_panel_table_without_enabled_key_defaults_to_true(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    real_path = tmp_path / "vulniverse.toml"
+    real_path.write_text('[panels.stats]\nnote = "no enabled key here"\n')
+
+    monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
+    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+
+    result = app_config.load_app_config()
+
+    assert result["panels"] == {"stats": True}
+
+
+def test_legacy_flat_bool_panels_still_supported(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    real_path = tmp_path / "vulniverse.toml"
+    real_path.write_text('[panels]\n"vl" = false\n"stats" = true\n')
+
+    monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
+    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+
+    result = app_config.load_app_config()
+
+    assert result["panels"] == {"vl": False, "stats": True}
+
+
 def test_empty_tables_when_neither_file_exists(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

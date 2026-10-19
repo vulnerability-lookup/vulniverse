@@ -1,10 +1,10 @@
 export {
-  default as CpeNameRenderer,
-} from "./CpeNameRenderer.vue";
+  default as CpeAutocompleteField,
+} from "./CpeAutocompleteField.vue";
 
 export {
-  default as CpeVendorField,
-} from "./CpeVendorField.vue";
+  default as CpeNameRenderer,
+} from "./CpeNameRenderer.vue";
 
 export {
   isCpeNamePattern,

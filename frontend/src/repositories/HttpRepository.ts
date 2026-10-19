@@ -10,6 +10,7 @@ import type {
   ValidationResult,
   CpeSuggestion,
   CpeVendorSuggestion,
+  CpeProductSuggestion,
   CpeSearchParams,
 } from "@/editor/contracts";
 
@@ -58,6 +59,14 @@ export interface AppCapabilities {
 // CPE stuff
 
 interface CpeVendorApiItem {
+  id: number;
+  uuid: string;
+  name: string;
+  title: string | null;
+}
+
+
+interface CpeProductApiItem {
   id: number;
   uuid: string;
   name: string;
@@ -255,6 +264,35 @@ export class HttpRepository
 
         title:
           vendor.title,
+      }),
+    );
+  }
+
+  async searchCpeProducts(
+    q: string,
+  ): Promise<CpeProductSuggestion[]> {
+    const query =
+      new URLSearchParams({
+        q,
+      });
+
+    const response = await this.request<
+      | CpeProductApiItem[]
+      | CpeSearchApiResponse<CpeProductApiItem>
+    >(
+      `/cpe/products?${query.toString()}`,
+    );
+
+    return cpeSearchItems(
+      response,
+    ).map(
+      (product) => ({
+        id: product.uuid,
+
+        name: product.name,
+
+        title:
+          product.title,
       }),
     );
   }

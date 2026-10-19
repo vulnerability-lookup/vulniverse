@@ -12,18 +12,19 @@ import {
   useCpeSearch,
 } from "./use-cpe-search";
 
-import type {
-  CpeVendorSuggestion,
-} from "../contracts";
-
 /*
- * A plain text field underneath — "vendor" stays free text in the
- * schema, this only adds a live-search suggestion list on top so an
- * unreachable/unsupported CPE Editor (searchCpeVendors is optional
- * on EditorRepository) degrades to normal free-text entry.
+ * A plain text field underneath — "vendor"/"product" stay free text
+ * in the schema, this only adds a live-search suggestion list on top
+ * so an unreachable/unsupported CPE Editor (searchCpeVendors/
+ * searchCpeProducts are optional on EditorRepository) degrades to
+ * normal free-text entry. Shared by the vendor and product fields in
+ * AffectedRenderer.vue — both search a CPE Editor list keyed by `q`
+ * alone and return the same {id, name, title?} suggestion shape.
  */
 const props = defineProps<{
   modelValue: string;
+  method: "searchCpeVendors" | "searchCpeProducts";
+  kind: string;
   id?: string;
   inputClass?: string;
   disabled?: boolean;
@@ -35,6 +36,12 @@ const emit = defineEmits<{
     value: string,
   ];
 }>();
+
+interface Suggestion {
+  id: string;
+  name: string;
+  title?: string | null;
+}
 
 const repository = useEditorRepository();
 
@@ -57,8 +64,8 @@ const {
   open,
   onQueryChange,
   hide,
-} = useCpeSearch<CpeVendorSuggestion>(
-  (term) => repository.value?.searchCpeVendors?.(term) ?? Promise.resolve([]),
+} = useCpeSearch<Suggestion>(
+  (term) => repository.value?.[props.method]?.(term) ?? Promise.resolve([]),
 );
 
 function onInput(
@@ -79,7 +86,7 @@ function onBlurInput(): void {
 }
 
 function select(
-  suggestion: CpeVendorSuggestion,
+  suggestion: Suggestion,
 ): void {
   query.value = suggestion.name;
   emit("update:modelValue", suggestion.name);
@@ -128,15 +135,15 @@ function select(
       v-if="open && loading && !results.length"
       class="text-secondary small mt-1"
     >
-      Searching CPE vendors…
+      Searching CPE {{ kind }}s…
     </div>
 
     <div
       v-else-if="open && failed"
       class="text-secondary small mt-1"
     >
-      The CPE vendor search timed out or is unavailable — you can still
-      enter a vendor name directly.
+      The CPE {{ kind }} search timed out or is unavailable — you can
+      still enter a {{ kind }} name directly.
     </div>
   </div>
 </template>

@@ -23,7 +23,7 @@ import {
 } from "../common/use-collapsible-items";
 
 import {
-  CpeVendorField,
+  CpeAutocompleteField,
 } from "../../cpe";
 
 const props = defineProps({
@@ -37,11 +37,11 @@ const {
 } = useJsonFormsArrayControl(props);
 
 /*
- * Only needed for the vendor field's live-search autocomplete below
- * (CpeVendorField), which writes directly via handleChange +
- * composePaths rather than through DispatchRenderer like every other
- * field in this renderer — the same handleChange-on-the-side pattern
- * GcveExtensionRenderer.vue uses for its own nested writes.
+ * Only needed for the vendor/product fields' live-search autocomplete
+ * below (CpeAutocompleteField), which write directly via handleChange
+ * + composePaths rather than through DispatchRenderer like every
+ * other field in this renderer — the same handleChange-on-the-side
+ * pattern GcveExtensionRenderer.vue uses for its own nested writes.
  */
 const { handleChange } = useJsonFormsControl(props);
 
@@ -66,20 +66,17 @@ const { isExpanded, toggle } = useCollapsibleItems(
  * through the normal String/Enum/Array renderers, unchanged.
  */
 /*
- * "vendor" is rendered separately below via CpeVendorField (a
- * live-search autocomplete), not through dispatch-renderer like
- * every other field here.
+ * "vendor" and "product" are rendered separately below via
+ * CpeAutocompleteField (a live-search autocomplete), not through
+ * dispatch-renderer like every other field here.
  */
-const primaryFields = [
-  "product",
-];
-
-function vendorPath(
+function fieldPath(
   index: number,
+  key: string,
 ): string {
   return composePaths(
     itemPath(index),
-    "vendor",
+    key,
   );
 }
 
@@ -88,7 +85,17 @@ function onVendorUpdate(
   value: string,
 ): void {
   handleChange(
-    vendorPath(index),
+    fieldPath(index, "vendor"),
+    value || undefined,
+  );
+}
+
+function onProductUpdate(
+  index: number,
+  value: string,
+): void {
+  handleChange(
+    fieldPath(index, "product"),
     value || undefined,
   );
 }
@@ -207,27 +214,33 @@ function addAffected(): void {
               Vendor
             </label>
 
-            <CpeVendorField
+            <CpeAutocompleteField
               :id="`${control.id}-${index}-vendor`"
               :model-value="(item.vendor as string) ?? ''"
+              method="searchCpeVendors"
+              kind="vendor"
               input-class="form-control"
               :disabled="!control.enabled"
               @update:model-value="(value) => onVendorUpdate(index, value)"
             />
           </div>
 
-          <div
-            v-for="key in primaryFields"
-            :key="key"
-            class="col-md-6"
-          >
-            <dispatch-renderer
-              :schema="control.schema"
-              :uischema="controlFor(key)"
-              :path="itemPath(index)"
-              :enabled="control.enabled"
-              :renderers="control.renderers"
-              :cells="control.cells"
+          <div class="col-md-6">
+            <label
+              :for="`${control.id}-${index}-product`"
+              class="form-label"
+            >
+              Product
+            </label>
+
+            <CpeAutocompleteField
+              :id="`${control.id}-${index}-product`"
+              :model-value="(item.product as string) ?? ''"
+              method="searchCpeProducts"
+              kind="product"
+              input-class="form-control"
+              :disabled="!control.enabled"
+              @update:model-value="(value) => onProductUpdate(index, value)"
             />
           </div>
         </div>
