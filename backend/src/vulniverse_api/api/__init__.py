@@ -67,6 +67,7 @@ from . import (  # noqa: F401
     cna_credentials,
     cpe_search,
     publish,
+    record_quality,
     records,
     reference_data,
     templates,
