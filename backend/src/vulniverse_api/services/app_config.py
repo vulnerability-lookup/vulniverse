@@ -11,6 +11,21 @@ CONFIG_PATH = CONFIG_DIR / "vulniverse.toml"
 SAMPLE_CONFIG_PATH = CONFIG_DIR / "vulniverse.toml.sample"
 
 
+def _panel_enabled(value: Any) -> bool:
+    """A panel entry is either the legacy plain bool ("id" = true/false)
+    or a table ([panels.id] with an `enabled` key, possibly alongside
+    other panel-specific config such as patch2vuln's executable/
+    ollama_host/model/timeout_seconds). Only `enabled` is ever a
+    capability the frontend needs — the rest is backend-internal
+    config for whatever reads this panel's own table directly, and
+    deliberately never reaches the /capabilities response.
+    """
+    if isinstance(value, dict):
+        return bool(value.get("enabled", True))
+
+    return bool(value)
+
+
 @lru_cache(maxsize=1)
 def load_app_config() -> dict[str, dict[str, Any]]:
     """Load config/vulniverse.toml, falling back to the committed
@@ -28,6 +43,9 @@ def load_app_config() -> dict[str, dict[str, Any]]:
         data: dict[str, Any] = tomllib.load(handle)
 
     return {
-        "panels": dict(data.get("panels", {})),
+        "panels": {
+            name: _panel_enabled(value)
+            for name, value in dict(data.get("panels", {})).items()
+        },
         "actions": dict(data.get("actions", {})),
     }
