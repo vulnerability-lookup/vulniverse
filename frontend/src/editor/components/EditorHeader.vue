@@ -5,13 +5,14 @@ import { displayIdentifier } from "../identifier";
 
 defineProps<{
   canDelete: boolean;
+  canReject: boolean;
   identifier: string | null;
   profile: string | null;
   isDraft: boolean;
   isRejected: boolean;
   dirty: boolean;
   loading: boolean;
-  modules: Array<{
+  actions: Array<{
     id: string;
     label: string;
     enabled: boolean;
@@ -26,7 +27,7 @@ defineEmits<{
   unpublish: [];
   reject: [];
   delete: [];
-  runModule: [
+  runAction: [
     id: string,
   ];
 }>();
@@ -174,25 +175,25 @@ defineEmits<{
           Revert to draft
         </button>
 
-        <template v-if="modules.length">
+        <template v-if="actions.length">
           <div
             class="vr d-none d-md-block"
             aria-hidden="true"
           />
 
           <button
-            v-for="module in modules"
-            :key="module.id"
+            v-for="action in actions"
+            :key="action.id"
             type="button"
             class="btn btn-sm btn-outline-primary"
-            :disabled="loading || !module.enabled"
-            @click="$emit('runModule', module.id)"
+            :disabled="loading || !action.enabled"
+            @click="$emit('runAction', action.id)"
           >
-            {{ module.label }}
+            {{ action.label }}
           </button>
         </template>
 
-        <template v-if="identifier && !isRejected">
+        <template v-if="identifier && canReject && !isRejected">
           <div
             class="vr d-none d-md-block"
             aria-hidden="true"

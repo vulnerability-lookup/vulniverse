@@ -1,5 +1,5 @@
 /**
- * Filters a BUILTIN_PANELS/BUILTIN_MODULES list down to the ids
+ * Filters a BUILTIN_PANELS/BUILTIN_ACTIONS list down to the ids
  * enabled by config/vulniverse.toml (fetched via
  * HttpRepository.getCapabilities()). An id absent from the flags —
  * no config file, or the id just isn't mentioned — defaults to

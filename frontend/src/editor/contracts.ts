@@ -2,6 +2,9 @@ import type {
   Component,
 } from "vue";
 
+export type EditorDocument =
+  Record<string, unknown>;
+
 export interface Description {
   lang: string;
   value: string;
@@ -67,7 +70,7 @@ export interface RecordContainers {
   [key: string]: unknown;
 }
 
-export interface VulnerabilityRecord {
+export interface CveRecord {
   dataType?: string;
   dataVersion?: string;
   cveMetadata?: CveMetadata;
@@ -84,7 +87,7 @@ export interface VulnerabilityRecord {
 export interface LoadedRecord {
   identifier: string;
   profile: string;
-  record: VulnerabilityRecord;
+  record: EditorDocument;
   isDraft: boolean;
 }
 
@@ -132,6 +135,7 @@ export interface TemplateField {
 
 export interface Template {
   id: string;
+  profile: string;
   name: string;
   fields: TemplateField[];
 }
@@ -140,7 +144,7 @@ export interface Template {
  * "vl" and "cve-program" are both CVE Services API-shaped publish targets
  * (POST /cve-id, POST|PUT /cve/<id>/cna, POST|PUT /cve/<id>/reject) at a
  * different base URL/credentials — see the "CVE Program"/"Vulnerability-
- * Lookup" panels (editor/panels/CnaPublicationPanel.vue).
+ * Lookup" panels (editor/panels/publication/CnaPublicationPanel.vue).
  */
 export type PublicationTarget = "vl" | "cve-program";
 
@@ -164,20 +168,20 @@ export interface EditorRepository {
   ): Promise<LoadedRecord>;
 
   createRecord(
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord>;
 
   updateRecord(
     identifier: string,
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord>;
 
   validateRecord(
-    record: VulnerabilityRecord,
+    record: EditorDocument,
     profile: string,
   ): Promise<ValidationResult>;
 
@@ -201,10 +205,18 @@ export interface EditorRepository {
    * no per-user storage at all), in which case the Templates
    * section shows a "not supported here" message instead of the
    * create/apply UI — nothing else in the editor depends on this.
+   * Templates belong to the profile they were captured from (a CVE
+   * path like containers.cna.affected.0.vendor makes no sense
+   * offered against a differently-shaped profile), so listing/
+   * creating both take the active profile explicitly rather than
+   * returning/accepting every template regardless of shape.
    */
-  listTemplates?(): Promise<Template[]>;
+  listTemplates?(
+    profile: string,
+  ): Promise<Template[]>;
 
   saveTemplate?(
+    profile: string,
     name: string,
     fields: TemplateField[],
   ): Promise<Template>;
@@ -256,21 +268,21 @@ export interface EditorRepository {
   ): Promise<CnaPublication>;
 }
 
-export interface EditorModuleContext {
+export interface EditorContext {
   identifier: string | null;
   profile: string;
-  record: VulnerabilityRecord;
+  record: EditorDocument;
   isDraft: boolean;
 }
 
 /**
  * An optional, host-supplied action shown as an extra button in the
- * editor header (e.g. "Publish to CVE Project"). Modules are entirely
+ * editor header (e.g. "Publish to CVE Project"). Actions are entirely
  * host-configured, the same way an EditorRepository is: Vulniverse
- * ships a few built-ins under editor/modules/, but a host decides
- * which (if any) to pass in via VulniverseEditor's `modules` prop.
+ * ships a few built-ins under editor/actions/, but a host decides
+ * which (if any) to pass in via VulniverseEditor's `actions` prop.
  */
-export interface EditorModule {
+export interface EditorAction {
   id: string;
   label: string;
 
@@ -278,28 +290,28 @@ export interface EditorModule {
    * Hide the button entirely for the current context. Defaults to
    * always visible.
    */
-  isVisible?(context: EditorModuleContext): boolean;
+  isVisible?(context: EditorContext): boolean;
 
   /**
    * Show the button but disable it for the current context. Defaults
    * to always enabled.
    */
-  isEnabled?(context: EditorModuleContext): boolean;
+  isEnabled?(context: EditorContext): boolean;
 
-  run(context: EditorModuleContext): Promise<void>;
+  run(context: EditorContext): Promise<void>;
 }
 
 /**
  * An optional, host-supplied navigation tab + the component rendered
  * for it (e.g. a "CVE Project" panel showing publish status). Like
- * EditorModule, entirely host-configured via VulniverseEditor's
- * `panels` prop. The component receives the same EditorModuleContext
+ * EditorAction, entirely host-configured via VulniverseEditor's
+ * `panels` prop. The component receives the same EditorContext
  * as a single `context` prop — not via provide/inject — so it works
- * regardless of which bundle built it, exactly like EditorModule.run().
+ * regardless of which bundle built it, exactly like EditorAction.run().
  */
 export interface EditorPanel {
   id: string;
   label: string;
   component: Component;
-  isVisible?(context: EditorModuleContext): boolean;
+  isVisible?(context: EditorContext): boolean;
 }

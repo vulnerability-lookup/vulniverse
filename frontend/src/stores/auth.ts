@@ -3,7 +3,7 @@ import { defineStore } from "pinia";
 
 import { clearCsrfToken } from "@/repositories/csrf";
 import { apiRequest } from "@/repositories/apiRequest";
-import { RepositoryError } from "@/repositories/RepositoryError";
+import { ApiError } from "@/shared/errors";
 
 export interface AuthUser {
   id: number;
@@ -24,7 +24,7 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       currentUser.value = await apiRequest<AuthUser>("/auth/me");
     } catch (error) {
-      if (error instanceof RepositoryError && error.status === 401) {
+      if (error instanceof ApiError && error.status === 401) {
         currentUser.value = null;
       } else {
         throw error;

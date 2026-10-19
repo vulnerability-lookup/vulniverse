@@ -1,215 +1,35 @@
-import {
-  and,
-  isBooleanControl,
-  isStringControl,
-  rankWith,
-  schemaMatches,
-  schemaTypeIs,
-} from "@jsonforms/core";
-
 import type {
-  ControlElement,
   JsonFormsRendererRegistryEntry,
-  UISchemaElement,
 } from "@jsonforms/core";
 
-import { MultiStringControlRenderer } from "@jsonforms/vue-vanilla";
-
-import AffectedRenderer from "./AffectedRenderer.vue";
-import CpeApplicabilityRenderer from "./CpeApplicabilityRenderer.vue";
-import MetricsRenderer from "./MetricsRenderer.vue";
-import ReferencesRenderer from "./ReferencesRenderer.vue";
-import AdpRenderer from "./AdpRenderer.vue";
-import GcveExtensionRenderer from "./GcveExtensionRenderer.vue";
-import SourceRenderer from "./SourceRenderer.vue";
-import TagsRenderer from "./TagsRenderer.vue";
-import GcveTagsRenderer from "./GcveTagsRenderer.vue";
-import ArrayCardRenderer from "./ArrayCardRenderer.vue";
-import BooleanSelectRenderer from "./BooleanSelectRenderer.vue";
-import ReferenceIdRenderer from "./ReferenceIdRenderer.vue";
+import {
+  COMMON_RENDERERS,
+} from "./common";
 
 import {
-  referenceKindForPattern,
-} from "./reference-lookup";
+  CVE_RENDERERS,
+} from "./cve";
+
+import {
+  GCVE_RENDERERS,
+} from "./gcve";
+
+
+export {
+  COMMON_RENDERERS,
+  CVE_RENDERERS,
+  GCVE_RENDERERS,
+};
+
 
 /*
- * Any string property whose schema allows at least this many
- * characters is free-form prose rather than a short label —
- * descriptions/timeline/credits/configurations/workarounds/
- * solutions/exploits/rejectedReasons all share the CVE schema's own
- * "value" free-text shape, maxLength 4096 (supportingMedia's value
- * is 16384). Detected straight from the schema, not a per-field
- * list, so it keeps working if the schema grows more fields shaped
- * like this. `title` (256), `vendor` (512), and `product`/
- * `packageName` (2048) stay single-line.
+ * Compatibility aggregate for consumers that want the complete
+ * built-in renderer set. Editor profiles compose the individual
+ * renderer families directly.
  */
-const LONG_TEXT_MIN_LENGTH = 4096;
-
-/*
- * Excludes a bare array-item control (scope "#", e.g. an entry in
- * Modules/CPEs/Platforms) — ArrayCardRenderer dispatches those with
- * the array's own maxLength, which for a few primitive-item arrays
- * happens to be 4096 too despite holding short enumerable values,
- * not prose.
- */
-const isLongTextControl = and(
-  isStringControl,
-  (uischema: UISchemaElement) => (uischema as ControlElement).scope !== "#",
-  schemaMatches(
-    (schema) => typeof schema.maxLength === "number" && schema.maxLength >= LONG_TEXT_MIN_LENGTH,
-  ),
-);
-
-/*
- * cweId (problemTypes[].descriptions[]) and capecId (impacts[]) are
- * detected by their exact schema pattern — the same one the CVE
- * schema uses in both the CNA and ADP copies of these fields — so a
- * combobox with a suggestion list swaps in automatically wherever
- * that pattern appears, with no per-path uischema configuration.
- */
-const isReferenceIdControl = and(
-  isStringControl,
-  schemaMatches(
-    (schema) => referenceKindForPattern(schema.pattern) !== null,
-  ),
-);
-
-/*
- * A plain free-form tags array — no oneOf, no enum (unlike
- * containers.cna.tags/containers.adp[].tags, which are both a oneOf
- * and already get TagsRenderer via options.renderer, rank 10 below —
- * this never competes with those). Detected the same way
- * isReferenceIdControl is, straight from the schema shape, because a
- * GCVE extension's own sub-controls (e.g. ai_annotations[].tags,
- * generated dynamically by GcveExtensionRenderer.vue's
- * uiSchemaForExtension()) have no per-path uischema config to hang
- * an options.renderer override on — JSONForms falls back to its own
- * default uischema for everything nested past that point. Scope
- * must end in "/tags" too, so this doesn't also catch some other
- * unrelated plain string array with a different property name.
- */
-const isGcvePlainTagsControl = and(
-  schemaTypeIs("array"),
-  (uischema: UISchemaElement) =>
-    (uischema as ControlElement).scope?.endsWith("/tags") ?? false,
-  schemaMatches((schema) => {
-    const items = schema.items as
-      | { type?: string; enum?: unknown; oneOf?: unknown }
-      | undefined;
-
-    return Boolean(items)
-      && items?.type === "string"
-      && !items.enum
-      && !items.oneOf;
-  }),
-);
-
-/*
- * schemas/editor/cve.layout.json tags containers.cna.affected /
- * metrics / references with options.renderer = "vulniverse-*".
- * Rank 10 beats both the vanilla array renderer (rank 2) and
- * ArrayCardRenderer (rank 5) below, so these win whenever that
- * option is present.
- */
-function rendererOptionIs(
-  name: string,
-) {
-  return rankWith(
-    10,
-    (uischema: UISchemaElement) => {
-      const options = (
-        uischema as { options?: { renderer?: string } }
-      ).options;
-
-      return options?.renderer === name;
-    },
-  );
-}
-
-export const customRenderers: JsonFormsRendererRegistryEntry[] = [
-  {
-    renderer: AffectedRenderer,
-    tester: rendererOptionIs("vulniverse-affected"),
-  },
-  {
-    renderer: CpeApplicabilityRenderer,
-    tester: rendererOptionIs("vulniverse-cpe-applicability"),
-  },
-  {
-    renderer: MetricsRenderer,
-    tester: rendererOptionIs("vulniverse-metrics"),
-  },
-  {
-    renderer: ReferencesRenderer,
-    tester: rendererOptionIs("vulniverse-references"),
-  },
-  {
-    renderer: AdpRenderer,
-    tester: rendererOptionIs("vulniverse-adp"),
-  },
-  {
-    renderer: GcveExtensionRenderer,
-    tester: rendererOptionIs("vulniverse-gcve-extension"),
-  },
-  {
-    renderer: SourceRenderer,
-    tester: rendererOptionIs("vulniverse-source"),
-  },
-  {
-    renderer: TagsRenderer,
-    tester: rendererOptionIs("vulniverse-tags"),
-  },
-  {
-    renderer: ReferenceIdRenderer,
-    tester: rankWith(4, isReferenceIdControl),
-  },
-  /*
-   * Rank 6 beats ArrayCardRenderer's generic rank 5 for a plain
-   * tags-shaped array with no explicit uischema override — but
-   * never competes with the rank-10 options.renderer path
-   * containers.cna.tags/containers.adp[].tags use, since those are
-   * oneOf-shaped and isGcvePlainTagsControl only matches a plain
-   * string array.
-   */
-  {
-    renderer: GcveTagsRenderer,
-    tester: rankWith(6, isGcvePlainTagsControl),
-  },
-  /*
-   * Rank 2 beats vanilla's own checkbox-based BooleanControlRenderer
-   * (rank 1) for every boolean field — see BooleanSelectRenderer.vue
-   * for why.
-   */
-  {
-    renderer: BooleanSelectRenderer,
-    tester: rankWith(2, isBooleanControl),
-  },
-  /*
-   * Reuses vanilla's own textarea control (normally opt-in via
-   * uischema `options.multi`) but with a schema-driven tester
-   * instead, so no per-field uischema configuration is needed. Rank
-   * 3 beats vanilla's plain single-line StringControlRenderer
-   * (rank 1) and its own opt-in multi tester (rank 2) wherever the
-   * schema itself signals long-form text.
-   */
-  {
-    renderer: MultiStringControlRenderer,
-    tester: rankWith(3, isLongTextControl),
-  },
-  /*
-   * Default styling for every other array field — object items
-   * (Descriptions, Credits, Timeline, supportingMedia, versions,
-   * changes, ...) and primitive items alike (Cpes, Modules,
-   * Program Files, Platforms, ...) — same card look and add/
-   * remove buttons as the three named renderers above, minus
-   * their field-specific curation. schemaTypeIs('array') is
-   * exactly what vanilla's own ArrayListRenderer tests for, so
-   * this covers its entire scope; rank 5 beats it (rank 2) but
-   * loses to the three named renderers (rank 10) wherever those
-   * apply instead.
-   */
-  {
-    renderer: ArrayCardRenderer,
-    tester: rankWith(5, schemaTypeIs("array")),
-  },
-];
+export const customRenderers:
+  JsonFormsRendererRegistryEntry[] = [
+    ...COMMON_RENDERERS,
+    ...CVE_RENDERERS,
+    ...GCVE_RENDERERS,
+  ];

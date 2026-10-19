@@ -5,7 +5,20 @@ from flask_login import current_user
 
 from ..extensions import db
 from ..models import Template
+from ..services.profiles import known_profiles
 from . import api_bp
+
+
+def _validate_profile(
+    profile: object,
+) -> str | None:
+    if not isinstance(profile, str) or not profile.strip():
+        return "A non-empty 'profile' is required."
+
+    if profile not in known_profiles():
+        return f"Unknown profile: {profile!r}."
+
+    return None
 
 
 def _validate_fields(
@@ -34,6 +47,7 @@ def _serialize(
 ) -> dict:
     return {
         "id": template.id,
+        "profile": template.profile,
         "name": template.name,
         "fields": template.fields,
         "createdBy": template.created_by.email if template.created_by else None,
@@ -42,7 +56,15 @@ def _serialize(
 
 @api_bp.get("/templates")
 def list_templates() -> tuple[dict, int]:
-    templates = Template.query.order_by(
+    profile = request.args.get("profile")
+    error = _validate_profile(profile)
+
+    if error:
+        return {"message": error}, 400
+
+    templates = Template.query.filter_by(
+        profile=profile,
+    ).order_by(
         Template.name.asc(),
     ).all()
 
@@ -58,6 +80,12 @@ def create_template() -> tuple[dict, int]:
     if not isinstance(payload, dict):
         return {"message": "A JSON object is required."}, 400
 
+    profile = payload.get("profile")
+    error = _validate_profile(profile)
+
+    if error:
+        return {"message": error}, 400
+
     name = payload.get("name")
 
     if not isinstance(name, str) or not name.strip():
@@ -70,6 +98,7 @@ def create_template() -> tuple[dict, int]:
         return {"message": error}, 400
 
     template = Template(
+        profile=profile,
         name=name.strip(),
         fields=fields,
         created_by_id=current_user.id,
