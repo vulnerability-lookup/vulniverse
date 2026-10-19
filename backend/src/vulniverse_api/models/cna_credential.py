@@ -19,8 +19,8 @@ from ..extensions import db
 
 
 class UserCnaCredential(
-    db.Model,
-):  # type: ignore[name-defined]
+    db.Model,  # type: ignore[name-defined]
+):
     __tablename__ = "user_cna_credential"
 
     __table_args__ = (

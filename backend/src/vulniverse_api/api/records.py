@@ -9,12 +9,10 @@ from sqlalchemy import func, or_
 
 from ..extensions import db
 from ..models import CnaPublication, VulnerabilityRecord
+from ..services.profiles import known_profiles
 from ..services.record_validation import (
     find_x_gcve_occurrences,
     validate_record,
-)
-from ..services.record_validation import (
-    known_profiles,
 )
 from . import api_bp
 

@@ -21,8 +21,8 @@ from ..extensions import db
 # custom DeclarativeBase.
 class User(
     UserMixin,
-    db.Model,
-):  # type: ignore[name-defined]
+    db.Model,  # type: ignore[name-defined]
+):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(

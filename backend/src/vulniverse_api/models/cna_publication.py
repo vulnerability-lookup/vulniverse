@@ -18,8 +18,8 @@ from ..extensions import db
 
 
 class CnaPublication(
-    db.Model,
-):  # type: ignore[name-defined]
+    db.Model,  # type: ignore[name-defined]
+):
     __tablename__ = "cna_publication"
 
     __table_args__ = (

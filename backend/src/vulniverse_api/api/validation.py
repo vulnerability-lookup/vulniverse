@@ -1,6 +1,7 @@
 from flask import request
 
-from ..services.record_validation import known_profiles, validate_record
+from ..services.profiles import known_profiles
+from ..services.record_validation import validate_record
 from . import api_bp
 
 

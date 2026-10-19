@@ -5,7 +5,6 @@ import json
 import re
 from collections.abc import Callable
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 from jsonschema import FormatChecker
@@ -13,13 +12,7 @@ from jsonschema.exceptions import ValidationError
 from jsonschema.protocols import Validator
 from jsonschema.validators import validator_for
 
-from .profiles import (
-    SCHEMAS_ROOT,
-    UnknownProfileError,
-    resolve_profile,
-    known_profiles
-)
-
+from .profiles import SCHEMAS_ROOT, UnknownProfileError, resolve_profile
 
 GCVE_EXTENSION_REGISTRY_PATH = SCHEMAS_ROOT / "extensions" / "gcve" / "registry.json"
 
@@ -93,7 +86,7 @@ def apply_schema_overlay(
         overlay_config,
         dict,
     ):
-        raise ValueError("schemaOverlay must be an object.")
+        raise TypeError("schemaOverlay must be an object.")
 
     overlay_path = overlay_config.get("path")
 
@@ -101,7 +94,7 @@ def apply_schema_overlay(
         overlay_path,
         str,
     ):
-        raise ValueError("schemaOverlay.path must be a string.")
+        raise TypeError("schemaOverlay.path must be a string.")
 
     with (SCHEMAS_ROOT / overlay_path).open(
         encoding="utf-8",
@@ -112,7 +105,7 @@ def apply_schema_overlay(
         overlay,
         dict,
     ):
-        raise ValueError("Schema overlay root must be an object.")
+        raise TypeError("Schema overlay root must be an object.")
 
     apply_to = overlay_config.get(
         "applyTo",
@@ -169,7 +162,7 @@ def get_profile_validator(
         base_schema_path,
         str,
     ):
-        raise ValueError(f"Profile {profile_id!r} has no baseSchema.")
+        raise TypeError(f"Profile {profile_id!r} has no baseSchema.")
 
     with (SCHEMAS_ROOT / base_schema_path).open(
         encoding="utf-8",
@@ -180,7 +173,7 @@ def get_profile_validator(
         schema,
         dict,
     ):
-        raise ValueError(f"Schema for {profile_id!r} is not an object.")
+        raise TypeError(f"Schema for {profile_id!r} is not an object.")
 
     schema = apply_schema_overlay(
         schema,

@@ -21,8 +21,8 @@ from .user import User
 
 
 class Template(
-    db.Model,
-):  # type: ignore[name-defined]
+    db.Model,  # type: ignore[name-defined]
+):
     __tablename__ = "template"
 
     id: Mapped[int] = mapped_column(

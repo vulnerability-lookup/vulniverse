@@ -5,7 +5,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).parents[4]
 SCHEMAS_ROOT = PROJECT_ROOT / "schemas"
 MANIFEST_PATH = SCHEMAS_ROOT / "manifest.json"
