@@ -29,6 +29,8 @@ const repository = useEditorRepository();
 
 const {
   results: cpeSuggestions,
+  loading: cpeSuggestionsLoading,
+  failed: cpeSuggestionsFailed,
   open: showCpeSuggestions,
   onQueryChange: onCriteriaQueryChange,
   hide: hideCpeSuggestions,
@@ -252,6 +254,21 @@ defineExpose({
               </button>
             </li>
           </ul>
+
+          <div
+            v-if="showCpeSuggestions && cpeSuggestionsLoading && !cpeSuggestions.length"
+            class="text-secondary small mt-1"
+          >
+            Searching the CPE dictionary…
+          </div>
+
+          <div
+            v-else-if="showCpeSuggestions && cpeSuggestionsFailed"
+            class="text-secondary small mt-1"
+          >
+            The CPE search timed out or is unavailable — you can still
+            enter a CPE string directly.
+          </div>
         </div>
 
         <p class="form-text mb-3">

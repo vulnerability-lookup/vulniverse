@@ -52,6 +52,8 @@ watch(
 
 const {
   results,
+  loading,
+  failed,
   open,
   onQueryChange,
   hide,
@@ -121,5 +123,20 @@ function select(
         </button>
       </li>
     </ul>
+
+    <div
+      v-if="open && loading && !results.length"
+      class="text-secondary small mt-1"
+    >
+      Searching CPE vendors…
+    </div>
+
+    <div
+      v-else-if="open && failed"
+      class="text-secondary small mt-1"
+    >
+      The CPE vendor search timed out or is unavailable — you can still
+      enter a vendor name directly.
+    </div>
   </div>
 </template>

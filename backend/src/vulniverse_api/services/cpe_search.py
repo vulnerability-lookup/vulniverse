@@ -7,10 +7,14 @@ from typing import Any
 
 import httpx
 
-
 CPE_API_ROOT = "https://cpe.gcve.eu/api"
 
-REQUEST_TIMEOUT_SECONDS = 5.0
+# Measured live: /vendors typically answers in ~1-4s, but /cpes'
+# broad `q` search runs a substring match across ~2.1M rows (title,
+# vendor, product, version, URI) and can legitimately take 10s+ even
+# on success — 5s was cutting off searches that would otherwise have
+# returned results, not just hanging ones.
+REQUEST_TIMEOUT_SECONDS = 12.0
 
 CACHE_TTL_SECONDS = 45.0
 CACHE_MAX_ENTRIES = 128
@@ -125,7 +129,7 @@ def _get(
         payload,
         (dict, list),
     ):
-        raise ValueError("CPE API returned an unexpected JSON response.")
+        raise TypeError("CPE API returned an unexpected JSON response.")
 
     _store_cached(
         key,

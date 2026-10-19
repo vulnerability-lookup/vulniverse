@@ -26,6 +26,11 @@ export function useCpeSearch<T>(
   const results = ref<T[]>([]);
   const loading = ref(false);
   const open = ref(false);
+  // Distinct from "loading" with zero results so the dropdown can
+  // say "search failed" instead of silently looking like "no
+  // matches" — the CPE Editor's broad search can legitimately take
+  // 10s+ or occasionally time out against its ~2.1M-row dictionary.
+  const failed = ref(false);
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
   let requestToken = 0;
@@ -41,6 +46,7 @@ export function useCpeSearch<T>(
     const token = ++requestToken;
 
     loading.value = true;
+    failed.value = false;
 
     search(term)
       .then((items) => {
@@ -51,6 +57,7 @@ export function useCpeSearch<T>(
       .catch(() => {
         if (token === requestToken) {
           results.value = [];
+          failed.value = true;
         }
       })
       .finally(() => {
@@ -73,6 +80,7 @@ export function useCpeSearch<T>(
       // can't land after the query has already been cleared.
       requestToken++;
       loading.value = false;
+      failed.value = false;
       results.value = [];
 
       return;
@@ -96,6 +104,7 @@ export function useCpeSearch<T>(
     clearTimer();
     requestToken++;
     loading.value = false;
+    failed.value = false;
     results.value = [];
     open.value = false;
   }
@@ -103,6 +112,7 @@ export function useCpeSearch<T>(
   return {
     results,
     loading,
+    failed,
     open,
     onQueryChange,
     show,

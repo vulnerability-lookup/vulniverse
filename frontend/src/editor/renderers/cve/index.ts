@@ -39,6 +39,11 @@ import {
 } from "./reference-id";
 
 import {
+  CpeNameRenderer,
+  isCpeNamePattern,
+} from "../../cpe";
+
+import {
   rendererOptionIs,
 } from "../testers";
 
@@ -52,6 +57,15 @@ const isReferenceIdControl = and(
         schema.pattern,
       ) !== null
     ),
+  ),
+);
+
+
+const isCpeNameControl = and(
+  isStringControl,
+
+  schemaMatches(
+    (schema) => isCpeNamePattern(schema.pattern),
   ),
 );
 
@@ -244,6 +258,17 @@ export const CVE_RENDERERS:
         rankWith(
           4,
           isReferenceIdControl,
+        ),
+    },
+
+    {
+      renderer:
+        CpeNameRenderer,
+
+      tester:
+        rankWith(
+          4,
+          isCpeNameControl,
         ),
     },
   ];

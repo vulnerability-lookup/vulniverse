@@ -11,7 +11,6 @@ from ..services.cpe_search import (
 )
 from . import api_bp
 
-
 MIN_QUERY_LENGTH = 2
 
 DEFAULT_PAGE = 1
@@ -85,6 +84,8 @@ def cpe_vendors() -> tuple[
 
     if not _is_search_term(q):
         return [], 200
+
+    assert q is not None  # narrowed by _is_search_term above
 
     try:
         result = search_vendors(
