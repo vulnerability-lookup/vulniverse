@@ -162,7 +162,6 @@ export interface CnaPublication {
   updatedAt: string;
 }
 
-
 // Scoring
 
 export interface RecordQualityCheck {
@@ -188,6 +187,41 @@ export interface RecordQualityScore {
   methodologyVersion: number;
   pillars: RecordQualityPillar[];
   checks: RecordQualityCheck[];
+}
+
+export interface CpeVendorSuggestion {
+  id: string;
+  name: string;
+  title?: string | null;
+}
+
+export interface CpeProductSuggestion {
+  id: string;
+  name: string;
+  title?: string | null;
+}
+
+export interface CpeSearchParams {
+  q?: string;
+  vendorQ?: string;
+  productQ?: string;
+  part?: CpePart;
+}
+
+export type CpePart =
+  | "a"
+  | "o"
+  | "h";
+
+export interface CpeSuggestion {
+  id: string;
+  cpe: string;
+
+  title?: string | null;
+  part: CpePart;
+
+  version: string;
+  deprecated: boolean;
 }
 
 export interface EditorRepository {
@@ -227,6 +261,18 @@ export interface EditorRepository {
   getReferenceList?(
     kind: "cwe" | "capec",
   ): Promise<ReferenceListItem[]>;
+
+  searchCpeVendors?(
+    q: string
+  ): Promise<CpeVendorSuggestion[]>;
+
+  searchCpeProducts?(
+    q: string
+  ): Promise<CpeProductSuggestion[]>;
+
+  searchCpes?(
+    params:  CpeSearchParams,
+  ): Promise<CpeSuggestion[]>;
 
   /**
    * Optional: a host may have no place to persist templates (e.g.

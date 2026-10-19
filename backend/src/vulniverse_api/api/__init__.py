@@ -52,7 +52,7 @@ def capabilities() -> dict:
         "features": {
             "recordStorage": True,
             "validation": True,
-            "cpeSearch": False,
+            "cpeSearch": True,
             "cpeProposals": False,
             "publication": True,
         },
@@ -65,6 +65,7 @@ from . import (  # noqa: F401
     admin,
     auth,
     cna_credentials,
+    cpe_search,
     publish,
     record_quality,
     records,

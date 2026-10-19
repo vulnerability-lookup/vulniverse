@@ -9,6 +9,10 @@ import type {
   TemplateField,
   ValidationResult,
   RecordQualityScore,
+  CpeSuggestion,
+  CpeVendorSuggestion,
+  CpeProductSuggestion,
+  CpeSearchParams,
 } from "@/editor/contracts";
 
 import {
@@ -55,15 +59,6 @@ export interface AppCapabilities {
 
 // Record quality
 
-/*
- * The backend's own field names (services/record_quality.py) — kept
- * distinct from RecordQualityScore/RecordQualityCheck/
- * RecordQualityPillar because "name"/"rule"/"score" there mean
- * something more specific in the editor's own vocabulary ("id",
- * "label", a pillar's "points"). Mapped below, not renamed upstream,
- * since the backend's names match Vulnerability-Lookup's own
- * scorecard methodology field names.
- */
 interface RecordQualityApiCheck {
   name: string;
   pillar: string;
@@ -98,6 +93,83 @@ function prettifyCheckName(
       (word) => word.charAt(0).toUpperCase() + word.slice(1),
     )
     .join(" ");
+}
+
+// CPE stuff
+
+interface CpeVendorApiItem {
+  id: number;
+  uuid: string;
+  name: string;
+  title: string | null;
+}
+
+
+interface CpeProductApiItem {
+  id: number;
+  uuid: string;
+  name: string;
+  title: string | null;
+}
+
+
+interface CpeApiItem {
+  id: number;
+  cpe_name_id: string;
+  cpe_uri: string;
+
+  title: string | null;
+
+  part: string;
+  version: string;
+
+  deprecated: boolean;
+  deprecated_by: string | null;
+
+  vendor_id: number;
+  vendor_uuid: string;
+
+  product_id: number;
+  product_uuid: string;
+}
+
+
+interface CpeSearchApiResponse<T> {
+  items: T[];
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+}
+
+/*
+ * The backend deliberately returns [] when a search term is too
+ * short, while normal upstream search responses are paginated
+ * objects containing `items`.
+ */
+function cpeSearchItems<T>(
+  response:
+    | T[]
+    | CpeSearchApiResponse<T>,
+): T[] {
+  return Array.isArray(response)
+    ? response
+    : response.items;
+}
+
+
+function cpePart(
+  value: string,
+): CpeSuggestion["part"] | undefined {
+  switch (value) {
+    case "a":
+    case "o":
+    case "h":
+      return value;
+
+    default:
+      return undefined;
+  }
 }
 
 export class HttpRepository
@@ -205,6 +277,145 @@ export class HttpRepository
 
     return result.items;
   }
+
+  async searchCpeVendors(
+    q: string,
+  ): Promise<CpeVendorSuggestion[]> {
+    const query =
+      new URLSearchParams({
+        q,
+      });
+
+    const response = await this.request<
+      | CpeVendorApiItem[]
+      | CpeSearchApiResponse<CpeVendorApiItem>
+    >(
+      `/cpe/vendors?${query.toString()}`,
+    );
+
+    return cpeSearchItems(
+      response,
+    ).map(
+      (vendor) => ({
+        id: vendor.uuid,
+
+        name: vendor.name,
+
+        title:
+          vendor.title,
+      }),
+    );
+  }
+
+  async searchCpeProducts(
+    q: string,
+  ): Promise<CpeProductSuggestion[]> {
+    const query =
+      new URLSearchParams({
+        q,
+      });
+
+    const response = await this.request<
+      | CpeProductApiItem[]
+      | CpeSearchApiResponse<CpeProductApiItem>
+    >(
+      `/cpe/products?${query.toString()}`,
+    );
+
+    return cpeSearchItems(
+      response,
+    ).map(
+      (product) => ({
+        id: product.uuid,
+
+        name: product.name,
+
+        title:
+          product.title,
+      }),
+    );
+  }
+
+  async searchCpes(
+    params: CpeSearchParams,
+  ): Promise<CpeSuggestion[]> {
+    const query =
+      new URLSearchParams();
+
+    if (params.q) {
+      query.set(
+        "q",
+        params.q,
+      );
+    }
+
+    if (params.vendorQ) {
+      query.set(
+        "vendor_q",
+        params.vendorQ,
+      );
+    }
+
+    if (params.productQ) {
+      query.set(
+        "product_q",
+        params.productQ,
+      );
+    }
+
+    if (params.part) {
+      query.set(
+        "part",
+        params.part,
+      );
+    }
+
+    const response = await this.request<
+      | CpeApiItem[]
+      | CpeSearchApiResponse<CpeApiItem>
+    >(
+      `/cpe/cpes?${query.toString()}`,
+    );
+
+    return cpeSearchItems(
+      response,
+    ).flatMap(
+      (item): CpeSuggestion[] => {
+        const part =
+          cpePart(
+            item.part,
+          );
+
+        /*
+         * Ignore malformed upstream entries rather
+         * than exposing invalid suggestions.
+         */
+        if (!part) {
+          return [];
+        }
+
+        return [{
+          id:
+            item.cpe_name_id,
+
+          cpe:
+            item.cpe_uri,
+
+          title:
+            item.title,
+
+          part,
+
+          version:
+            item.version,
+
+          deprecated:
+            item.deprecated,
+        }];
+      },
+    );
+  }
+
 
   async listTemplates(
     profile: string,
