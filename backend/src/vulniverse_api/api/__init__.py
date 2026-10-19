@@ -66,6 +66,7 @@ from . import (  # noqa: F401
     auth,
     cna_credentials,
     publish,
+    record_quality,
     records,
     reference_data,
     templates,
