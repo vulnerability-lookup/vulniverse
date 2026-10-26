@@ -8,7 +8,7 @@ from functools import lru_cache
 from redis import Redis
 from rq import Queue
 
-ALLOWED_QUEUES = frozenset({"patch2vuln", "vuln2patch"})
+ALLOWED_QUEUES = frozenset({"patch2vuln"})
 
 
 @lru_cache(maxsize=1)

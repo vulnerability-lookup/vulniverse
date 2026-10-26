@@ -22,8 +22,12 @@ services:
 
   worker:
     <<: *python
-    command: ["rq", "worker", "--url", "redis://redis:6379/0", "patch2vuln", "vuln2patch"]
+    command: ["rq", "worker", "--url", "redis://redis:6379/0", "patch2vuln"]
     stop_grace_period: 35m
+    volumes:
+      - ${PATCH2VULN_HOST_DIR}:/opt/patch2vuln:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   redis:
     image: valkey/valkey:8-alpine
