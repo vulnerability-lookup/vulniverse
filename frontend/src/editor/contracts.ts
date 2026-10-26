@@ -224,6 +224,33 @@ export interface CpeSuggestion {
   deprecated: boolean;
 }
 
+// Interfaces for patch2vuln
+export interface Patch2VulnContext {
+  vendor?: string;
+  product?: string;
+  affectedVersion?: string;
+  fixedVersion?: string;
+  versionType?: string;
+}
+
+export interface Patch2VulnInput {
+  commitUrls: string[];
+  files: File[];
+  context: Patch2VulnContext;
+}
+
+export interface Patch2VulnResult {
+  record: CveRecord;
+  analysis: unknown;
+}
+
+export interface Patch2VulnJob {
+  jobId: string;
+  status: "queued" | "running" | "completed" | "failed";
+  result?: Patch2VulnResult;
+  error?: string;
+}
+
 export interface EditorRepository {
   loadRecord(
     identifier: string,
@@ -347,6 +374,16 @@ export interface EditorRepository {
     record: EditorDocument,
     profile: string,
   ): Promise<RecordQualityScore>;
+
+
+  // patch2vuln
+  submitPatch2VulnJob?(
+    input: Patch2VulnInput,
+  ): Promise<Patch2VulnJob>;
+
+  getPatch2VulnJob?(
+    jobId: string,
+  ): Promise<Patch2VulnJob>;
 }
 
 export interface EditorContext {

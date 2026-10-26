@@ -82,4 +82,5 @@ from . import (  # noqa: F401
     reference_data,
     templates,
     validation,
+    patch2vuln,
 )

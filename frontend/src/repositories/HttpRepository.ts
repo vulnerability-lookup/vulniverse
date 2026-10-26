@@ -13,6 +13,8 @@ import type {
   CpeVendorSuggestion,
   CpeProductSuggestion,
   CpeSearchParams,
+  Patch2VulnJob,
+  Patch2VulnInput,
 } from "@/editor/contracts";
 
 import {
@@ -265,6 +267,44 @@ export class HttpRepository
     await this.request<unknown>(
       `/records/${encodeURIComponent(identifier)}`,
       { method: "DELETE" },
+    );
+  }
+
+
+  async submitPatch2VulnJob(
+    input: Patch2VulnInput,
+  ): Promise<Patch2VulnJob> {
+    const formData = new FormData();
+
+    formData.append(
+      "commitUrls",
+      JSON.stringify(input.commitUrls),
+    );
+
+    for (const file of input.files) {
+      formData.append("files", file);
+    }
+
+    for (const [key, value] of Object.entries(input.context)) {
+      if (value) {
+        formData.append(key, value);
+      }
+    }
+
+    return this.request<Patch2VulnJob>(
+      "/patch2vuln/jobs",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+  }
+
+  async getPatch2VulnJob(
+    jobId: string,
+  ): Promise<Patch2VulnJob> {
+    return this.request<Patch2VulnJob>(
+      `/patch2vuln/jobs/${encodeURIComponent(jobId)}`,
     );
   }
 

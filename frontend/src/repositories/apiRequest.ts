@@ -22,7 +22,10 @@ export async function apiRequest<T>(
 
   headers.set("Accept", "application/json");
 
-  if (init.body !== undefined) {
+  if (
+    init.body !== undefined &&
+    !(init.body instanceof FormData)
+  ) {
     headers.set("Content-Type", "application/json");
   }
 

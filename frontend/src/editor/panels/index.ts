@@ -19,6 +19,10 @@ import {
   recordQualityPanel,
 } from "./record-quality";
 
+import {
+  patch2vulnPanel,
+} from "./patch2vuln";
+
 export const BUILTIN_PANELS:
   EditorPanel[] = [
     templatesPanel,
@@ -26,6 +30,7 @@ export const BUILTIN_PANELS:
     vulnerabilityLookupPanel,
     cveProgramPanel,
     recordQualityPanel,
+    patch2vulnPanel,
   ];
 
 
@@ -44,6 +49,10 @@ export {
 export {
   cveProgramPanel,
   vulnerabilityLookupPanel,
+};
+
+export {
+  patch2vulnPanel,
 };
 
 export {
