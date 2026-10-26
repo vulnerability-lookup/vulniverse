@@ -162,6 +162,33 @@ export interface CnaPublication {
   updatedAt: string;
 }
 
+// Scoring
+
+export interface RecordQualityCheck {
+  id: string;
+  label: string;
+  pillar: string;
+  credit: number;
+  weight: number;
+  points: number;
+  rule: string;
+}
+
+export interface RecordQualityPillar {
+  id: string;
+  label: string;
+  points: number;
+  maximum: number;
+}
+
+export interface RecordQualityScore {
+  score: number;
+  grade: string;
+  methodologyVersion: number;
+  pillars: RecordQualityPillar[];
+  checks: RecordQualityCheck[];
+}
+
 export interface CpeVendorSuggestion {
   id: string;
   name: string;
@@ -313,6 +340,13 @@ export interface EditorRepository {
     target: PublicationTarget,
     recordIdentifier: string,
   ): Promise<CnaPublication>;
+
+
+  // Scoreboard
+  scoreRecordQuality?(
+    record: EditorDocument,
+    profile: string,
+  ): Promise<RecordQualityScore>;
 }
 
 export interface EditorContext {

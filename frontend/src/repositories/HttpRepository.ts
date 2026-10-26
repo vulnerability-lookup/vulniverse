@@ -8,6 +8,7 @@ import type {
   Template,
   TemplateField,
   ValidationResult,
+  RecordQualityScore,
   CpeSuggestion,
   CpeVendorSuggestion,
   CpeProductSuggestion,
@@ -55,6 +56,44 @@ export interface AppCapabilities {
   actions: Record<string, boolean>;
 }
 
+
+// Record quality
+
+interface RecordQualityApiCheck {
+  name: string;
+  pillar: string;
+  weight: number;
+  rule: string;
+  credit: number;
+  points: number;
+}
+
+interface RecordQualityApiPillar {
+  name: string;
+  label: string;
+  score: number;
+  maximum: number;
+}
+
+interface RecordQualityApiResponse {
+  score: number;
+  grade: string;
+  methodologyVersion: number;
+  methodologySince: string;
+  pillars: RecordQualityApiPillar[];
+  checks: RecordQualityApiCheck[];
+}
+
+function prettifyCheckName(
+  name: string,
+): string {
+  return name
+    .split("_")
+    .map(
+      (word) => word.charAt(0).toUpperCase() + word.slice(1),
+    )
+    .join(" ");
+}
 
 // CPE stuff
 
@@ -487,6 +526,49 @@ export class HttpRepository
       `/publish/${target}/${encodeURIComponent(recordIdentifier)}/abort`,
       { method: "POST" },
     );
+  }
+
+  async scoreRecordQuality(
+    record: EditorDocument,
+    profile: string,
+  ): Promise<RecordQualityScore> {
+    const response = await this.request<RecordQualityApiResponse>(
+      "/record-quality",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          record,
+          profile,
+        }),
+      },
+    );
+
+    return {
+      score: response.score,
+      grade: response.grade,
+      methodologyVersion: response.methodologyVersion,
+
+      pillars: response.pillars.map(
+        (pillar) => ({
+          id: pillar.name,
+          label: pillar.label,
+          points: pillar.score,
+          maximum: pillar.maximum,
+        }),
+      ),
+
+      checks: response.checks.map(
+        (check) => ({
+          id: check.name,
+          label: prettifyCheckName(check.name),
+          pillar: check.pillar,
+          credit: check.credit,
+          weight: check.weight,
+          points: check.points,
+          rule: check.rule,
+        }),
+      ),
+    };
   }
 
   /*
