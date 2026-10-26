@@ -5,20 +5,34 @@
 # this sample file's values, so a fresh checkout behaves exactly like a
 # deployment with no config file at all — nothing here is required.
 
-[panels]
-# Which sidebar panels the standalone app shows, keyed by EditorPanel.id
-# (see frontend/src/editor/panels/*.ts). A panel id with no entry here
-# defaults to enabled, matching pre-config behavior.
-"templates" = true
-"stats" = false
-"vl" = false
-"cve-program" = false
+[panels.stats]
+enabled = false
+
+[panels.vl]
+enabled = false
+
+[panels.cve-program]
+enabled = false
+
+[panels.record-quality]
+enabled = true
+
 # Opt-in only: needed by hosts with GCVE-only storage (e.g.
 # Vulnerability-Lookup), not by the standalone app.
-"gcve-identifier" = false
+[panels.gcve-identifier]
+enabled = false
+
+[panels.patch2vuln]
+enabled = true
+# patch2vuln executable/script.
+executable = "/opt/patch2vuln/patch2vuln.py"
+# Ollama may run on another machine in the local network.
+ollama_host = "http://ollama.internal:11434"
+model = "qwen3.8:27b"
+timeout_seconds = 300
+
 
 [actions]
 # Which header-button actions the standalone app shows, keyed by
-# EditorAction.id (see frontend/src/editor/actions/*.ts).
+# EditorAction.id.
 "download-json" = true
-

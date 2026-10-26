@@ -7,6 +7,7 @@ import {
   DispatchRenderer,
   rendererProps,
   useJsonFormsArrayControl,
+  useJsonFormsControl,
 } from "@jsonforms/vue";
 
 import {
@@ -21,6 +22,10 @@ import {
   useCollapsibleItems,
 } from "../common/use-collapsible-items";
 
+import {
+  CpeAutocompleteField,
+} from "../../cpe";
+
 const props = defineProps({
   ...rendererProps<ControlElement>(),
 });
@@ -30,6 +35,15 @@ const {
   addItem,
   removeItems,
 } = useJsonFormsArrayControl(props);
+
+/*
+ * Only needed for the vendor/product fields' live-search autocomplete
+ * below (CpeAutocompleteField), which write directly via handleChange
+ * + composePaths rather than through DispatchRenderer like every
+ * other field in this renderer — the same handleChange-on-the-side
+ * pattern GcveExtensionRenderer.vue uses for its own nested writes.
+ */
+const { handleChange } = useJsonFormsControl(props);
 
 const items = computed(() => {
   return (control.value.data ?? []) as Array<
@@ -51,10 +65,40 @@ const { isExpanded, toggle } = useCollapsibleItems(
  * avoids that path entirely; the fields themselves still go
  * through the normal String/Enum/Array renderers, unchanged.
  */
-const primaryFields = [
-  "vendor",
-  "product",
-];
+/*
+ * "vendor" and "product" are rendered separately below via
+ * CpeAutocompleteField (a live-search autocomplete), not through
+ * dispatch-renderer like every other field here.
+ */
+function fieldPath(
+  index: number,
+  key: string,
+): string {
+  return composePaths(
+    itemPath(index),
+    key,
+  );
+}
+
+function onVendorUpdate(
+  index: number,
+  value: string,
+): void {
+  handleChange(
+    fieldPath(index, "vendor"),
+    value || undefined,
+  );
+}
+
+function onProductUpdate(
+  index: number,
+  value: string,
+): void {
+  handleChange(
+    fieldPath(index, "product"),
+    value || undefined,
+  );
+}
 
 const detailFields = [
   "packageName",
@@ -162,18 +206,41 @@ function addAffected(): void {
         class="card-body"
       >
         <div class="row g-3 mb-3">
-          <div
-            v-for="key in primaryFields"
-            :key="key"
-            class="col-md-6"
-          >
-            <dispatch-renderer
-              :schema="control.schema"
-              :uischema="controlFor(key)"
-              :path="itemPath(index)"
-              :enabled="control.enabled"
-              :renderers="control.renderers"
-              :cells="control.cells"
+          <div class="col-md-6">
+            <label
+              :for="`${control.id}-${index}-vendor`"
+              class="form-label"
+            >
+              Vendor
+            </label>
+
+            <CpeAutocompleteField
+              :id="`${control.id}-${index}-vendor`"
+              :model-value="(item.vendor as string) ?? ''"
+              method="searchCpeVendors"
+              kind="vendor"
+              input-class="form-control"
+              :disabled="!control.enabled"
+              @update:model-value="(value) => onVendorUpdate(index, value)"
+            />
+          </div>
+
+          <div class="col-md-6">
+            <label
+              :for="`${control.id}-${index}-product`"
+              class="form-label"
+            >
+              Product
+            </label>
+
+            <CpeAutocompleteField
+              :id="`${control.id}-${index}-product`"
+              :model-value="(item.product as string) ?? ''"
+              method="searchCpeProducts"
+              kind="product"
+              input-class="form-control"
+              :disabled="!control.enabled"
+              @update:model-value="(value) => onProductUpdate(index, value)"
             />
           </div>
         </div>

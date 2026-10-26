@@ -386,9 +386,16 @@
     color: var(--bs-danger, #dc3545);
   }
 
-  .control > .wrapper > .input,
-  .control > .wrapper > .select,
-  .control > .wrapper > .text-area {
+  // Descendant (not direct-child) selectors: a control that adds its
+  // own suggestion-dropdown wrapper around the actual <input> (e.g.
+  // ReferenceIdRenderer.vue, CpeNameRenderer.vue, CpeAutocompleteField.vue
+  // — all wrap it in a `.reference-id-control` div for the dropdown to
+  // anchor to) nests .input one level deeper than .wrapper > .input
+  // ever matches, so a direct-child rule silently left those inputs
+  // completely unstyled (no width, no padding, no border).
+  .control > .wrapper .input,
+  .control > .wrapper .select,
+  .control > .wrapper .text-area {
     width: 100%;
     padding: 0.625rem 0.75rem;
     color: var(--bs-body-color);
@@ -406,15 +413,15 @@
   // as content is typed/pasted in, on browsers that support it
   // (Chrome/Edge 123+ as of writing) — a no-op elsewhere, where it
   // just falls back to the min-height/manual-resize behavior above.
-  .control > .wrapper > .text-area {
+  .control > .wrapper .text-area {
     min-height: 6rem;
     resize: vertical;
     field-sizing: content;
   }
 
-  .control > .wrapper > .input:focus,
-  .control > .wrapper > .select:focus,
-  .control > .wrapper > .text-area:focus {
+  .control > .wrapper .input:focus,
+  .control > .wrapper .select:focus,
+  .control > .wrapper .text-area:focus {
     outline: 0;
     border-color: var(--bs-primary);
     box-shadow: 0 0 0 0.2rem
@@ -545,6 +552,17 @@
 
 .reference-id-control {
   position: relative;
+
+  // .control > .wrapper is display:flex (see above) — as a flex item,
+  // this div shrinks to its content's width by default instead of
+  // filling the row, which left the input it contains stuck at a
+  // tiny content-driven width (~274px) regardless of its own
+  // width: 100%. flex: 1 makes it actually fill the available width;
+  // min-width: 0 stops a long CPE string's intrinsic content size
+  // from overriding that and overflowing the row (the standard
+  // flexbox gotcha: flex items default to min-width: auto, not 0).
+  flex: 1;
+  min-width: 0;
 }
 
 .reference-id-suggestions {
