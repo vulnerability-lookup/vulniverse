@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => ({
 
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5000",
+        target: process.env.API_PROXY_TARGET ?? "http://127.0.0.1:5000",
         changeOrigin: true,
       },
     },

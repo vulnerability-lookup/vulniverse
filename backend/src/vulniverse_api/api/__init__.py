@@ -56,9 +56,19 @@ def capabilities() -> dict:
             "cpeProposals": False,
             "publication": True,
         },
-        "panels": app_config["panels"],
+        #"panels": app_config["panels"],
+        "panels": {
+            name: panel_enabled(value)
+            for name, value in app_config["panels"].items()
+        },
         "actions": app_config["actions"],
     }
+
+
+def panel_enabled(value: bool | dict) -> bool:
+    if isinstance(value, dict):
+        return bool(value.get("enabled", True))
+    return bool(value)
 
 
 from . import (  # noqa: F401

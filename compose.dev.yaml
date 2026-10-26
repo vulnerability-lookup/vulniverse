@@ -1,0 +1,74 @@
+services:
+  backend:
+    build:
+      args:
+        INSTALL_DEV: "true"
+    command: ["flask", "--app", "vulniverse_api", "run", "--debug", "--host", "0.0.0.0", "--port", "5000"]
+    ports:
+      - "127.0.0.1:5000:5000"
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/src
+          target: /app/backend/src
+          ignore:
+            - instance/
+            - __pycache__/
+        - action: sync+restart
+          path: ./schemas
+          target: /app/schemas
+        - action: rebuild
+          path: ./backend/pyproject.toml
+        - action: rebuild
+          path: ./backend/uv.lock
+        - action: restart
+          path: ./config
+  worker:
+    build:
+      args:
+        INSTALL_DEV: "true"
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./backend/src
+          target: /app/backend/src
+          ignore:
+            - instance/
+            - __pycache__/
+        - action: sync+restart
+          path: ./schemas
+          target: /app/schemas
+        - action: rebuild
+          path: ./backend/pyproject.toml
+        - action: rebuild
+          path: ./backend/uv.lock
+
+  frontend:
+    build:
+      target: development
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    environment:
+      API_PROXY_TARGET: http://backend:5000
+    ports:
+      - "127.0.0.1:5173:5173"
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/frontend/src
+        - action: sync
+          path: ./frontend/public
+          target: /app/frontend/public
+        - action: sync
+          path: ./frontend/index.html
+          target: /app/frontend/index.html
+        - action: sync+restart
+          path: ./frontend/vite.config.ts
+          target: /app/frontend/vite.config.ts
+        - action: sync
+          path: ./schemas
+          target: /app/schemas
+        - action: rebuild
+          path: ./frontend/package.json
+        - action: rebuild
+          path: ./frontend/package-lock.json

@@ -1,0 +1,12 @@
+services:
+  backend:
+    restart: unless-stopped
+  worker:
+    restart: unless-stopped
+  redis:
+    restart: unless-stopped
+  frontend:
+    restart: unless-stopped
+    ports:
+      # Put TLS/Caddy/Nginx on the host in front of this port.
+      - "127.0.0.1:8080:80"

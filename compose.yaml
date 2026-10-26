@@ -1,0 +1,50 @@
+x-python: &python
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  env_file:
+    - ./backend/.env
+  environment:
+    REDIS_URL: redis://redis:6379/0
+    JOB_DATA_DIR: /app/job-data
+  volumes:
+    - backend_instance:/app/backend/src/instance
+    - job_data:/app/job-data
+    - ./config:/app/config:ro
+  depends_on:
+    redis:
+      condition: service_healthy
+
+services:
+  backend:
+    <<: *python
+    command: ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:8000", "wsgi:app"]
+
+  worker:
+    <<: *python
+    command: ["rq", "worker", "--url", "redis://redis:6379/0", "patch2vuln", "vuln2patch"]
+    stop_grace_period: 35m
+
+  redis:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: production
+    depends_on:
+      - backend
+
+volumes:
+  backend_instance:
+  job_data:
+  redis_data:
