@@ -14,6 +14,9 @@ export const patch2vulnPanel: EditorPanel = {
   component: markRaw(Patch2VulnPanel),
 
   isVisible(context) {
-    return context.profile === "cve-5.2.0";
+    return [
+      "cve-5.2.0",
+      "gcve-bcp-05-1.7",
+    ].includes(context.profile);
   },
 };

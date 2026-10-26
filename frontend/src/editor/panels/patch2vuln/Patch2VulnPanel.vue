@@ -11,6 +11,7 @@ import type {
   CveRecord,
   EditorContext,
   Patch2VulnJob,
+  GcveExtension,
 } from "../../contracts";
 
 import {
@@ -85,12 +86,102 @@ const FIELDS = [
   { id: "references", label: "References" },
   { id: "impacts", label: "Impacts / CAPEC" },
   { id: "credits", label: "Credits" },
+  { id: "cpeApplicability", label: "CPE applicability" },
+  { id: "x_gcve", label: "GCVE metadata / AI provenance" },
 ] as const;
+
+const PROTECTED_FIELDS = new Set([
+  "providerMetadata",
+  "datePublic",
+  "dateUpdated",
+  "dateAssigned",
+  "rejectedReasons",
+  "replacedBy",
+]);
 
 const selectedFields = ref<string[]>(
   FIELDS.map((field) => field.id),
 );
 
+// handle gcve extensions
+function mergeGeneratedGcve(
+  current: CveRecord,
+  generated: CveRecord,
+): boolean {
+  const sourceEntries = generated.containers?.cna?.x_gcve;
+
+  if (!Array.isArray(sourceEntries) || sourceEntries.length === 0) {
+    return false;
+  }
+
+  current.containers ??= {};
+  current.containers.cna ??= {};
+
+  const cna = current.containers.cna;
+
+  // Always use containers.cna.x_gcve, regardless of profile.
+  const entries: GcveExtension[] = Array.isArray(cna.x_gcve)
+    ? cna.x_gcve as GcveExtension[]
+    : [];
+
+  // Prefer the existing assigned GCVE identifier.
+  const assignedId = [
+    current.cveMetadata?.vulnId,
+    entries[0]?.vulnId,
+    current.x_gcve?.[0]?.vulnId,
+  ].find(
+    (id) =>
+      typeof id === "string" &&
+      /^GCVE-\d+-\d{4}-\d+$/.test(id),
+  );
+
+  for (const source of sourceEntries as GcveExtension[]) {
+    const incoming = JSON.parse(
+      JSON.stringify(source),
+    ) as GcveExtension;
+
+    if (assignedId) {
+      incoming.vulnId = assignedId;
+    }
+
+    // Find an existing entry of the same record type.
+    const existing = entries.find(
+      (entry) =>
+        entry.vulnId === incoming.vulnId &&
+        entry.recordType === incoming.recordType,
+    );
+
+    if (!existing) {
+      // No existing entry: include the complete generated entry.
+      entries.push(incoming);
+      continue;
+    }
+
+    // Preserve existing GCVE metadata and unrelated extensions.
+    const oldExtensions =
+      existing.extensions &&
+      typeof existing.extensions === "object" &&
+      !Array.isArray(existing.extensions)
+        ? existing.extensions as Record<string, unknown>
+        : {};
+
+    const newExtensions =
+      incoming.extensions &&
+      typeof incoming.extensions === "object" &&
+      !Array.isArray(incoming.extensions)
+        ? incoming.extensions as Record<string, unknown>
+        : {};
+
+    existing.extensions = {
+      ...oldExtensions,
+      ...newExtensions,
+    };
+  }
+
+  cna.x_gcve = entries;
+
+  return true;
+}
 
 // Handle uploaded files.
 function onFileChange(event: Event): void {
@@ -208,13 +299,14 @@ function applyResult(): void {
   const generated = generatedRecord.value;
 
   if (!generated?.containers?.cna) {
+    error.value = "No generated CNA container available.";
     return;
   }
 
   const current = props.context.record as CveRecord;
 
   if (current.cveMetadata?.state === "REJECTED") {
-    error.value = "Cannot apply generated fields to a rejected record.";
+    error.value = "Cannot modify a rejected record.";
     return;
   }
 
@@ -227,13 +319,38 @@ function applyResult(): void {
   let count = 0;
 
   for (const field of selectedFields.value) {
-    if (Object.prototype.hasOwnProperty.call(source, field)) {
-      target[field] = structuredClone(source[field]);
-      count++;
+    // Handle GCVE metadata independently.
+    if (field === "x_gcve") {
+      if (mergeGeneratedGcve(current, generated)) {
+        count++;
+      }
+
+      continue;
     }
+
+    // Do not overwrite provider or lifecycle metadata.
+    if (PROTECTED_FIELDS.has(field)) {
+      continue;
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(source, field)) {
+      continue;
+    }
+
+    const value = source[field];
+
+    if (value === undefined) {
+      continue;
+    }
+
+    // Works with Vue proxies and creates missing fields.
+    target[field] = JSON.parse(JSON.stringify(value));
+
+    count++;
   }
 
   message.value = `Applied ${count} field(s) to the editor.`;
+  error.value = null;
 }
 
 
