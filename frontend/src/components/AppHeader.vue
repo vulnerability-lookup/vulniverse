@@ -27,10 +27,10 @@ watch(
   { immediate: true },
 );
 
-// A panel id absent from config defaults to enabled — same convention
-// as editor/enabled-extensions.ts's filterEnabled().
+// A panel id absent from config defaults to enabled.
 const showCnaCredentialsLink = computed(() =>
-  (panelFlags.value.vl ?? true) || (panelFlags.value["cve-program"] ?? true),
+  (panelFlags.value.vl ?? true) ||
+  (panelFlags.value["cve-program"] ?? true),
 );
 
 async function onLogout(): Promise<void> {
@@ -41,20 +41,31 @@ async function onLogout(): Promise<void> {
 
 <template>
   <header class="navbar navbar-expand bg-body-tertiary border-bottom px-3">
-    <RouterLink to="/" class="navbar-brand">
-      <img :src="vulniverseLogo" alt="Vulniverse" class="app-header-logo">
+    <RouterLink
+      :to="auth.isLocalMode ? '/records' : '/'"
+      class="navbar-brand"
+    >
+      <img
+        :src="vulniverseLogo"
+        alt="Vulniverse"
+        class="app-header-logo"
+      >
     </RouterLink>
 
+    <!-- Authenticated navigation (local and multi-user) -->
     <nav
       v-if="auth.isAuthenticated"
       class="d-flex align-items-center ms-auto gap-3"
     >
-      <RouterLink to="/records" class="text-decoration-none">
+      <RouterLink
+        to="/records"
+        class="text-decoration-none"
+      >
         Records
       </RouterLink>
 
       <RouterLink
-        v-if="auth.currentUser?.isAdmin"
+        v-if="!auth.isLocalMode && auth.currentUser?.isAdmin"
         to="/admin/users"
         class="text-decoration-none"
       >
@@ -69,30 +80,52 @@ async function onLogout(): Promise<void> {
         CNA credentials
       </RouterLink>
 
-      <span class="text-secondary">{{ auth.currentUser?.email }}</span>
+      <!-- Local mode -->
+      <template v-if="auth.isLocalMode">
+        <span class="text-secondary">
+          Local workspace
+        </span>
+      </template>
 
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-sm"
-        @click="onLogout"
-      >
-        Log out
-      </button>
+      <!-- Multi-user mode -->
+      <template v-else>
+        <span class="text-secondary">
+          {{ auth.currentUser?.email }}
+        </span>
+
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          @click="onLogout"
+        >
+          Log out
+        </button>
+      </template>
     </nav>
 
+    <!-- Anonymous navigation (multi-user mode) -->
     <nav
       v-else
       class="d-flex align-items-center ms-auto gap-3"
     >
-      <RouterLink to="/try" class="text-decoration-none">
+      <RouterLink
+        to="/try"
+        class="text-decoration-none"
+      >
         Try it
       </RouterLink>
 
-      <RouterLink to="/login" class="text-decoration-none">
+      <RouterLink
+        to="/login"
+        class="text-decoration-none"
+      >
         Log in
       </RouterLink>
 
-      <RouterLink to="/register" class="btn btn-primary btn-sm">
+      <RouterLink
+        to="/register"
+        class="btn btn-primary btn-sm"
+      >
         Register
       </RouterLink>
     </nav>

@@ -3,6 +3,8 @@ from __future__ import annotations
 import click
 from flask import Flask
 
+from .auth.identity import is_local_mode
+from .auth.local_user import create_local_user
 from .extensions import db
 from .models import Template, User, VulnerabilityRecord
 
@@ -65,4 +67,19 @@ def register_cli(app: Flask) -> None:
         click.echo(
             f"Assigned {updated_records} record(s) and "
             f"{updated_templates} template(s) to {user.email}.",
+        )
+
+    @app.cli.command("init-local-user")
+    def init_local_user() -> None:
+        """Initialize the internal user for local mode."""
+
+        if not is_local_mode():
+            raise click.ClickException(
+                "Local user initialization requires local mode."
+            )
+
+        user = create_local_user()
+
+        click.echo(
+            f"Local user initialized: {user.email}"
         )

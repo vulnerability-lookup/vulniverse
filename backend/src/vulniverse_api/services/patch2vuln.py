@@ -11,7 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from .app_config import CONFIG_PATH, SAMPLE_CONFIG_PATH
+from ..app_config import CONFIG_PATH, SAMPLE_CONFIG_PATH
 
 
 @dataclass(frozen=True)

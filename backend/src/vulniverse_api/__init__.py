@@ -7,6 +7,8 @@ from typing import Any
 from dotenv import load_dotenv
 from flask import Flask
 
+from .app_config import load_app_config
+from .auth.identity import init_auth
 from .extensions import csrf, db, login_manager, migrate
 
 
@@ -22,6 +24,15 @@ def create_app(
         __name__,
         instance_relative_config=True,
     )
+
+    app_config = load_app_config()
+
+    mode = app_config["server"]["mode"]
+
+    if mode not in {"local", "multiuser"}:
+        raise RuntimeError(
+            f"Invalid Vulniverse deployment mode: {mode}"
+        )
 
     instance_path = Path(app.instance_path)
     instance_path.mkdir(parents=True, exist_ok=True)
@@ -55,6 +66,7 @@ def create_app(
             f"sqlite:///{database_path}",
         ),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        VULNIVERSE_MODE=mode,
     )
 
     if test_config:
@@ -69,6 +81,8 @@ def create_app(
     from . import models
     from .api import api_bp
     from .cli import register_cli
+
+    init_auth()
 
     @login_manager.user_loader
     def load_user(user_id: str) -> models.User | None:

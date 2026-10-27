@@ -1,7 +1,7 @@
 from flask import Blueprint, request
 from flask_login import current_user
 
-from ..services.app_config import load_app_config
+from ..app_config import load_app_config
 
 api_bp = Blueprint("api_v1", __name__)
 
@@ -56,19 +56,9 @@ def capabilities() -> dict:
             "cpeProposals": False,
             "publication": True,
         },
-        #"panels": app_config["panels"],
-        "panels": {
-            name: panel_enabled(value)
-            for name, value in app_config["panels"].items()
-        },
+        "panels": app_config["panels"],
         "actions": app_config["actions"],
     }
-
-
-def panel_enabled(value: bool | dict) -> bool:
-    if isinstance(value, dict):
-        return bool(value.get("enabled", True))
-    return bool(value)
 
 
 from . import (  # noqa: F401

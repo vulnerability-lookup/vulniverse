@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-PROJECT_ROOT = Path(__file__).parents[4]
+PROJECT_ROOT = Path(__file__).parents[3]
 CONFIG_DIR = PROJECT_ROOT / "config"
 CONFIG_PATH = CONFIG_DIR / "vulniverse.toml"
 SAMPLE_CONFIG_PATH = CONFIG_DIR / "vulniverse.toml.sample"
@@ -37,12 +37,21 @@ def load_app_config() -> dict[str, dict[str, Any]]:
     path = CONFIG_PATH if CONFIG_PATH.exists() else SAMPLE_CONFIG_PATH
 
     if not path.exists():
-        return {"panels": {}, "actions": {}}
+        return {
+            "server": {
+                "mode": "local",
+            },
+            "panels": {},
+            "actions": {},
+        }
 
     with path.open("rb") as handle:
         data: dict[str, Any] = tomllib.load(handle)
 
     return {
+        "server": {
+            "mode": data.get("server", {}).get("mode", "local"),
+        },
         "panels": {
             name: _panel_enabled(value)
             for name, value in dict(data.get("panels", {})).items()

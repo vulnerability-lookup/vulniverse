@@ -25,6 +25,11 @@ def app() -> Iterator[Flask]:
         # A fresh, real key per test run — tests that exercise per-user
         # CNA credential encryption need this to actually round-trip.
         "CNA_CREDENTIAL_ENCRYPTION_KEY": Fernet.generate_key().decode(),
+        # The test suite exercises register/login/logout/admin routes,
+        # which are @multiuser_only (404 in local mode) — overrides
+        # whatever config/vulniverse.toml(.sample) says, same mechanism
+        # as every other setting above.
+        "VULNIVERSE_MODE": "multiuser",
     })
 
     with application.app_context():

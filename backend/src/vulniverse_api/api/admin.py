@@ -5,9 +5,9 @@ from typing import Any
 from flask import request
 from flask_login import current_user
 
+from ..auth.permissions import admin_required, multiuser_only
 from ..extensions import db
 from ..models import User
-from ..services.authz import admin_required
 from . import api_bp
 
 
@@ -22,6 +22,7 @@ def _serialize(user: User) -> dict[str, Any]:
 
 
 @api_bp.get("/admin/users")
+@multiuser_only
 @admin_required
 def list_users() -> tuple[dict, int]:
     users = User.query.order_by(User.created_at.asc()).all()
@@ -30,6 +31,7 @@ def list_users() -> tuple[dict, int]:
 
 
 @api_bp.put("/admin/users/<int:user_id>")
+@multiuser_only
 @admin_required
 def update_user(user_id: int) -> tuple[dict, int]:
     user = db.session.get(User, user_id)

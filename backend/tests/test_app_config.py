@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from flask.testing import FlaskClient
 
-from vulniverse_api.services import app_config
+from vulniverse_api import app_config
 
 
 @pytest.fixture(autouse=True)
@@ -31,6 +31,7 @@ def test_falls_back_to_sample_file_when_real_config_absent(
     result = app_config.load_app_config()
 
     assert result == {
+        "server": {"mode": "local"},
         "panels": {"stats": True},
         "actions": {"download-json": False},
     }
@@ -112,7 +113,11 @@ def test_empty_tables_when_neither_file_exists(
 
     result = app_config.load_app_config()
 
-    assert result == {"panels": {}, "actions": {}}
+    assert result == {
+        "server": {"mode": "local"},
+        "panels": {},
+        "actions": {},
+    }
 
 
 def test_capabilities_endpoint_includes_panels_and_actions(client: FlaskClient) -> None:

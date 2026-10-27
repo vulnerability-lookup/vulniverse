@@ -5,10 +5,13 @@ import { clearCsrfToken } from "@/repositories/csrf";
 import { apiRequest } from "@/repositories/apiRequest";
 import { ApiError } from "@/shared/errors";
 
+export type AuthMode = "local" | "multiuser";
+
 export interface AuthUser {
   id: number;
   email: string;
   isAdmin: boolean;
+  authMode: AuthMode;
 }
 
 export const useAuthStore = defineStore("auth", () => {
@@ -19,6 +22,10 @@ export const useAuthStore = defineStore("auth", () => {
   const initialized = ref(false);
 
   const isAuthenticated = computed(() => currentUser.value !== null);
+
+  const isLocalMode = computed(
+    () => currentUser.value?.authMode === "local",
+  );
 
   async function fetchMe(): Promise<void> {
     try {
@@ -58,6 +65,7 @@ export const useAuthStore = defineStore("auth", () => {
     currentUser,
     initialized,
     isAuthenticated,
+    isLocalMode,
     fetchMe,
     login,
     register,

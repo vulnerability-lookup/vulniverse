@@ -116,6 +116,10 @@ router.beforeEach(async (to) => {
     await auth.fetchMe();
   }
 
+  if (auth.isLocalMode && to.name === "landing") {
+    return { name: "records" };
+  }
+
   if (!to.meta.public && !auth.isAuthenticated) {
     return {
       name: "login",

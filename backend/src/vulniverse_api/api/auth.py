@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from flask import request
+from flask import current_app, request
 from flask_login import current_user, login_required, login_user, logout_user
 from flask_wtf.csrf import generate_csrf
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from ..auth.local_user import LOCAL_USER_EMAIL
+from ..auth.permissions import multiuser_only
 from ..extensions import db
 from ..models import User
 from . import api_bp
@@ -25,10 +27,12 @@ def _serialize(user: User) -> dict[str, Any]:
         "id": user.id,
         "email": user.email,
         "isAdmin": user.is_admin,
+        "authMode": current_app.config["VULNIVERSE_MODE"],
     }
 
 
 @api_bp.post("/auth/register")
+@multiuser_only
 def register() -> tuple[dict, int]:
     payload = request.get_json(silent=True)
 
@@ -47,6 +51,11 @@ def register() -> tuple[dict, int]:
         }, 400
 
     email = email.strip().lower()
+
+    if email == LOCAL_USER_EMAIL:
+        return {
+            "message": "This email address is reserved."
+        }, 400
 
     existing = User.query.filter_by(email=email).first()
 
@@ -67,6 +76,7 @@ def register() -> tuple[dict, int]:
 
 
 @api_bp.post("/auth/login")
+@multiuser_only
 def login() -> tuple[dict, int]:
     payload = request.get_json(silent=True)
 
@@ -93,6 +103,7 @@ def login() -> tuple[dict, int]:
 
 
 @api_bp.post("/auth/logout")
+@multiuser_only
 @login_required
 def logout() -> tuple[dict, int]:
     logout_user()
