@@ -8,7 +8,6 @@ import {
 import type {
   CveRecord,
   EditorContext,
-  GcveExtension,
   PublicationTarget,
 } from "../../contracts";
 
@@ -18,6 +17,7 @@ import {
 
 import {
   recordHasGcveId,
+  setGcveVulnId,
 } from "../../gcve";
 
 import {
@@ -167,26 +167,17 @@ function applyReservedId(): boolean {
   const reservedId = publication.value.cveId;
   const record = editor.record.value as CveRecord;
 
-  record.cveMetadata ??= {};
-  record.cveMetadata[targetIdField.value] = reservedId;
-
-  // "vl" reserves a real GCVE identifier (see targetIdField above) —
-  // record it in the GCVE-BCP-05 extension too, not only in the
-  // non-standard cveMetadata.vulnId convenience field, so the record
-  // is actually GCVE-conformant. "cve-program" reserves an official
-  // CVE ID, which isn't a valid x_gcve[].vulnId shape at all (its
-  // pattern requires "GCVE-..."), so this only applies to "vl".
+  // "vl" reserves a real GCVE identifier — it belongs in
+  // x_gcve[].vulnId, the real GCVE-BCP-05 schema field, not only the
+  // non-standard cveMetadata.vulnId convenience field (setGcveVulnId
+  // mirrors both). "cve-program" reserves an official CVE ID, which
+  // isn't a valid x_gcve[].vulnId shape at all (its pattern requires
+  // "GCVE-..."), so it still goes straight into cveMetadata.cveId.
   if (props.target === "vl") {
-    record.containers ??= {};
-    record.containers.cna ??= {};
-    record.containers.cna.x_gcve ??= [];
-
-    const entries = record.containers.cna.x_gcve as GcveExtension[];
-    const alreadyPresent = entries.some((entry) => entry.vulnId === reservedId);
-
-    if (!alreadyPresent) {
-      entries.push({ vulnId: reservedId, recordType: "advisory" });
-    }
+    setGcveVulnId(record, reservedId);
+  } else {
+    record.cveMetadata ??= {};
+    record.cveMetadata[targetIdField.value] = reservedId;
   }
 
   return true;

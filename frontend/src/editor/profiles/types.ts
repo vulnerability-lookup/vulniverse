@@ -37,7 +37,6 @@ export interface ProfileRejection {
 
 export interface EditorProfileFeatures {
   cnaPublication?: boolean;
-  gcveIdentifier?: boolean;
 }
 
 

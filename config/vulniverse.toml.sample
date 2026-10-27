@@ -5,6 +5,9 @@
 # this sample file's values, so a fresh checkout behaves exactly like a
 # deployment with no config file at all — nothing here is required.
 
+[server]
+mode = "local" # local or multiuser -> Mulituser still WIP (do not use in prod)
+
 [panels.stats]
 enabled = false
 
@@ -17,17 +20,11 @@ enabled = false
 [panels.record-quality]
 enabled = true
 
-# Opt-in only: needed by hosts with GCVE-only storage (e.g.
-# Vulnerability-Lookup), not by the standalone app.
-[panels.gcve-identifier]
-enabled = false
-
 [panels.patch2vuln]
 enabled = true
 # patch2vuln executable/script.
 executable = "/opt/patch2vuln/patch2vuln.py"
-# Ollama may run on another machine in the local network.
-ollama_host = "http://ollama.internal:11434"
+ollama_host = "http://host.docker.internal:11434"
 model = "qwen3.8:27b"
 timeout_seconds = 300
 

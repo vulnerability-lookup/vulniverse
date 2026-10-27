@@ -50,7 +50,6 @@ export {
 
 export {
   cveProgramPanel,
-  gcveIdentifierPanel,
   templatesPanel,
   vulnerabilityLookupPanel,
 } from "./editor/panels";

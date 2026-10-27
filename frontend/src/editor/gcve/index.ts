@@ -7,7 +7,9 @@ export {
 
 export {
   findXGcveOccurrences,
+  getGcveVulnId,
   recordHasGcveId,
+  setGcveVulnId,
 } from "./occurrences";
 
 export type {

@@ -54,7 +54,3 @@ export {
 export {
   patch2vulnPanel,
 };
-
-export {
-  gcveIdentifierPanel,
-} from "./gcve-identifier";

@@ -13,14 +13,6 @@ application, embed the editor in
 [Vulnerability-Lookup](https://github.com/vulnerability-lookup/vulnerability-lookup),
 or connect it to any software that works with the CVE Record Format.
 
-The project targets **CVE Record Format 5.2.0**, and also supports
-authoring and validating the **GCVE BCP-05 1.7** extension profile: a
-dedicated `x_gcve` editor, profile-aware schema validation (including the
-BCP-05 semantic rules — relationships required for certain record types,
-`language` required for translations, relationship-type checking), and a
-"Create as GCVE" option alongside "Create as CVE" when starting a new
-record in the standalone app.
-
 !!! note
 
     Vulniverse is under active development. The editor and API are usable,
