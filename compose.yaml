@@ -18,11 +18,11 @@ x-python: &python
 services:
   backend:
     <<: *python
-    command: ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:8000", "wsgi:app"]
+    command: ["gunicorn", "--worker-class", "gthreaded", "--workers", "2", "--threads", "8", "--bind", "0.0.0.0:8000", "wsgi:app"]
 
   worker:
     <<: *python
-    command: ["rq", "worker", "--url", "redis://redis:6379/0", "patch2vuln"]
+    command: ["rq", "worker", "--worker-class", "vulniverse_api.jobs.worker.NotifyingWorker", "--url", "redis://redis:6379/0", "patch2vuln"]
     stop_grace_period: 35m
     volumes:
       - backend_instance:/app/backend/src/instance

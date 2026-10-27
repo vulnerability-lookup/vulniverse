@@ -15,6 +15,7 @@ import type {
   CpeSearchParams,
   Patch2VulnJob,
   Patch2VulnInput,
+  BackgroundJobEvent,
 } from "@/editor/contracts";
 
 import {
@@ -655,4 +656,54 @@ export class HttpRepository
       );
     }
   }
+
+  subscribeJobEvents(
+    jobId: string,
+    onStatus: (event: BackgroundJobEvent) => void,
+    onDisconnect?: () => void,
+  ): () => void {
+
+    const url = `${this.apiRoot}/jobs/${encodeURIComponent(jobId)}/events`;
+
+    const source = new EventSource(url, {
+      withCredentials: true,
+    });
+
+    const handleStatus = (event: Event): void => {
+      try {
+        const message = event as MessageEvent<string>;
+
+        const data = JSON.parse(
+          message.data,
+        ) as BackgroundJobEvent;
+
+        if (data.jobId !== jobId) {
+          return;
+        }
+
+        onStatus(data);
+
+      } catch (err) {
+        console.error(
+          "Invalid job SSE event:",
+          err,
+        );
+      }
+    };
+
+    source.addEventListener("status", handleStatus);
+
+    source.onerror = () => {
+      // EventSource automatically reconnects after
+      // a temporary connection failure.
+      onDisconnect?.();
+    };
+
+    return () => {
+      source.removeEventListener("status", handleStatus);
+      source.close();
+    };
+  }
+
+
 }

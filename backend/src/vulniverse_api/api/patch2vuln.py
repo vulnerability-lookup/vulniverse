@@ -12,7 +12,7 @@ from rq.exceptions import NoSuchJobError
 from rq.job import Job
 
 from . import api_bp
-from ..services.job_queue import get_redis, get_queue
+from ..jobs.queue import get_redis, get_queue
 from ..services.patch2vuln import get_patch2vuln_config, run_patch2vuln
 
 

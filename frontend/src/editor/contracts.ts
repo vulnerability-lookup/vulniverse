@@ -251,6 +251,18 @@ export interface Patch2VulnJob {
   error?: string;
 }
 
+// Jobs
+export type BackgroundJobStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed";
+
+export interface BackgroundJobEvent {
+  jobId: string;
+  status: BackgroundJobStatus;
+}
+
 export interface EditorRepository {
   loadRecord(
     identifier: string,
@@ -384,6 +396,13 @@ export interface EditorRepository {
   getPatch2VulnJob?(
     jobId: string,
   ): Promise<Patch2VulnJob>;
+
+  subscribeJobEvents?(
+    jobId: string,
+    onStatus: (event: BackgroundJobEvent) => void,
+    onDisconnect?: () => void,
+  ): () => void;
+
 }
 
 export interface EditorContext {

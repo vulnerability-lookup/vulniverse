@@ -83,4 +83,5 @@ from . import (  # noqa: F401
     templates,
     validation,
     patch2vuln,
+    jobs,
 )

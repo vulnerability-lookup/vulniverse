@@ -52,6 +52,7 @@ const message = ref<string | null>(null);
 
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let mounted = false;
+let unsubscribeJobEvents: (() => void) | null = null;
 
 
 // Persist the current job when switching panels.
@@ -199,6 +200,117 @@ function stopPolling(): void {
   }
 }
 
+// function for SSE
+function stopWatchingJob(): void {
+  unsubscribeJobEvents?.();
+  unsubscribeJobEvents = null;
+
+  stopPolling();
+}
+
+async function refreshJob(jobId: string): Promise<void> {
+  if (!repository.value?.getPatch2VulnJob) {
+    return;
+  }
+
+  try {
+    const result =
+      await repository.value.getPatch2VulnJob(jobId);
+
+    if (!mounted || job.value?.jobId !== jobId) {
+      return;
+    }
+
+    job.value = result;
+    error.value = null;
+
+    // Normally this won't happen because the worker
+    // publishes only after persisting the result.
+    // Reconnect if the job isn't terminal yet.
+    if (
+      result.status === "queued" ||
+      result.status === "running"
+    ) {
+      startWatchingJob(jobId);
+    }
+
+  } catch (err) {
+    if (!mounted || job.value?.jobId !== jobId) {
+      return;
+    }
+
+    error.value = err instanceof Error
+      ? err.message
+      : "Could not retrieve the job result.";
+  }
+}
+
+function startWatchingJob(jobId: string): void {
+  stopWatchingJob();
+
+  const repo = repository.value;
+
+  if (!repo) {
+    return;
+  }
+
+  // Compatibility with embedding hosts without SSE.
+  if (!repo.subscribeJobEvents) {
+    void pollJob();
+    return;
+  }
+
+  unsubscribeJobEvents = repo.subscribeJobEvents(
+    jobId,
+
+    (event) => {
+      if (
+        !mounted ||
+        job.value?.jobId !== jobId ||
+        event.jobId !== jobId
+      ) {
+        return;
+      }
+
+      error.value = null;
+
+      if (
+        event.status === "completed" ||
+        event.status === "failed"
+      ) {
+        // Update status immediately.
+        job.value = {
+          jobId,
+          status: event.status,
+        };
+
+        // Close the stream.
+        stopWatchingJob();
+
+        // Fetch the actual result once.
+        void refreshJob(jobId);
+
+        return;
+      }
+
+      // job uses shallowRef(), so replace the object.
+      job.value = {
+        ...job.value,
+        status: event.status,
+      };
+    },
+
+    () => {
+      if (!mounted || job.value?.jobId !== jobId) {
+        return;
+      }
+
+      error.value =
+        "Live updates disconnected. Reconnecting...";
+    },
+  );
+}
+
 
 // Retrieve the current job status.
 async function pollJob(): Promise<void> {
@@ -246,7 +358,8 @@ async function submit(): Promise<void> {
     return;
   }
 
-  stopPolling();
+  //stopPolling();
+  stopWatchingJob();
 
   submitting.value = true;
   error.value = null;
@@ -280,7 +393,8 @@ async function submit(): Promise<void> {
 
     if (mounted) {
       job.value = result;
-      void pollJob();
+      //void pollJob();
+      startWatchingJob(result.jobId);
     }
   } catch (err) {
     if (mounted) {
@@ -368,13 +482,15 @@ onMounted(() => {
       status: "queued",
     };
 
-    void pollJob();
+    // void pollJob();
+    startWatchingJob(savedJobId);
   }
 });
 
 onBeforeUnmount(() => {
   mounted = false;
-  stopPolling();
+  //stopPolling();
+  stopWatchingJob();
 });
 </script>
 
