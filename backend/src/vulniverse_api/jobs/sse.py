@@ -10,7 +10,6 @@ from rq.job import Job
 
 from .events import job_channel
 
-
 TERMINAL_STATUSES = {"completed", "failed"}
 
 STATUS_MAP = {

@@ -6,9 +6,9 @@ from redis.exceptions import RedisError
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 
-from . import api_bp
-from ..jobs.queue import get_redis, ALLOWED_QUEUES
+from ..jobs.queue import ALLOWED_QUEUES, get_redis
 from ..jobs.sse import stream_job_events
+from . import api_bp
 
 
 @api_bp.get("/jobs/<string:job_id>/events")

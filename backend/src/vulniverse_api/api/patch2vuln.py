@@ -7,14 +7,12 @@ from urllib.parse import urlsplit
 from flask import request
 from flask_login import current_user
 from redis.exceptions import RedisError
-from rq import Queue
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 
-from . import api_bp
-from ..jobs.queue import get_redis, get_queue
+from ..jobs.queue import get_queue, get_redis
 from ..services.patch2vuln import get_patch2vuln_config, run_patch2vuln
-
+from . import api_bp
 
 MAX_PATCH_BYTES = 4 * 1024 * 1024
 MAX_INPUTS = 5
