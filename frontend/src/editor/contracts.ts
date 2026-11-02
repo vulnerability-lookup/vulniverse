@@ -50,6 +50,8 @@ export interface CnaContainer {
   affected?: unknown[];
   references?: unknown[];
 
+  x_gcve?: GcveExtension[];
+
   /*
    * A rejected CNA container is a different, minimal shape from the
    * one above (schemas/upstream/cve/5.2.0's cnaRejectedContainer:
@@ -75,7 +77,7 @@ export interface CveRecord {
   dataVersion?: string;
   cveMetadata?: CveMetadata;
   containers?: RecordContainers;
-  x_gcve?: GcveExtension[];
+  // x_gcve?: GcveExtension[];
 
   /*
    * Records may contain extensions that Vulniverse does not

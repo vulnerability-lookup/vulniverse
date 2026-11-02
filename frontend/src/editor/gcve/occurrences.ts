@@ -77,84 +77,63 @@ export function findXGcveOccurrences(
 export function recordHasGcveId(
   record: CveRecord,
 ): boolean {
-  if (
-    typeof record.cveMetadata
-      ?.vulnId === "string" &&
-    record.cveMetadata.vulnId
-  ) {
-    return true;
-  }
-
-  return findXGcveOccurrences(
-    record,
-  ).some(
-    (occurrence) =>
-      occurrence.extensions.some(
-        (entry) =>
-          Boolean(entry?.vulnId),
-      ),
+  return (
+    record.containers?.cna?.x_gcve?.some(
+      (entry) =>
+        typeof entry.vulnId === "string" &&
+        entry.vulnId.length > 0,
+    ) ?? false
   );
 }
 
-/**
- * The real GCVE-BCP-05 identifier, read from wherever x_gcve actually
- * appears in the record — mirrors the backend's gcve_vuln_id()
- * (api/records.py) exactly, so both ends agree on which value wins.
- * cveMetadata.vulnId is deliberately not consulted here: it's a
- * derived mirror (see setGcveVulnId below), never an independent
- * source of truth.
- */
+
 export function getGcveVulnId(
   record: CveRecord,
 ): string | undefined {
-  for (const occurrence of findXGcveOccurrences(record)) {
-    for (const entry of occurrence.extensions) {
-      if (typeof entry?.vulnId === "string" && entry.vulnId) {
-        return entry.vulnId;
-      }
-    }
+  const entries = record.containers?.cna?.x_gcve;
+
+  if (!Array.isArray(entries)) {
+    return undefined;
   }
 
-  return undefined;
+  const advisory = entries.find(
+    (entry) =>
+      entry.recordType === "advisory" &&
+      typeof entry.vulnId === "string" &&
+      entry.vulnId.length > 0,
+  );
+
+  return advisory?.vulnId;
 }
 
 /**
- * Sets the GCVE identifier the one place it actually belongs per the
- * GCVE-BCP-05 schema — the first x_gcve entry found anywhere in the
- * record, or a freshly-created one under containers.cna.x_gcve if
- * none exists yet (same location CnaPublicationPanel's reservation
- * flow already used). cveMetadata.vulnId is also mirrored alongside
- * it: non-standard and not part of the CVE 5.2.0 schema, but some
- * hosts (e.g. Vulnerability-Lookup) key their own save/routing off it
- * — see api/records.py's extract_identifier(). Never set directly by
- * UI; always derived from here.
+ * Sets the GCVE identifier in containers.cna.x_gcve.
+ *
+ * If an advisory entry already exists, its identifier is updated.
+ * Otherwise, a new advisory entry is created.
+ *
+ * Other GCVE extension entries are preserved.
  */
 export function setGcveVulnId(
   record: CveRecord,
   value: string,
 ): void {
-  const [firstOccurrence] = findXGcveOccurrences(record);
+  record.containers ??= {};
+  record.containers.cna ??= {};
+  record.containers.cna.x_gcve ??= [];
 
-  let entries: GcveExtension[];
+  const entries = record.containers.cna.x_gcve;
 
-  if (firstOccurrence) {
-    entries = firstOccurrence.extensions;
+  const advisory = entries.find(
+    (entry) => entry.recordType === "advisory",
+  );
+
+  if (advisory) {
+    advisory.vulnId = value;
   } else {
-    record.containers ??= {};
-    record.containers.cna ??= {};
-    record.containers.cna.x_gcve ??= [];
-
-    entries = record.containers.cna.x_gcve as GcveExtension[];
+    entries.push({
+      vulnId: value,
+      recordType: "advisory",
+    });
   }
-
-  const [firstEntry] = entries;
-
-  if (firstEntry) {
-    firstEntry.vulnId = value;
-  } else {
-    entries.push({ vulnId: value, recordType: "advisory" });
-  }
-
-  record.cveMetadata ??= {};
-  record.cveMetadata.vulnId = value;
 }

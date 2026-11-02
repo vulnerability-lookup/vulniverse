@@ -125,32 +125,24 @@ function mergeGeneratedGcve(
     ? cna.x_gcve as GcveExtension[]
     : [];
 
-  // Prefer the existing assigned GCVE identifier.
-  const assignedId = [
-    current.cveMetadata?.vulnId,
-    entries[0]?.vulnId,
-    current.x_gcve?.[0]?.vulnId,
-  ].find(
-    (id) =>
-      typeof id === "string" &&
-      /^GCVE-\d+-\d{4}-\d+$/.test(id),
-  );
-
   for (const source of sourceEntries as GcveExtension[]) {
     const incoming = JSON.parse(
       JSON.stringify(source),
     ) as GcveExtension;
 
-    if (assignedId) {
-      incoming.vulnId = assignedId;
-    }
-
     // Find an existing entry of the same record type.
-    const existing = entries.find(
-      (entry) =>
-        entry.vulnId === incoming.vulnId &&
-        entry.recordType === incoming.recordType,
-    );
+    const existing = entries.find((entry) => {
+      if (incoming.recordType === "advisory") {
+        // Only one advisory is allowed.
+        // Reuse the existing advisory regardless of its vulnId.
+        return entry.recordType === "advisory";
+      }
+
+      return (
+        entry.recordType === incoming.recordType &&
+        entry.vulnId === incoming.vulnId
+      );
+    });
 
     if (!existing) {
       // No existing entry: include the complete generated entry.
