@@ -45,7 +45,7 @@ def minimal_gcve_record(**extension_overrides: Any) -> dict[str, Any]:
         "recordType": "creation",
     }
     extension.update(extension_overrides)
-    record["x_gcve"] = [extension]
+    record["containers"]["cna"]["x_gcve"] = [extension]
     return record
 
 
@@ -105,7 +105,7 @@ def test_bad_vuln_id_pattern_fails_at_x_gcve_path() -> None:
     errors = validate_record(record, "gcve-bcp-05-1.7")
 
     assert errors
-    assert ["x_gcve", 0, "vulnId"] in error_paths(errors)
+    assert ["containers", "cna", "x_gcve", 0, "vulnId"] in error_paths(errors)
     assert all(error["severity"] == "error" for error in errors)
 
 
@@ -114,7 +114,7 @@ def test_mandatory_relationships_by_record_type() -> None:
 
     errors = validate_record(record, "gcve-bcp-05-1.7")
 
-    assert ["x_gcve", 0, "relationships"] in error_paths(errors)
+    assert ["containers", "cna", "x_gcve", 0, "relationships"] in error_paths(errors)
 
 
 def test_translation_requires_language() -> None:
@@ -125,7 +125,7 @@ def test_translation_requires_language() -> None:
 
     errors = validate_record(record, "gcve-bcp-05-1.7")
 
-    assert ["x_gcve", 0, "language"] in error_paths(errors)
+    assert ["containers", "cna", "x_gcve", 0, "language"] in error_paths(errors)
 
 
 def test_unknown_relationship_type_is_a_warning_not_an_error() -> None:
