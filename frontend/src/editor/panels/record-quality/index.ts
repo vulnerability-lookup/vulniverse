@@ -13,7 +13,7 @@ import RecordQualityPanel from
 export const recordQualityPanel:
   EditorPanel = {
     id: "record-quality",
-    label: "Record quality",
+    label: "Record Quality",
 
     component:
       markRaw(
