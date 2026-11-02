@@ -18,7 +18,13 @@ export interface GcveRelationship {
 }
 
 export interface GcveExtension {
-  vulnId: string;
+  /*
+   * Absent until a real GCVE ID is assigned (e.g. an entry freshly
+   * merged from a generator like Patch2Vuln, before reservation) —
+   * the schema requires it on a published record, but the editor
+   * allows an incomplete draft to exist without one.
+   */
+  vulnId?: string;
   recordType: string;
   relationships?: GcveRelationship[];
   language?: string;

@@ -174,6 +174,15 @@ export function mergeGcveExtensions(
       JSON.stringify(source),
     ) as GcveExtension;
 
+    // Generators (e.g. Patch2Vuln) emit a placeholder identifier like
+    // "GCVE-1-2026-UNASSIGNED" when no real GCVE ID has been
+    // allocated yet — never write that into the record; leave vulnId
+    // unset so the user assigns a real one later (the GCVE
+    // reservation panel, or a manual edit).
+    if (incoming.vulnId?.endsWith("-UNASSIGNED")) {
+      delete incoming.vulnId;
+    }
+
     const existing = entries.find((entry) => {
       if (incoming.recordType === "advisory") {
         // Only one advisory is allowed.
