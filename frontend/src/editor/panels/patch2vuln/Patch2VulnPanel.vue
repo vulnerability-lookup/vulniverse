@@ -11,12 +11,15 @@ import type {
   CveRecord,
   EditorContext,
   Patch2VulnJob,
-  GcveExtension,
 } from "../../contracts";
 
 import {
   useEditorRepository,
 } from "../../core/context";
+
+import {
+  mergeGcveExtensions,
+} from "../../gcve";
 
 
 const props = defineProps<{
@@ -109,71 +112,10 @@ function mergeGeneratedGcve(
   current: CveRecord,
   generated: CveRecord,
 ): boolean {
-  const sourceEntries = generated.containers?.cna?.x_gcve;
-
-  if (!Array.isArray(sourceEntries) || sourceEntries.length === 0) {
-    return false;
-  }
-
-  current.containers ??= {};
-  current.containers.cna ??= {};
-
-  const cna = current.containers.cna;
-
-  // Always use containers.cna.x_gcve, regardless of profile.
-  const entries: GcveExtension[] = Array.isArray(cna.x_gcve)
-    ? cna.x_gcve as GcveExtension[]
-    : [];
-
-  for (const source of sourceEntries as GcveExtension[]) {
-    const incoming = JSON.parse(
-      JSON.stringify(source),
-    ) as GcveExtension;
-
-    // Find an existing entry of the same record type.
-    const existing = entries.find((entry) => {
-      if (incoming.recordType === "advisory") {
-        // Only one advisory is allowed.
-        // Reuse the existing advisory regardless of its vulnId.
-        return entry.recordType === "advisory";
-      }
-
-      return (
-        entry.recordType === incoming.recordType &&
-        entry.vulnId === incoming.vulnId
-      );
-    });
-
-    if (!existing) {
-      // No existing entry: include the complete generated entry.
-      entries.push(incoming);
-      continue;
-    }
-
-    // Preserve existing GCVE metadata and unrelated extensions.
-    const oldExtensions =
-      existing.extensions &&
-      typeof existing.extensions === "object" &&
-      !Array.isArray(existing.extensions)
-        ? existing.extensions as Record<string, unknown>
-        : {};
-
-    const newExtensions =
-      incoming.extensions &&
-      typeof incoming.extensions === "object" &&
-      !Array.isArray(incoming.extensions)
-        ? incoming.extensions as Record<string, unknown>
-        : {};
-
-    existing.extensions = {
-      ...oldExtensions,
-      ...newExtensions,
-    };
-  }
-
-  cna.x_gcve = entries;
-
-  return true;
+  return mergeGcveExtensions(
+    current,
+    generated.containers?.cna?.x_gcve ?? [],
+  );
 }
 
 // Handle uploaded files.

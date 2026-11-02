@@ -6,8 +6,11 @@ export {
 
 
 export {
+  ensureGcveEntries,
   findXGcveOccurrences,
+  getGcveEntries,
   getGcveVulnId,
+  mergeGcveExtensions,
   recordHasGcveId,
   setGcveVulnId,
 } from "./occurrences";
