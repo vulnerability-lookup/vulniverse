@@ -10,6 +10,17 @@ CONFIG_DIR = PROJECT_ROOT / "config"
 CONFIG_PATH = CONFIG_DIR / "vulniverse.toml"
 SAMPLE_CONFIG_PATH = CONFIG_DIR / "vulniverse.toml.sample"
 
+# cpeEntries defaults off because there is no local full-CPE catalog to
+# serve it from yet (see services/cpe_catalog.py) — setting it to true
+# in config wouldn't make /cpe/cpes work, so it stays off regardless.
+DEFAULT_FEATURES: dict[str, bool] = {
+    "cpeVendors": True,
+    "cpeProducts": True,
+    "cpeEntries": False,
+    "cwe": True,
+    "capec": True,
+}
+
 
 def _panel_enabled(value: Any) -> bool:
     """A panel entry is either the legacy plain bool ("id" = true/false)
@@ -43,6 +54,7 @@ def load_app_config() -> dict[str, dict[str, Any]]:
             },
             "panels": {},
             "actions": {},
+            "features": dict(DEFAULT_FEATURES),
         }
 
     with path.open("rb") as handle:
@@ -51,6 +63,14 @@ def load_app_config() -> dict[str, dict[str, Any]]:
     return {
         "server": {
             "mode": data.get("server", {}).get("mode", "local"),
+        },
+        "features": {
+            **DEFAULT_FEATURES,
+            **{
+                key: bool(value)
+                for key, value in dict(data.get("features", {})).items()
+                if key in DEFAULT_FEATURES
+            },
         },
         "panels": {
             name: _panel_enabled(value)

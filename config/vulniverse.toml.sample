@@ -8,6 +8,20 @@
 [server]
 mode = "local" # local or multiuser -> Mulituser still WIP (do not use in prod)
 
+[features]
+# Vendor/product autocomplete, backed by the local CPE catalog (see
+# `flask cpe sync`) — no outbound requests at search time either way.
+cpeVendors = true
+cpeProducts = true
+# Full CPE-identifier suggestions. Left here for documentation, but
+# there is currently no local catalog to serve it from, so this has
+# no effect yet regardless of what it's set to.
+cpeEntries = false
+# CWE/CAPEC autocomplete. Each lookup that reaches the backend (not
+# just the UI) is disabled when set to false — see reference_data.py.
+cwe = true
+capec = true
+
 [panels.stats]
 enabled = false
 

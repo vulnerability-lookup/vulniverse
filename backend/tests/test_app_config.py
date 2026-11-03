@@ -32,6 +32,7 @@ def test_falls_back_to_sample_file_when_real_config_absent(
 
     assert result == {
         "server": {"mode": "local"},
+        "features": dict(app_config.DEFAULT_FEATURES),
         "panels": {"stats": True},
         "actions": {"download-json": False},
     }
@@ -52,6 +53,55 @@ def test_prefers_real_config_over_sample(
     result = app_config.load_app_config()
 
     assert result["panels"] == {"vl": False}
+
+
+def test_features_default_when_not_configured(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    real_path = tmp_path / "vulniverse.toml"
+    real_path.write_text('[panels]\n"vl" = false\n')
+
+    monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
+    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+
+    result = app_config.load_app_config()
+
+    assert result["features"] == app_config.DEFAULT_FEATURES
+
+
+def test_features_override_defaults(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    real_path = tmp_path / "vulniverse.toml"
+    real_path.write_text("[features]\ncwe = false\ncpeProducts = false\n")
+
+    monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
+    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+
+    result = app_config.load_app_config()
+
+    assert result["features"] == {
+        **app_config.DEFAULT_FEATURES,
+        "cwe": False,
+        "cpeProducts": False,
+    }
+
+
+def test_unknown_feature_keys_are_ignored(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    real_path = tmp_path / "vulniverse.toml"
+    real_path.write_text("[features]\nmadeUpFeature = true\n")
+
+    monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
+    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+
+    result = app_config.load_app_config()
+
+    assert result["features"] == app_config.DEFAULT_FEATURES
 
 
 def test_panel_table_with_enabled_key_is_flattened_to_bool(
@@ -117,6 +167,7 @@ def test_empty_tables_when_neither_file_exists(
         "server": {"mode": "local"},
         "panels": {},
         "actions": {},
+        "features": dict(app_config.DEFAULT_FEATURES),
     }
 
 
@@ -129,3 +180,29 @@ def test_capabilities_endpoint_includes_panels_and_actions(client: FlaskClient) 
     assert "actions" in body
     assert isinstance(body["panels"], dict)
     assert isinstance(body["actions"], dict)
+
+
+def test_capabilities_endpoint_includes_configured_features(
+    client: FlaskClient,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    real_path = tmp_path / "vulniverse.toml"
+    real_path.write_text("[features]\ncwe = false\n")
+
+    monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
+    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    # The client fixture already triggered create_app(), which calls
+    # load_app_config() once and caches it (@lru_cache) before this
+    # test's monkeypatching above — clear it so the route re-reads
+    # from the path just configured.
+    app_config.load_app_config.cache_clear()
+
+    response = client.get("/api/v1/capabilities")
+
+    assert response.status_code == 200
+    features = response.get_json()["features"]
+
+    assert features["cwe"] is False
+    assert features["capec"] is True
+    assert features["cpeVendors"] is True

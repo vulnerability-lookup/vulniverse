@@ -62,6 +62,46 @@ def test_cpe_vendors_returns_503_when_catalog_unavailable(
     assert response.get_json() == {"message": "Local CPE catalog unavailable."}
 
 
+def test_cpe_vendors_route_disabled_by_config(
+    client: FlaskClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(*_: Any, **__: Any) -> None:
+        raise AssertionError("search_vendors should not be called when disabled")
+
+    monkeypatch.setattr(cpe_search_api, "search_vendors", fail)
+    monkeypatch.setattr(
+        cpe_search_api,
+        "load_app_config",
+        lambda: {"features": {"cpeVendors": False, "cpeProducts": True}},
+    )
+
+    response = client.get("/api/v1/cpe/vendors?q=acme")
+
+    assert response.status_code == 404
+    assert response.get_json() == {"message": "Vendor suggestions are disabled."}
+
+
+def test_cpe_products_route_disabled_by_config(
+    client: FlaskClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(*_: Any, **__: Any) -> None:
+        raise AssertionError("search_products should not be called when disabled")
+
+    monkeypatch.setattr(cpe_search_api, "search_products", fail)
+    monkeypatch.setattr(
+        cpe_search_api,
+        "load_app_config",
+        lambda: {"features": {"cpeVendors": True, "cpeProducts": False}},
+    )
+
+    response = client.get("/api/v1/cpe/products?q=widget")
+
+    assert response.status_code == 404
+    assert response.get_json() == {"message": "Product suggestions are disabled."}
+
+
 def test_cpe_products_returns_catalog_results(
     client: FlaskClient,
     monkeypatch: pytest.MonkeyPatch,

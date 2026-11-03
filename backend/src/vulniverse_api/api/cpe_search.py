@@ -4,6 +4,7 @@ from typing import Any
 
 from flask import request
 
+from ..app_config import load_app_config
 from ..services.cpe_search import (
     search_products,
     search_vendors,
@@ -79,6 +80,9 @@ def cpe_vendors() -> tuple[
     dict[str, Any] | list[Any],
     int,
 ]:
+    if not load_app_config()["features"]["cpeVendors"]:
+        return {"message": "Vendor suggestions are disabled."}, 404
+
     q = _text_arg("q")
 
     if not _is_search_term(q):
@@ -104,6 +108,9 @@ def cpe_products() -> tuple[
     dict[str, Any] | list[Any],
     int,
 ]:
+    if not load_app_config()["features"]["cpeProducts"]:
+        return {"message": "Product suggestions are disabled."}, 404
+
     q = _text_arg("q")
 
     if not _is_search_term(q):

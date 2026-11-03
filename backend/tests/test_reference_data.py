@@ -193,6 +193,26 @@ def test_reference_list_route_unknown_kind(client: FlaskClient) -> None:
     assert response.status_code == 404
 
 
+def test_reference_list_route_disabled_by_config(
+    client: FlaskClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(*_: object, **__: object) -> None:
+        raise AssertionError("get_reference_list should not be called when disabled")
+
+    monkeypatch.setattr(reference_data_api, "get_reference_list", fail)
+    monkeypatch.setattr(
+        reference_data_api,
+        "load_app_config",
+        lambda: {"features": {"cwe": False, "capec": True}},
+    )
+
+    response = client.get("/api/v1/references/cwe")
+
+    assert response.status_code == 404
+    assert response.get_json() == {"message": "CWE suggestions are disabled."}
+
+
 def test_reference_list_route_upstream_failure(client: FlaskClient, monkeypatch: pytest.MonkeyPatch) -> None:
     def raise_error(kind: str) -> list[dict[str, str]]:
         raise httpx.ConnectError("boom")

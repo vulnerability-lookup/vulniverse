@@ -52,10 +52,16 @@ def capabilities() -> dict:
         "features": {
             "recordStorage": True,
             "validation": True,
-            "cpeSearch": True,
-            "cpeEntrySuggestions": False,
-            "cpeProposals": False,
             "publication": True,
+            # Deprecated: kept for any existing consumer, derived from
+            # the granular flags below rather than hardcoded. Nothing
+            # in this codebase reads it anymore.
+            "cpeSearch": (
+                app_config["features"]["cpeVendors"]
+                or app_config["features"]["cpeProducts"]
+            ),
+            "cpeProposals": False,
+            **app_config["features"],
         },
         "panels": app_config["panels"],
         "actions": app_config["actions"],

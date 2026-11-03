@@ -59,6 +59,22 @@ export interface AppCapabilities {
   actions: Record<string, boolean>;
 }
 
+interface SuggestionFeatures {
+  cpeVendors: boolean;
+  cpeProducts: boolean;
+  cpeEntries: boolean;
+  cwe: boolean;
+  capec: boolean;
+}
+
+const CLOSED_SUGGESTION_FEATURES: SuggestionFeatures = {
+  cpeVendors: false,
+  cpeProducts: false,
+  cpeEntries: false,
+  cwe: false,
+  capec: false,
+};
+
 
 // Record quality
 
@@ -177,6 +193,10 @@ function cpePart(
 
 export class HttpRepository
   implements EditorRepository {
+  private suggestionFeatures: SuggestionFeatures = {
+    ...CLOSED_SUGGESTION_FEATURES,
+  };
+
   constructor(
     private readonly apiRoot = "/api/v1",
   ) { }
@@ -193,7 +213,16 @@ export class HttpRepository
     const result = await this.request<{
       panels?: Record<string, boolean>;
       actions?: Record<string, boolean>;
+      features?: Partial<SuggestionFeatures>;
     }>("/capabilities");
+
+    this.suggestionFeatures = {
+      cpeVendors: result.features?.cpeVendors === true,
+      cpeProducts: result.features?.cpeProducts === true,
+      cpeEntries: result.features?.cpeEntries === true,
+      cwe: result.features?.cwe === true,
+      capec: result.features?.capec === true,
+    };
 
     return {
       panels: result.panels ?? {},
@@ -312,6 +341,10 @@ export class HttpRepository
   async getReferenceList(
     kind: "cwe" | "capec",
   ): Promise<ReferenceListItem[]> {
+    if (!this.suggestionFeatures[kind]) {
+      return [];
+    }
+
     const result = await this.request<{ items: ReferenceListItem[] }>(
       `/references/${kind}`,
     );
@@ -322,6 +355,10 @@ export class HttpRepository
   async searchCpeVendors(
     q: string,
   ): Promise<CpeVendorSuggestion[]> {
+    if (!this.suggestionFeatures.cpeVendors) {
+      return [];
+    }
+
     const query =
       new URLSearchParams({
         q,
@@ -352,6 +389,10 @@ export class HttpRepository
     q: string,
     vendorQ?: string,
   ): Promise<CpeProductSuggestion[]> {
+    if (!this.suggestionFeatures.cpeProducts) {
+      return [];
+    }
+
     const query =
       new URLSearchParams({
         q,
@@ -388,6 +429,10 @@ export class HttpRepository
   async searchCpes(
     params: CpeSearchParams,
   ): Promise<CpeSuggestion[]> {
+    if (!this.suggestionFeatures.cpeEntries) {
+      return [];
+    }
+
     const query =
       new URLSearchParams();
 
