@@ -314,7 +314,8 @@ export interface EditorRepository {
   ): Promise<CpeVendorSuggestion[]>;
 
   searchCpeProducts?(
-    q: string
+    q: string,
+    vendorQ?: string,
   ): Promise<CpeProductSuggestion[]>;
 
   searchCpes?(

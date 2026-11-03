@@ -7,6 +7,7 @@ from .auth.identity import is_local_mode
 from .auth.local_user import create_local_user
 from .extensions import db
 from .models import Template, User, VulnerabilityRecord
+from .services.cpe_catalog import sync_catalog
 
 
 def register_cli(app: Flask) -> None:
@@ -82,4 +83,21 @@ def register_cli(app: Flask) -> None:
 
         click.echo(
             f"Local user initialized: {user.email}"
+        )
+
+    @app.cli.group("cpe")
+    def cpe_group() -> None:
+        """Manage the local CPE vendor/product reference catalog."""
+
+    @cpe_group.command("sync")
+    def sync_cpe() -> None:
+        """flask --app vulniverse_api cpe sync — refreshes the local
+        vendor/product catalog from cpe.gcve.eu's export endpoints.
+        A failed sync leaves the existing catalog untouched.
+        """
+        result = sync_catalog()
+
+        click.echo(
+            "CPE catalog synchronized: "
+            f"{result['vendors']} vendors, {result['products']} products.",
         )

@@ -53,6 +53,7 @@ def capabilities() -> dict:
             "recordStorage": True,
             "validation": True,
             "cpeSearch": True,
+            "cpeEntrySuggestions": False,
             "cpeProposals": False,
             "publication": True,
         },

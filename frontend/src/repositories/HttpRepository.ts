@@ -350,11 +350,19 @@ export class HttpRepository
 
   async searchCpeProducts(
     q: string,
+    vendorQ?: string,
   ): Promise<CpeProductSuggestion[]> {
     const query =
       new URLSearchParams({
         q,
       });
+
+    if (vendorQ) {
+      query.set(
+        "vendor_q",
+        vendorQ,
+      );
+    }
 
     const response = await this.request<
       | CpeProductApiItem[]

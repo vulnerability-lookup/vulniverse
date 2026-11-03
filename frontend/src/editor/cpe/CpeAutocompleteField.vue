@@ -18,8 +18,9 @@ import {
  * so an unreachable/unsupported CPE Editor (searchCpeVendors/
  * searchCpeProducts are optional on EditorRepository) degrades to
  * normal free-text entry. Shared by the vendor and product fields in
- * AffectedRenderer.vue — both search a CPE Editor list keyed by `q`
- * alone and return the same {id, name, title?} suggestion shape.
+ * AffectedRenderer.vue — both return the same {id, name, title?}
+ * suggestion shape; the product field additionally narrows by
+ * vendorQuery (see props below).
  */
 const props = defineProps<{
   modelValue: string;
@@ -29,6 +30,10 @@ const props = defineProps<{
   inputClass?: string;
   disabled?: boolean;
   placeholder?: string;
+  // Only meaningful when method is "searchCpeProducts" — the sibling
+  // vendor field's current text, used to narrow product suggestions
+  // to that vendor. Ignored for the vendor field itself.
+  vendorQuery?: string;
 }>();
 
 const emit = defineEmits<{
@@ -65,7 +70,13 @@ const {
   onQueryChange,
   hide,
 } = useCpeSearch<Suggestion>(
-  (term) => repository.value?.[props.method]?.(term) ?? Promise.resolve([]),
+  (term) => {
+    if (props.method === "searchCpeProducts") {
+      return repository.value?.searchCpeProducts?.(term, props.vendorQuery) ?? Promise.resolve([]);
+    }
+
+    return repository.value?.searchCpeVendors?.(term) ?? Promise.resolve([]);
+  },
 );
 
 function onInput(

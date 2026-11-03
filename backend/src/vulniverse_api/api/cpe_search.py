@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-import httpx
 from flask import request
 
 from ..services.cpe_search import (
-    search_cpes,
     search_products,
     search_vendors,
 )
@@ -95,11 +93,8 @@ def cpe_vendors() -> tuple[
             per_page=_per_page(),
         )
 
-    except httpx.HTTPError as error:
-        return {
-            "message": "Could not search CPE vendors.",
-            "detail": str(error),
-        }, 502
+    except (FileNotFoundError, OSError, ValueError):
+        return {"message": "Local CPE catalog unavailable."}, 503
 
     return result, 200
 
@@ -116,18 +111,18 @@ def cpe_products() -> tuple[
 
     assert q is not None  # narrowed by _is_search_term above
 
+    vendor_q = _text_arg("vendor_q")
+
     try:
         result = search_products(
             q,
             page=_page(),
             per_page=_per_page(),
+            vendor_q=vendor_q,
         )
 
-    except httpx.HTTPError as error:
-        return {
-            "message": "Could not search CPE products.",
-            "detail": str(error),
-        }, 502
+    except (FileNotFoundError, OSError, ValueError):
+        return {"message": "Local CPE catalog unavailable."}, 503
 
     return result, 200
 
@@ -137,40 +132,10 @@ def cpe_entries() -> tuple[
     dict[str, Any] | list[Any],
     int,
 ]:
-    q = _text_arg("q")
-
-    vendor_q = _text_arg("vendor_q")
-
-    product_q = _text_arg("product_q")
-
-    part = _text_arg("part")
-
-    # Avoid expensive broad requests while the user is merely
-    # typing. q itself is optional because vendor_q/product_q
-    # are valid CPE search inputs.
-    if not any(
-        (
-            _is_search_term(q),
-            _is_search_term(vendor_q),
-            _is_search_term(product_q),
-        )
-    ):
-        return [], 200
-
-    try:
-        result = search_cpes(
-            q=q,
-            vendor_q=vendor_q,
-            product_q=product_q,
-            part=part,
-            page=_page(),
-            per_page=_per_page(),
-        )
-
-    except httpx.HTTPError as error:
-        return {
-            "message": "Could not search CPEs.",
-            "detail": str(error),
-        }, 502
-
-    return result, 200
+    # Full CPE-identifier suggestions are temporarily disabled: unlike
+    # vendor/product search, mirroring this catalog locally would mean
+    # syncing the much larger /cpes/export dataset, which is out of
+    # scope for now. 
+    return {
+        "message": "CPE identifier recommendations are temporarily disabled.",
+    }, 503

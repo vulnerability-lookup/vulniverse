@@ -238,6 +238,7 @@ function addAffected(): void {
               :model-value="(item.product as string) ?? ''"
               method="searchCpeProducts"
               kind="product"
+              :vendor-query="(item.vendor as string) ?? ''"
               input-class="form-control"
               :disabled="!control.enabled"
               @update:model-value="(value) => onProductUpdate(index, value)"
