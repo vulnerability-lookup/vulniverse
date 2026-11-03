@@ -41,17 +41,15 @@ class Template(
         nullable=False,
     )
 
-    # Attribution only, not access control. Every logged-in user can
-    # still view/edit/delete templates regardless of who created them.
     created_by_id: Mapped[
-        int | None
+        int
     ] = mapped_column(
         ForeignKey("user.id"),
-        nullable=True,
+        nullable=False,
     )
 
     created_by: Mapped[
-        User | None
+        User
     ] = relationship(
         foreign_keys=[
             created_by_id,

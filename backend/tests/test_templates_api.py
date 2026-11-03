@@ -2,6 +2,36 @@ from __future__ import annotations
 
 from flask.testing import FlaskClient
 
+from vulniverse_api.extensions import db
+from vulniverse_api.models import Template
+
+
+def insert_template(
+    app,
+    owner_id: int,
+    name: str = "Acme Widget",
+    profile: str = "cve-5.2.0",
+) -> int:
+    """Inserts a template directly via the ORM rather than through an
+    authenticated HTTP request — see insert_record's docstring in
+    test_records_api.py for why cross-user visibility tests need this
+    instead of two different logged-in test_client()s each making a
+    real request within one test.
+    """
+    with app.app_context():
+        template = Template(
+            profile=profile,
+            name=name,
+            fields=[
+                {"path": "containers.cna.affected.0.vendor", "value": "Acme"},
+            ],
+            created_by_id=owner_id,
+        )
+        db.session.add(template)
+        db.session.commit()
+        db.session.refresh(template)
+        return template.id
+
 
 def create_template(
     client: FlaskClient,
@@ -224,5 +254,67 @@ def test_delete_template_removes_it(client: FlaskClient) -> None:
 
 def test_delete_unknown_template_returns_404(client: FlaskClient) -> None:
     response = client.delete("/api/v1/templates/99999")
+
+    assert response.status_code == 404
+
+
+def test_other_users_templates_are_hidden_from_list(
+    app,
+    test_user,
+    other_client: FlaskClient,
+) -> None:
+    insert_template(app, test_user.id)
+
+    assert list_templates(other_client).get_json()["templates"] == []
+
+
+def test_other_user_cannot_update_someones_template(
+    app,
+    test_user,
+    other_client: FlaskClient,
+) -> None:
+    template_id = insert_template(app, test_user.id)
+
+    response = other_client.put(
+        f"/api/v1/templates/{template_id}",
+        json={"name": "Hijacked", "fields": []},
+    )
+
+    assert response.status_code == 404
+
+
+def test_other_user_cannot_delete_someones_template(
+    app,
+    test_user,
+    other_client: FlaskClient,
+) -> None:
+    template_id = insert_template(app, test_user.id)
+
+    response = other_client.delete(f"/api/v1/templates/{template_id}")
+
+    assert response.status_code == 404
+
+
+def test_admin_does_not_see_other_users_templates_in_list(
+    app,
+    test_user,
+    admin_client: FlaskClient,
+) -> None:
+    insert_template(app, test_user.id)
+
+    assert list_templates(admin_client).get_json()["templates"] == []
+
+
+def test_admin_cannot_update_someone_elses_template(
+    app,
+    test_user,
+    admin_client: FlaskClient,
+) -> None:
+    template_id = insert_template(app, test_user.id)
+
+    response = admin_client.put(
+        f"/api/v1/templates/{template_id}",
+        json={"name": "Renamed by admin", "fields": []},
+    )
 
     assert response.status_code == 404

@@ -54,6 +54,12 @@ def _serialize(
     }
 
 
+def _is_visible(
+    template: Template,
+) -> bool:
+    return template.created_by_id == current_user.id
+
+
 @api_bp.get("/templates")
 def list_templates() -> tuple[dict, int]:
     profile = request.args.get("profile")
@@ -64,6 +70,7 @@ def list_templates() -> tuple[dict, int]:
 
     templates = Template.query.filter_by(
         profile=profile,
+        created_by_id=current_user.id,
     ).order_by(
         Template.name.asc(),
     ).all()
@@ -116,7 +123,7 @@ def update_template(
 ) -> tuple[dict, int]:
     template = db.session.get(Template, template_id)
 
-    if template is None:
+    if template is None or not _is_visible(template):
         return {"message": "Template not found."}, 404
 
     payload = request.get_json(silent=True)
@@ -151,7 +158,7 @@ def delete_template(
 ) -> tuple[dict, int]:
     template = db.session.get(Template, template_id)
 
-    if template is None:
+    if template is None or not _is_visible(template):
         return {"message": "Template not found."}, 404
 
     db.session.delete(template)
