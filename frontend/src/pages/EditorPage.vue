@@ -44,6 +44,7 @@ onMounted(async () => {
 
     enabledActions.value = filterEnabled(BUILTIN_ACTIONS, capabilities.actions);
     enabledPanels.value = filterEnabled(BUILTIN_PANELS, capabilities.panels);
+    repository.setFeatures(capabilities.features);
   } catch (error) {
     console.warn(
       "Could not load app capabilities, showing all built-in panels/actions:",

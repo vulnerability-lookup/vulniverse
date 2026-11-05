@@ -57,9 +57,10 @@ export interface RecordSummary {
 export interface AppCapabilities {
   panels: Record<string, boolean>;
   actions: Record<string, boolean>;
+  features: SuggestionFeatures;
 }
 
-interface SuggestionFeatures {
+export interface SuggestionFeatures {
   cpeVendors: boolean;
   cpeProducts: boolean;
   cpeEntries: boolean;
@@ -74,6 +75,22 @@ const CLOSED_SUGGESTION_FEATURES: SuggestionFeatures = {
   cwe: false,
   capec: false,
 };
+
+// Used by both getCapabilities() (parsing the raw API response) and
+// setFeatures() (accepting that same shape back from a caller) — a
+// malformed/partial object normalizes to "closed" per key rather than
+// throwing or leaving a key undefined.
+function normalizeSuggestionFeatures(
+  features: Partial<SuggestionFeatures> | undefined,
+): SuggestionFeatures {
+  return {
+    cpeVendors: features?.cpeVendors === true,
+    cpeProducts: features?.cpeProducts === true,
+    cpeEntries: features?.cpeEntries === true,
+    cwe: features?.cwe === true,
+    capec: features?.capec === true,
+  };
+}
 
 
 // Record quality
@@ -216,18 +233,27 @@ export class HttpRepository
       features?: Partial<SuggestionFeatures>;
     }>("/capabilities");
 
-    this.suggestionFeatures = {
-      cpeVendors: result.features?.cpeVendors === true,
-      cpeProducts: result.features?.cpeProducts === true,
-      cpeEntries: result.features?.cpeEntries === true,
-      cwe: result.features?.cwe === true,
-      capec: result.features?.capec === true,
-    };
-
     return {
       panels: result.panels ?? {},
       actions: result.actions ?? {},
+      features: normalizeSuggestionFeatures(result.features),
     };
+  }
+
+  /*
+   * Called explicitly by the standalone app's pages once
+   * getCapabilities() resolves (see EditorPage.vue/NewRecordPage.vue)
+   * — kept separate from getCapabilities() itself so that method
+   * stays a pure fetch rather than one with a side effect a reader
+   * wouldn't expect from its name. Until this is called, every
+   * suggestion lookup below stays closed (see the constructor), so a
+   * page that never calls it just never gets suggestions rather than
+   * getting them unconditionally.
+   */
+  setFeatures(
+    features: Partial<SuggestionFeatures> | undefined,
+  ): void {
+    this.suggestionFeatures = normalizeSuggestionFeatures(features);
   }
 
   async loadRecord(
