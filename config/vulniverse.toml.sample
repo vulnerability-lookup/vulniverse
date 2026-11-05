@@ -36,10 +36,17 @@ enabled = true
 
 [panels.patch2vuln]
 enabled = true
-# patch2vuln executable/script.
-executable = "/opt/patch2vuln/patch2vuln.py"
-ollama_host = "http://host.docker.internal:11434"
-model = "qwen3.8:27b"
+# Base URL of a patch2vuln web service instance (the Flask app in
+# gcve-eu/gcve-lab-patch2vuln's main branch, not the CLI tool) — see
+# its docs/web-service.md for the full API.
+api_url = "https://patch2vuln.example.org"
+# Bearer token, only required if the service was started with
+# PATCH2VULN_API_TOKEN set. Prefer the PATCH2VULN_API_TOKEN env var
+# over committing a real token here.
+# api_token = ""
+# Optional: up to 4 model names to request: defaults to whatever the
+# service itself is configured to use.
+# models = ["qwen3.8:27b"]
 timeout_seconds = 300
 
 

@@ -26,11 +26,9 @@ services:
     <<: *python
     command: ["rq", "worker", "--worker-class", "vulniverse_api.jobs.worker.NotifyingWorker", "--url", "redis://redis:6379/0", "patch2vuln"]
     stop_grace_period: 35m
-    volumes:
-      - backend_instance:/app/backend/src/instance
-      - job_data:/app/job-data
-      - ./config:/app/config:ro
-      - ${PATCH2VULN_HOST_DIR}:/opt/patch2vuln:ro
+    # Needed whenever the patch2vuln web service itself runs on the
+    # host rather than elsewhere on the network (e.g. local dev) — see
+    # config/vulniverse.toml's patch2vuln.api_url.
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

@@ -412,6 +412,20 @@ export interface EditorRepository {
     onDisconnect?: () => void,
   ): () => void;
 
+  /**
+   * Optional: which draft/publish-style buttons the editor header
+   * shows, and what each sets isDraft to when clicked. Absent means
+   * "use the standalone app's own default pair" (see
+   * editor/core/lifecycle.ts's DEFAULT_LIFECYCLE_TRANSITIONS); an
+   * explicit [] means this host has no such concept at all (e.g.
+   * vulnerability-lookup's CNA API persists immediately, with nowhere
+   * to store an incomplete draft) and the editor shows none of these
+   * buttons. Each entry's run cost is always the same —
+   * controller.save(targetIsDraft) — so unlike EditorAction there is
+   * no run() here, only what to call it with and when to show it.
+   */
+  lifecycleTransitions?: LifecycleTransition[];
+
 }
 
 export interface EditorContext {
@@ -419,6 +433,20 @@ export interface EditorContext {
   profile: string;
   record: EditorDocument;
   isDraft: boolean;
+}
+
+export interface LifecycleTransition {
+  id: string;
+  label: string;
+  targetIsDraft: boolean;
+
+  /**
+   * Hide the button entirely for the current context. Defaults to
+   * always visible — a host providing a single custom transition
+   * presumably wants it shown unconditionally unless it says
+   * otherwise.
+   */
+  isVisible?(context: EditorContext): boolean;
 }
 
 /**

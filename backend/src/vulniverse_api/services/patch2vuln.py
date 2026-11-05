@@ -1,26 +1,25 @@
 from __future__ import annotations
 
-import json
 import os
-import subprocess
-import sys
-import tempfile
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
+import httpx
+
 from ..app_config import CONFIG_PATH, SAMPLE_CONFIG_PATH
+
+ADVISORIES_PATH = "/api/v1/advisories"
 
 
 @dataclass(frozen=True)
 class Patch2VulnConfig:
     enabled: bool
-    executable: str
-    ollama_host: str
-    model: str
+    api_url: str
+    api_token: str | None
     timeout_seconds: int
+    models: tuple[str, ...] = field(default_factory=tuple)
 
 
 @lru_cache(maxsize=1)
@@ -32,22 +31,41 @@ def get_patch2vuln_config() -> Patch2VulnConfig:
 
     settings = config.get("panels", {}).get("patch2vuln", {})
 
+    models = settings.get("models", [])
+
     return Patch2VulnConfig(
         enabled=bool(settings.get("enabled", False)),
-        executable=os.environ.get(
-            "PATCH2VULN_EXECUTABLE",
-            settings.get(
-                "executable",
-                "/opt/patch2vuln/patch2vuln.py",
-            ),
+        api_url=str(settings.get("api_url", "")).rstrip("/"),
+        # A secret: prefer an env var over the committed/shared TOML file,
+        # same override pattern the old `executable` key used for its own
+        # (non-secret) deployment-specific path.
+        api_token=os.environ.get(
+            "PATCH2VULN_API_TOKEN",
+            settings.get("api_token") or None,
         ),
-        ollama_host=settings.get(
-            "ollama_host",
-            "http://localhost:11434",
-        ),
-        model=settings.get("model", "qwen3.8:27b"),
         timeout_seconds=int(settings.get("timeout_seconds", 300)),
+        models=tuple(models) if isinstance(models, list) else (),
     )
+
+
+def _error_message(response: httpx.Response) -> str:
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = None
+
+    message = None
+
+    if isinstance(payload, dict):
+        error = payload.get("error")
+
+        if isinstance(error, dict):
+            message = error.get("message")
+
+    if isinstance(message, str) and message:
+        return message
+
+    return f"patch2vuln request failed with status {response.status_code}"
 
 
 def run_patch2vuln(
@@ -60,88 +78,73 @@ def run_patch2vuln(
     if not config.enabled:
         raise RuntimeError("Patch2Vuln is disabled")
 
-    with tempfile.TemporaryDirectory(prefix="patch2vuln-") as tmp:
-        directory = Path(tmp)
+    if not sources and not patches:
+        raise ValueError("No patch inputs provided")
 
-        inputs = list(sources)
+    body: dict[str, Any] = {
+        "patches": [patch.decode("utf-8") for patch in patches],
+        "urls": sources,
+    }
 
-        # Write uploaded patches into the job's temporary directory.
-        for index, content in enumerate(patches):
-            path = directory / f"patch-{index}.patch"
-            path.write_bytes(content)
-            inputs.append(str(path))
+    # Maps Vulniverse's own camelCase context keys (see api/patch2vuln.py)
+    # to the web service's snake_case ones. versionType has no equivalent
+    # on the web service's side (not in its documented request schema),
+    # so it's deliberately dropped rather than forwarded — the service
+    # rejects unknown JSON properties outright.
+    field_names = {
+        "vendor": "vendor",
+        "product": "product",
+        "affectedVersion": "affected_version",
+        "fixedVersion": "fixed_version",
+    }
 
-        if not inputs:
-            raise ValueError("No patch inputs provided")
+    for context_key, remote_key in field_names.items():
+        value = context.get(context_key)
 
-        advisory_path = directory / "advisory.json"
-        analysis_path = directory / "analysis.json"
+        if value:
+            body[remote_key] = value
 
-        command = [
-            sys.executable,
-            config.executable,
-            *inputs,
-            "--ollama-host",
-            config.ollama_host,
-            "--model",
-            config.model,
-            "--no-tag-version-detection",
-            "--analysis-output",
-            str(analysis_path),
-            "--max-download-bytes",
-            "4194304",
-            "-o",
-            str(advisory_path),
-        ]
+    if config.models:
+        body["models"] = list(config.models)
 
-        options = {
-            "vendor": "--vendor",
-            "product": "--product",
-            "affectedVersion": "--affected-version",
-            "fixedVersion": "--fixed-version",
-            "versionType": "--version-type",
-        }
+    headers = {}
 
-        for key, flag in options.items():
-            value = context.get(key)
+    if config.api_token:
+        headers["Authorization"] = f"Bearer {config.api_token}"
 
-            if value:
-                command.extend([flag, value])
+    try:
+        response = httpx.post(
+            f"{config.api_url}{ADVISORIES_PATH}",
+            json=body,
+            headers=headers,
+            timeout=config.timeout_seconds,
+        )
+    except httpx.TimeoutException as exc:
+        raise RuntimeError("Patch2Vuln analysis timed out") from exc
+    except httpx.HTTPError as exc:
+        raise RuntimeError("Could not reach the Patch2Vuln service") from exc
 
-        try:
-            result = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                timeout=config.timeout_seconds,
-                check=False,
-            )
-        except subprocess.TimeoutExpired as exc:
-            raise RuntimeError("Patch2Vuln analysis timed out") from exc
+    if response.status_code != 200:
+        raise RuntimeError(_error_message(response))
 
-        if result.returncode != 0:
-            raise RuntimeError(f"Patch2Vuln exited with code {result.returncode}")
+    payload = response.json()
+    records = payload.get("records")
 
-        if not advisory_path.exists():
-            raise RuntimeError("Patch2Vuln did not produce an advisory")
+    if not isinstance(records, dict):
+        raise TypeError("Patch2Vuln response did not include any records")
 
-        record = json.loads(advisory_path.read_text(encoding="utf-8"))
+    record = records.get("cve")
 
-        if (
-            not isinstance(record, dict)
-            or record.get("dataType") != "CVE_RECORD"
-            or record.get("dataVersion") != "5.2"
-            or not isinstance(record.get("containers"), dict)
-            or not isinstance(record["containers"].get("cna"), dict)
-        ):
-            raise RuntimeError("Invalid Patch2Vuln record")
+    if (
+        not isinstance(record, dict)
+        or record.get("dataType") != "CVE_RECORD"
+        or record.get("dataVersion") != "5.2"
+        or not isinstance(record.get("containers"), dict)
+        or not isinstance(record["containers"].get("cna"), dict)
+    ):
+        raise RuntimeError("Invalid Patch2Vuln record")
 
-        analysis = None
-
-        if analysis_path.exists():
-            analysis = json.loads(analysis_path.read_text(encoding="utf-8"))
-
-        return {
-            "record": record,
-            "analysis": analysis,
-        }
+    return {
+        "record": record,
+        "analysis": records.get("analysis"),
+    }

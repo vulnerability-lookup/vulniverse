@@ -25,8 +25,8 @@ DEFAULT_FEATURES: dict[str, bool] = {
 def _panel_enabled(value: Any) -> bool:
     """A panel entry is either the legacy plain bool ("id" = true/false)
     or a table ([panels.id] with an `enabled` key, possibly alongside
-    other panel-specific config such as patch2vuln's executable/
-    ollama_host/model/timeout_seconds). Only `enabled` is ever a
+    other panel-specific config such as patch2vuln's api_url/
+    api_token/models/timeout_seconds). Only `enabled` is ever a
     capability the frontend needs — the rest is backend-internal
     config for whatever reads this panel's own table directly, and
     deliberately never reaches the /capabilities response.

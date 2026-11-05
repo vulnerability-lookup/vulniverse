@@ -3,6 +3,8 @@ import vulniverseLogo from "../../assets/vulniverse-logo.png";
 
 import { displayIdentifier } from "../identifier";
 
+import type { LifecycleTransition } from "../contracts";
+
 defineProps<{
   canDelete: boolean;
   canReject: boolean;
@@ -17,20 +19,41 @@ defineProps<{
     label: string;
     enabled: boolean;
   }>;
+  lifecycleTransitions: LifecycleTransition[];
 }>();
 
 defineEmits<{
   reload: [];
   validate: [];
   save: [];
-  publish: [];
-  unpublish: [];
+  transition: [
+    transition: LifecycleTransition,
+  ];
   reject: [];
   delete: [];
   runAction: [
     id: string,
   ];
 }>();
+
+/*
+ * Only the two built-in transitions (publish/revert) get a distinct
+ * color — a host-supplied third transition falls back to a neutral
+ * style rather than this guessing at what it means.
+ */
+function transitionButtonClass(
+  transition: LifecycleTransition,
+): string {
+  if (transition.id === "publish") {
+    return "btn btn-sm btn-success";
+  }
+
+  if (transition.id === "unpublish") {
+    return "btn btn-sm btn-outline-warning";
+  }
+
+  return "btn btn-sm btn-outline-primary";
+}
 </script>
 
 <template>
@@ -156,23 +179,14 @@ defineEmits<{
         </button>
 
         <button
-          v-if="isDraft"
+          v-for="transition in lifecycleTransitions"
+          :key="transition.id"
           type="button"
-          class="btn btn-sm btn-success"
+          :class="transitionButtonClass(transition)"
           :disabled="loading"
-          @click="$emit('publish')"
+          @click="$emit('transition', transition)"
         >
-          Publish
-        </button>
-
-        <button
-          v-if="!isDraft"
-          type="button"
-          class="btn btn-sm btn-outline-warning"
-          :disabled="loading"
-          @click="$emit('unpublish')"
-        >
-          Revert to draft
+          {{ transition.label }}
         </button>
 
         <template v-if="actions.length">

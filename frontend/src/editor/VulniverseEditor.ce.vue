@@ -170,6 +170,9 @@ const extensions =
     actions:
       toRef(props, "actions"),
 
+    repository:
+      repositoryRef,
+
     isRejected:
       controller.isRejected,
 
@@ -183,6 +186,7 @@ const extensions =
 
 const {
   visibleActions,
+  visibleLifecycleTransitions,
   panelNavigationItems,
   currentSection,
   sectionProps,
@@ -233,13 +237,13 @@ onMounted(controller.load);
       :dirty="state.dirty.value"
       :loading="state.loading.value || state.saving.value"
       :actions="visibleActions"
+      :lifecycle-transitions="visibleLifecycleTransitions"
       :can-delete="controller.canDelete.value"
       :can-reject="controller.canReject.value"
       @reload="controller.load"
       @validate="controller.validate"
       @save="controller.save()"
-      @publish="controller.save(false)"
-      @unpublish="controller.save(true)"
+      @transition="(transition) => controller.save(transition.targetIsDraft)"
       @reject="handleRejectClick"
       @delete="handleDelete"
       @run-action="runAction"

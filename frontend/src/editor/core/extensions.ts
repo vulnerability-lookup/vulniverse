@@ -11,6 +11,7 @@ import type {
   EditorAction,
   EditorContext,
   EditorPanel,
+  EditorRepository,
 } from "../contracts";
 
 import type {
@@ -20,6 +21,10 @@ import type {
 import {
   normalizeError,
 } from "./errors";
+
+import {
+  DEFAULT_LIFECYCLE_TRANSITIONS,
+} from "./lifecycle";
 
 import {
   GenericPreviewSection,
@@ -39,6 +44,8 @@ interface EditorExtensionsOptions {
 
   panels: Readonly<Ref<EditorPanel[]>>;
   actions: Readonly<Ref<EditorAction[]>>;
+
+  repository: Readonly<Ref<EditorRepository | undefined>>;
 
   isRejected: Readonly<Ref<boolean>>;
 
@@ -76,6 +83,7 @@ export function useEditorExtensions(
     activeSection,
     panels,
     actions,
+    repository,
     isRejected,
   } = options;
 
@@ -201,6 +209,19 @@ export function useEditorExtensions(
         ),
     );
 
+  const visibleLifecycleTransitions =
+    computed(() =>
+      (
+        repository.value?.lifecycleTransitions ??
+        DEFAULT_LIFECYCLE_TRANSITIONS
+      ).filter(
+        (transition) =>
+          transition.isVisible?.(
+            context.value,
+          ) ?? true,
+      ),
+    );
+
   async function runAction(
     actionId: string,
   ): Promise<void> {
@@ -252,6 +273,7 @@ export function useEditorExtensions(
     sectionProps,
 
     visibleActions,
+    visibleLifecycleTransitions,
 
     runAction,
   };
