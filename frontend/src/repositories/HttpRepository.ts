@@ -742,7 +742,7 @@ export class HttpRepository
     onDisconnect?: () => void,
   ): () => void {
 
-    const url = `${this.apiRoot}/jobs/${encodeURIComponent(jobId)}/events`;
+    const url = `${this.apiRoot}/patch2vuln/jobs/${encodeURIComponent(jobId)}/events`;
 
     const source = new EventSource(url, {
       withCredentials: true,

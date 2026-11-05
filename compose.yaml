@@ -1,47 +1,16 @@
-x-python: &python
-  build:
-    context: .
-    dockerfile: backend/Dockerfile
-  env_file:
-    - ./backend/.env
-  environment:
-    REDIS_URL: redis://redis:6379/0
-    JOB_DATA_DIR: /app/job-data
-  volumes:
-    - backend_instance:/app/backend/src/instance
-    - job_data:/app/job-data
-    - ./config:/app/config:ro
-  depends_on:
-    redis:
-      condition: service_healthy
-
 services:
   backend:
-    <<: *python
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - ./backend/.env
+    volumes:
+      - backend_instance:/app/backend/src/instance
+      - ./config:/app/config:ro
     command: ["gunicorn", "--worker-class", "gthread", "--workers", "2", "--threads", "8", "--bind", "0.0.0.0:8000", "wsgi:app"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
-  worker:
-    <<: *python
-    command: ["rq", "worker", "--worker-class", "vulniverse_api.jobs.worker.NotifyingWorker", "--url", "redis://redis:6379/0", "patch2vuln"]
-    stop_grace_period: 35m
-    # Needed whenever the patch2vuln web service itself runs on the
-    # host rather than elsewhere on the network (e.g. local dev) — see
-    # config/vulniverse.toml's patch2vuln.api_url.
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-  redis:
-    image: valkey/valkey:8-alpine
-    command: ["valkey-server", "--appendonly", "yes"]
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "valkey-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
 
   frontend:
     build:
@@ -53,5 +22,3 @@ services:
 
 volumes:
   backend_instance:
-  job_data:
-  redis_data:

@@ -73,7 +73,6 @@ from . import (  # noqa: F401
     auth,
     cna_credentials,
     cpe_search,
-    jobs,
     patch2vuln,
     publish,
     record_quality,

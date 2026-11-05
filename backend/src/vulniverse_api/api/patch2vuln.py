@@ -4,18 +4,26 @@ import json
 import re
 from urllib.parse import urlsplit
 
-from flask import request
+from flask import Response, current_app, request
 from flask_login import current_user
-from redis.exceptions import RedisError
-from rq.exceptions import NoSuchJobError
-from rq.job import Job
+from itsdangerous import BadSignature, URLSafeSerializer
 
-from ..jobs.queue import get_queue, get_redis
-from ..services.patch2vuln import get_patch2vuln_config, run_patch2vuln
+from ..services.patch2vuln import (
+    get_job_result,
+    get_job_status,
+    get_patch2vuln_config,
+    stream_job_status,
+    submit_job,
+)
 from . import api_bp
 
 MAX_PATCH_BYTES = 4 * 1024 * 1024
 MAX_INPUTS = 5
+
+# Salts the signed job token below (see _encode_job_token) — scopes it to
+# this one purpose so it can never be replayed as a token meant for some
+# other itsdangerous use of the same SECRET_KEY.
+TOKEN_SALT = "patch2vuln-job"
 
 COMMIT_PATH = re.compile(
     r"^/([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)"
@@ -48,6 +56,47 @@ def normalize_commit_url(value: str) -> str:
         f"https://github.com/{owner}/{repo}"
         f"/commit/{commit}.patch"
     )
+
+
+def _serializer() -> URLSafeSerializer:
+    secret_key = current_app.secret_key
+    assert secret_key is not None, "SECRET_KEY must be configured"
+
+    return URLSafeSerializer(secret_key, salt=TOKEN_SALT)
+
+
+def _encode_job_token(job_id: str, owner_id: str) -> str:
+    """Patch2Vuln's own job id, signed together with the submitting user's
+    id. This is the "jobId" the frontend ever sees — it's opaque to it
+    either way. Ownership (one user can't poll/read another's job) is
+    enforced by verifying this signature rather than by looking anything
+    up in shared storage, which is what let Redis/RQ's per-job metadata
+    be retired along with the queue itself: nothing here needs state
+    shared across the two gunicorn worker processes.
+    """
+    return _serializer().dumps({"id": job_id, "owner": owner_id})
+
+
+def _decode_job_token(token: str) -> str:
+    """Verify the token belongs to the current user and return the real
+    patch2vuln job id. Raises LookupError — on a bad signature, a
+    tampered owner, or simply someone else's valid token — so callers
+    treat a forged/foreign token exactly like "job not found" and never
+    confirm whether a given id is real.
+    """
+    try:
+        payload = _serializer().loads(token)
+    except BadSignature as exc:
+        raise LookupError("Job not found") from exc
+
+    if (
+        not isinstance(payload, dict)
+        or not isinstance(payload.get("id"), str)
+        or payload.get("owner") != str(current_user.get_id())
+    ):
+        raise LookupError("Job not found")
+
+    return payload["id"]
 
 
 @api_bp.post("/patch2vuln/jobs")
@@ -131,75 +180,85 @@ def create_patch2vuln_job():
         if value:
             context[field] = value
 
-    queue = get_queue("patch2vuln")
-
     try:
-        job = queue.enqueue(
-            run_patch2vuln,
-            sources,
-            patches,
-            context,
-            job_timeout=config.timeout_seconds + 60,
-            result_ttl=86400,
-            failure_ttl=3600,
-            meta={
-                "owner_id": str(current_user.get_id()),
-            },
-        )
-    except RedisError:
-        return {"message": "Analysis queue unavailable"}, 503
+        job = submit_job(sources, patches, context)
+    except ValueError as exc:
+        return {"message": str(exc)}, 400
+    except RuntimeError as exc:
+        return {"message": str(exc)}, 502
+
+    token = _encode_job_token(job["jobId"], str(current_user.get_id()))
 
     return {
-        "jobId": job.id,
-        "status": "queued",
+        "jobId": token,
+        "status": job["status"],
     }, 202
 
 
-@api_bp.get("/patch2vuln/jobs/<string:job_id>")
-def get_patch2vuln_job(job_id: str):
+@api_bp.get("/patch2vuln/jobs/<string:token>")
+def get_patch2vuln_job(token: str):
     try:
-        job = Job.fetch(
-            job_id,
-            connection=get_redis(),
-        )
-    except NoSuchJobError:
-        return {"message": "Job not found"}, 404
-    except RedisError:
-        return {"message": "Analysis queue unavailable"}, 503
-
-    if job.meta.get("owner_id") != str(current_user.get_id()):
+        job_id = _decode_job_token(token)
+    except LookupError:
         return {"message": "Job not found"}, 404
 
-    status = job.get_status(refresh=True)
+    try:
+        status = get_job_status(job_id)["status"]
+    except LookupError:
+        return {"message": "Job not found"}, 404
+    except RuntimeError as exc:
+        return {"message": str(exc)}, 502
 
-    if status == "finished":
+    if status == "completed":
+        try:
+            result = get_job_result(job_id)
+        except LookupError:
+            return {"message": "Job not found"}, 404
+        except (RuntimeError, TypeError):
+            # The job itself succeeded, but relaying its result failed —
+            # surface it the same way an analysis failure would be, since
+            # the frontend only ever distinguishes "failed" from a result.
+            return {
+                "jobId": token,
+                "status": "failed",
+                "error": "Patch analysis failed",
+            }, 200
+
         return {
-            "jobId": job.id,
+            "jobId": token,
             "status": "completed",
-            "result": job.return_value(),
+            "result": result,
         }, 200
 
     if status == "failed":
         return {
-            "jobId": job.id,
+            "jobId": token,
             "status": "failed",
             "error": "Patch analysis failed",
         }, 200
 
-    if status == "started":
-        return {
-            "jobId": job.id,
-            "status": "running",
-        }, 200
-
-    if status in ("canceled", "stopped"):
-        return {
-            "jobId": job.id,
-            "status": "failed",
-            "error": "Patch analysis was canceled",
-        }, 200
-
     return {
-        "jobId": job.id,
-        "status": "queued",
+        "jobId": token,
+        "status": status,
     }, 200
+
+
+@api_bp.get("/patch2vuln/jobs/<string:token>/events")
+def stream_patch2vuln_job_events(token: str):
+    """Stream status updates for a patch2vuln job. Polls patch2vuln's own
+    job status directly — there's no background worker process left to
+    push notifications, so this is the relay instead.
+    """
+    try:
+        job_id = _decode_job_token(token)
+    except LookupError:
+        return {"message": "Job not found"}, 404
+
+    return Response(
+        stream_job_status(token, job_id),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+        },
+    )

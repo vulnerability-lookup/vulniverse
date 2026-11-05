@@ -5,9 +5,10 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH"
 
-# Git is used by patch-analysis tooling that inspects repository metadata.
+# ca-certificates: TLS verification for outbound HTTPS calls (patch2vuln,
+# the CPE catalog, CWE/CAPEC sources, GitHub patch URLs).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ca-certificates \
+    && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -25,9 +26,8 @@ RUN if [ "$INSTALL_DEV" = "true" ]; then \
 
 CMD ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:8000", "wsgi:app"]
 
-# Background processing must not execute arbitrary patches as root.
 RUN groupadd --system vulniverse \
     && useradd --system --gid vulniverse --home-dir /app vulniverse \
-    && mkdir -p /app/backend/src/instance /app/job-data \
+    && mkdir -p /app/backend/src/instance \
     && chown -R vulniverse:vulniverse /app /opt/venv
 USER vulniverse

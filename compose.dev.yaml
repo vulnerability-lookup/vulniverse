@@ -23,25 +23,6 @@ services:
           path: ./backend/uv.lock
         - action: restart
           path: ./config
-  worker:
-    build:
-      args:
-        INSTALL_DEV: "true"
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./backend/src
-          target: /app/backend/src
-          ignore:
-            - instance/
-            - __pycache__/
-        - action: sync+restart
-          path: ./schemas
-          target: /app/schemas
-        - action: rebuild
-          path: ./backend/pyproject.toml
-        - action: rebuild
-          path: ./backend/uv.lock
 
   frontend:
     build:
