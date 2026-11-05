@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { visualizer } from "rollup-plugin-visualizer";
 
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
@@ -7,6 +8,12 @@ export default defineConfig({
   plugins: [
     vue({
       customElement: /\.ce\.vue$/,
+    }),
+    visualizer({
+      filename: "dist/bundle-analysis.html",
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
     }),
   ],
 
