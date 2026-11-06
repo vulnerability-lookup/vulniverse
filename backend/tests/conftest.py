@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from cryptography.fernet import Fernet
@@ -8,13 +9,20 @@ from flask import Flask
 from flask.testing import FlaskClient
 from werkzeug.security import generate_password_hash
 
-from vulniverse_api import create_app
+from vulniverse_api import app_config, create_app
 from vulniverse_api.extensions import db
 from vulniverse_api.models import User
 
 
 @pytest.fixture
-def app() -> Iterator[Flask]:
+def app(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Flask]:
+    # Neither file exists, so load_app_config() falls back to its built-in
+    # defaults (every panel enabled) instead of whatever this checkout's
+    # config/vulniverse.toml(.sample) happens to say.
+    monkeypatch.setattr(app_config, "CONFIG_PATH", tmp_path / "vulniverse.toml")
+    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    app_config.load_app_config.cache_clear()
+
     application = create_app({
         "TESTING": True,
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
@@ -37,6 +45,8 @@ def app() -> Iterator[Flask]:
         yield application
         db.session.remove()
         db.drop_all()
+
+    app_config.load_app_config.cache_clear()
 
 
 @pytest.fixture
