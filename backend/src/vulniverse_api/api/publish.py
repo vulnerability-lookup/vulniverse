@@ -7,6 +7,7 @@ import httpx
 from flask import request
 from flask_login import current_user
 
+from ..app_config import load_app_config
 from ..models import CnaPublication
 from ..services.cna_credentials import is_credential_configured
 from ..services.cna_publication import (
@@ -41,6 +42,11 @@ def _resolve_service(
     if target not in KNOWN_TARGETS:
         return None, ({"message": f"Unknown publication target: {target!r}"}, 404)
 
+    # target doubles as the panel id ("vl"/"cve-program") -- see
+    # config/vulniverse.toml.sample's [panels.vl]/[panels.cve-program].
+    if not load_app_config()["panels"].get(target, True):
+        return None, ({"message": f"The {target!r} panel is disabled."}, 404)
+
     try:
         return CnaPublicationService(current_user.id, target), None
     except IntegrationNotConfiguredError as exc:
@@ -59,9 +65,12 @@ def _upstream_error_response(
 
 @api_bp.get("/publish/targets")
 def publish_targets() -> tuple[dict, int]:
+    panels = load_app_config()["panels"]
+
     return {
         target: {"configured": is_credential_configured(current_user.id, target)}
         for target in KNOWN_TARGETS
+        if panels.get(target, True)
     }, 200
 
 

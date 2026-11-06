@@ -7,6 +7,7 @@ import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
+from vulniverse_api.api import publish as publish_module
 from vulniverse_api.services import cna_publication as service_module
 from vulniverse_api.services.cna_credentials import set_credential
 
@@ -45,8 +46,25 @@ def configured_vl(app: Flask, test_user) -> None:
     })
 
 
+@pytest.fixture
+def cve_program_panel_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These tests exercise the cve-program target's own credential-
+    configuration logic, independent of whatever config/vulniverse.toml's
+    [panels.cve-program] happens to be set to in this checkout (it's
+    "Mulituser still WIP" territory and is routinely off).
+    """
+    real_load_app_config = publish_module.load_app_config
+
+    def patched() -> dict:
+        config = dict(real_load_app_config())
+        config["panels"] = {**config["panels"], "cve-program": True}
+        return config
+
+    monkeypatch.setattr(publish_module, "load_app_config", patched)
+
+
 def test_targets_endpoint_reports_configured(
-    client: FlaskClient, configured_vl: None,
+    client: FlaskClient, configured_vl: None, cve_program_panel_enabled: None,
 ) -> None:
     response = client.get("/api/v1/publish/targets")
 
@@ -62,7 +80,26 @@ def test_unknown_target_is_404(client: FlaskClient) -> None:
     assert response.status_code == 404
 
 
-def test_unconfigured_target_is_409(client: FlaskClient, configured_vl: None) -> None:
+def test_disabled_panel_target_is_404(
+    client: FlaskClient, configured_vl: None, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_load_app_config = publish_module.load_app_config
+
+    def patched() -> dict:
+        config = dict(real_load_app_config())
+        config["panels"] = {**config["panels"], "vl": False}
+        return config
+
+    monkeypatch.setattr(publish_module, "load_app_config", patched)
+
+    response = client.get("/api/v1/publish/vl/GCVE-0-2026-1")
+
+    assert response.status_code == 404
+
+
+def test_unconfigured_target_is_409(
+    client: FlaskClient, configured_vl: None, cve_program_panel_enabled: None,
+) -> None:
     response = client.get("/api/v1/publish/cve-program/GCVE-0-2026-1")
 
     assert response.status_code == 409

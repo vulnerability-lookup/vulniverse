@@ -3,12 +3,13 @@ from flask import request
 from ..services.record_quality import (
     score_record_quality,
 )
-from . import api_bp
+from . import api_bp, require_panel
 
 PROFILES = {"cve-5.2.0", "gcve-bcp-05-1.7"}
 
 
 @api_bp.post("/record-quality")
+@require_panel("record-quality")
 def record_quality():
     payload = request.get_json()
     profile = payload.get("profile")

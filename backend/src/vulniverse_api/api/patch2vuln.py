@@ -15,7 +15,7 @@ from ..services.patch2vuln import (
     stream_job_status,
     submit_job,
 )
-from . import api_bp
+from . import api_bp, require_panel
 
 MAX_PATCH_BYTES = 4 * 1024 * 1024
 MAX_INPUTS = 5
@@ -100,6 +100,7 @@ def _decode_job_token(token: str) -> str:
 
 
 @api_bp.post("/patch2vuln/jobs")
+@require_panel("patch2vuln")
 def create_patch2vuln_job():
     config = get_patch2vuln_config()
 
@@ -196,6 +197,7 @@ def create_patch2vuln_job():
 
 
 @api_bp.get("/patch2vuln/jobs/<string:token>")
+@require_panel("patch2vuln")
 def get_patch2vuln_job(token: str):
     try:
         job_id = _decode_job_token(token)
@@ -244,6 +246,7 @@ def get_patch2vuln_job(token: str):
 
 
 @api_bp.get("/patch2vuln/jobs/<string:token>/events")
+@require_panel("patch2vuln")
 def stream_patch2vuln_job_events(token: str):
     """Stream status updates for a patch2vuln job. Polls patch2vuln's own
     job status directly — there's no background worker process left to

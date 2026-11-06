@@ -6,6 +6,7 @@ import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
+from vulniverse_api import api as api_module
 from vulniverse_api.api import patch2vuln as patch2vuln_api
 from vulniverse_api.models import User
 from vulniverse_api.services import patch2vuln as patch2vuln_service
@@ -264,3 +265,31 @@ def test_events_streams_status_updates(
     assert response.mimetype == "text/event-stream"
     body = response.get_data(as_text=True)
     assert f'"jobId": "{token}", "status": "completed"' in body
+
+
+# --- [panels.patch2vuln] gating ---------------------------------------------
+
+
+def test_disabled_panel_404s_every_route(
+    app: Flask,
+    client: FlaskClient,
+    test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_load_app_config = api_module.load_app_config
+
+    def patched() -> dict:
+        config = dict(real_load_app_config())
+        config["panels"] = {**config["panels"], "patch2vuln": False}
+        return config
+
+    monkeypatch.setattr(api_module, "load_app_config", patched)
+
+    token = _token_for(app, "job-123", test_user)
+
+    assert client.post(
+        "/api/v1/patch2vuln/jobs",
+        data={"commitUrls": '["https://github.com/o/r/commit/abcdef1.patch"]'},
+    ).status_code == 404
+    assert client.get(f"/api/v1/patch2vuln/jobs/{token}").status_code == 404
+    assert client.get(f"/api/v1/patch2vuln/jobs/{token}/events").status_code == 404

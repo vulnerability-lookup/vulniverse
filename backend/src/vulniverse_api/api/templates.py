@@ -6,7 +6,7 @@ from flask_login import current_user
 from ..extensions import db
 from ..models import Template
 from ..services.profiles import known_profiles
-from . import api_bp
+from . import api_bp, require_panel
 
 
 def _validate_profile(
@@ -61,6 +61,7 @@ def _is_visible(
 
 
 @api_bp.get("/templates")
+@require_panel("templates")
 def list_templates() -> tuple[dict, int]:
     profile = request.args.get("profile")
     error = _validate_profile(profile)
@@ -81,6 +82,7 @@ def list_templates() -> tuple[dict, int]:
 
 
 @api_bp.post("/templates")
+@require_panel("templates")
 def create_template() -> tuple[dict, int]:
     payload = request.get_json(silent=True)
 
@@ -118,6 +120,7 @@ def create_template() -> tuple[dict, int]:
 
 
 @api_bp.put("/templates/<int:template_id>")
+@require_panel("templates")
 def update_template(
     template_id: int,
 ) -> tuple[dict, int]:
@@ -153,6 +156,7 @@ def update_template(
 
 
 @api_bp.delete("/templates/<int:template_id>")
+@require_panel("templates")
 def delete_template(
     template_id: int,
 ) -> tuple[dict, int]:

@@ -1,7 +1,13 @@
+from collections.abc import Callable
+from functools import wraps
+from typing import Any, TypeVar
+
 from flask import Blueprint, request
 from flask_login import current_user
 
 from ..app_config import load_app_config
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 api_bp = Blueprint("api_v1", __name__)
 
@@ -32,6 +38,31 @@ def require_login() -> tuple[dict, int] | None:
         return None
 
     return {"message": "Authentication required."}, 401
+
+
+def require_panel(panel_id: str) -> Callable[[F], F]:
+    """Gate a route behind config/vulniverse.toml's [panels.<panel_id>].
+
+    Panels used to be UI-only: hiding a panel's button never stopped its
+    routes from working, so disabling one in config didn't actually
+    restrict anything — any authenticated user could still reach it
+    directly. This closes that gap the same way [features] is already
+    enforced in reference_data.py/cpe_search.py. A panel id absent from
+    config defaults to enabled, matching the frontend's own default (see
+    frontend/src/editor/enabled-extensions.ts) and capabilities' own
+    "no config = everything on" behavior.
+    """
+    def decorator(func: F) -> F:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            if not load_app_config()["panels"].get(panel_id, True):
+                return {"message": f"The {panel_id!r} panel is disabled."}, 404
+
+            return func(*args, **kwargs)
+
+        return wrapper  # type: ignore[return-value]
+
+    return decorator
 
 
 @api_bp.get("/health")

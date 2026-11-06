@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import pytest
 from flask.testing import FlaskClient
 
+from vulniverse_api import api as api_module
 from vulniverse_api.extensions import db
 from vulniverse_api.models import Template
 
@@ -318,3 +320,29 @@ def test_admin_cannot_update_someone_elses_template(
     )
 
     assert response.status_code == 404
+
+
+def test_disabled_panel_404s_every_route(
+    client: FlaskClient,
+    app,
+    test_user,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_load_app_config = api_module.load_app_config
+
+    def patched() -> dict:
+        config = dict(real_load_app_config())
+        config["panels"] = {**config["panels"], "templates": False}
+        return config
+
+    monkeypatch.setattr(api_module, "load_app_config", patched)
+
+    template_id = insert_template(app, test_user.id)
+
+    assert client.get("/api/v1/templates?profile=cve-5.2.0").status_code == 404
+    assert create_template(client).status_code == 404
+    assert client.put(
+        f"/api/v1/templates/{template_id}",
+        json={"name": "x", "fields": []},
+    ).status_code == 404
+    assert client.delete(f"/api/v1/templates/{template_id}").status_code == 404
