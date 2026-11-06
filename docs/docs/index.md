@@ -1,5 +1,5 @@
 ---
-icon:
+icon: lucide/home
 ---
 
 # Vulniverse
@@ -42,6 +42,8 @@ its own backend instead.
   standalone application locally.
 - [Configuration](setup/config.md) — the handful of things that are
   actually configurable today.
+- [Docker](setup/docker.md) — running the standalone app in containers,
+  for development or production.
 - [Manage schemas](development/schema.md) — updating to a new upstream CVE or
   GCVE schema version.
 - [Architecture](development/architecture.md) — how the frontend and

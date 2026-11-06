@@ -29,3 +29,9 @@ config/vulniverse.toml
 # Drawio
 *.drawio.bkp
 *.drawio.dtmp
+
+# Claude Code
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+.claude/plans/

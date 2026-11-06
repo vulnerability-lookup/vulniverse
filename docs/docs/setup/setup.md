@@ -22,6 +22,7 @@ uv sync
 cp .env.example .env
 python3 -c "import secrets; print(secrets.token_hex(32))"   # paste into .env's SECRET_KEY=
 uv run flask --app vulniverse_api db upgrade
+uv run flask --app vulniverse_api init-local-user
 uv run flask --app vulniverse_api run --debug
 ```
 
@@ -29,9 +30,28 @@ uv run flask --app vulniverse_api run --debug
 environment) and fails fast with a clear error if it isn't — see
 [Configuration](config.md) and [Running in production](production.md).
 
+`init-local-user` is a separate, one-time step `db upgrade` doesn't do for
+you: it creates the internal user that local mode (`[server] mode =
+"local"` in `config/vulniverse.toml`, the default — see
+[Configuration](config.md)) auto-authenticates every request as. Without
+it, every request gets "Authentication required" even though the
+deployment is genuinely in local mode, since `db upgrade` only creates the
+`user` table, not this row.
+
 The API listens on `http://127.0.0.1:5000` by default. The SQLite database
 lives in the Flask instance directory (`backend/src/instance/`), created
 automatically on first run.
+
+CPE vendor/product autocomplete (in the Affected-products editor) needs
+its own local catalog synced before it returns anything:
+
+```bash
+uv run flask --app vulniverse_api cpe sync
+```
+
+Without this, the app still works fine — vendor/product search just
+silently returns no results until it's run. See
+[Architecture](../development/architecture.md).
 
 ## 2. Install and start the frontend
 

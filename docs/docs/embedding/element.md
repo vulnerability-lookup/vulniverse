@@ -110,13 +110,33 @@ editor.repository = myRepository;
 ```
 
 It must implement the `EditorRepository` interface
-(`frontend/src/editor/contracts.ts`) — `loadRecord`/`createRecord`/
-`updateRecord`/`validateRecord`/`deleteRecord` are required;
-`getReferenceList`/`listTemplates`+CRUD/`getCnaPublication`+the publish
-actions are all optional, and the corresponding UI degrades gracefully
-(plain free-text entry, a "not supported here" message) when a given one
-is omitted, rather than breaking. See
-[Architecture](../development/architecture.md) for the full interface.
+(`frontend/src/editor/contracts.ts`). Four methods are required; the rest
+are optional, and the editor degrades gracefully when one is omitted
+(a fallback, or a "not supported here" message in the relevant panel)
+rather than breaking:
+
+| Method(s) | Required? | If omitted |
+| --- | --- | --- |
+| `loadRecord`, `createRecord`, `updateRecord`, `validateRecord` | **Required** | — |
+| `deleteRecord` | Optional | No delete action in the UI |
+| `getReferenceList` | Optional | CWE/CAPEC fields fall back to plain free text |
+| `searchCpeVendors`, `searchCpeProducts`, `searchCpes` | Optional | No CPE autocomplete |
+| `listTemplates`, `saveTemplate`, `updateTemplate`, `deleteTemplate` | Optional, implement together | Templates panel shows "not supported here" |
+| `getCnaPublication`, `reserveCveId`, `publishCna`, `rejectCna`, `abortCna` | Optional, implement together | CVE Program / Vulnerability-Lookup panels show "not supported here" |
+| `scoreRecordQuality` | Optional | Record Quality panel shows "not supported here" |
+| `submitPatch2VulnJob`, `getPatch2VulnJob` | Optional, implement together | Patch2Vuln panel shows "not supported here" |
+| `subscribeJobEvents` | Optional | Patch2Vuln panel falls back to polling instead of live (SSE) updates |
+
+See [Architecture](../development/architecture.md) for the full interface.
+
+`lifecycleTransitions?: LifecycleTransition[]` is a property, not a
+method, and its three possible states each mean something different:
+
+| Value | Meaning |
+| --- | --- |
+| Omitted (`undefined`) | Use the standalone app's own default pair — Publish while a draft, Revert to draft once published (`editor/core/lifecycle.ts`'s `DEFAULT_LIFECYCLE_TRANSITIONS`). |
+| Explicit empty array `[]` | This host has no such concept (e.g. Vulnerability-Lookup's CNA API persists immediately, with nowhere to store an incomplete draft) — the editor shows none of these buttons. |
+| A custom `LifecycleTransition[]` | The host's own set: `{id, label, targetIsDraft, isVisible?}` each. Unlike `EditorAction`, there's no `run()` — clicking always just calls `controller.save(targetIsDraft)`. |
 
 The standalone app's own `HttpRepository`
 (`frontend/src/repositories/HttpRepository.ts`) takes one constructor
@@ -155,16 +175,24 @@ capabilities-filtering step for an embedded host (that machinery —
 standalone-app-only, see [Configuration](../setup/config.md)); a host just
 decides the array contents directly in its own code.
 
-`templatesPanel` is a genuine opt-in panel like the others (not a section
-baked into the element) — a host has to include it explicitly to get the
-Templates UI, the same as `gcveIdentifierPanel`, `cveProgramPanel`, and
-`vulnerabilityLookupPanel`. All four are exported from `src/element.ts`, so
-a host can import and reuse Vulniverse's own built-in ones instead of
-authoring equivalents from scratch — though for
-`cveProgramPanel`/`vulnerabilityLookupPanel`/`templatesPanel`
-specifically, that only does something useful once the host's own
-`EditorRepository` implements the matching optional methods
-(`getCnaPublication`/etc., `listTemplates`/etc.).
+Five built-in panels are exported from `src/element.ts` — none are baked
+into the element itself, so a host has to include each explicitly to get
+its UI, but can then reuse it instead of authoring an equivalent from
+scratch:
+
+| Panel | Needs repository method(s) |
+| --- | --- |
+| `templatesPanel` | `listTemplates` + CRUD |
+| `cveProgramPanel` | `getCnaPublication` + the publish actions |
+| `vulnerabilityLookupPanel` | `getCnaPublication` + the publish actions |
+| `recordQualityPanel` | `scoreRecordQuality` |
+| `patch2vulnPanel` | `submitPatch2VulnJob` + `getPatch2VulnJob` |
+
+A sixth built-in, `recordStatsPanel`, exists internally
+(`frontend/src/editor/panels/record-stats/`) but is deliberately **not**
+exported — it's a purely local computation over the already-loaded record
+with no repository dependency, and isn't currently offered as a reusable
+building block for embedding hosts.
 
 ## Events
 

@@ -6,7 +6,8 @@ icon: lucide/server
 
 The commands in [Get started](setup.md) (`flask --app vulniverse_api run
 --debug`, `npm run dev`) are development-only. Follow these steps in order
-for a real deployment.
+for a real, bare-metal deployment (systemd + nginx on the host). If you'd
+rather run it in containers instead, see [Docker](docker.md).
 
 ## Step 1 — Configure the environment
 
@@ -61,6 +62,18 @@ Run the DB migrations:
 cd backend
 uv run flask --app vulniverse_api db upgrade
 ```
+
+If you're running in local mode (`[server] mode = "local"` in
+`config/vulniverse.toml`, the default), also create the internal local
+user — this is a separate, one-time step migrations don't do for you:
+
+```bash
+uv run flask --app vulniverse_api init-local-user
+```
+
+Without it, every request gets "Authentication required" instead of
+being auto-authenticated, even though the deployment is genuinely in
+local mode — `db upgrade` only creates the `user` table, not this row.
 
 ## Step 4 — Run under gunicorn
 

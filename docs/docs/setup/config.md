@@ -14,8 +14,9 @@ embeddable `<vulniverse-editor>` element itself is a separate concern, covered i
 
 ## Config file 
 
-`config/vulniverse.toml` controls which built-in panels/actions the
-standalone app shows.
+`config/vulniverse.toml` controls the deployment mode, which built-in
+panels/actions the standalone app shows, and which suggestion-lookup
+features it's allowed to use.
 
   ```bash
   cp config/vulniverse.toml.sample config/vulniverse.toml
@@ -26,26 +27,91 @@ standalone app shows.
   real config file behaves exactly like the sample's own values — nothing
   here is required to get started.
 
-### `[panels]` / `[actions]`
-
+### `[server]`
 
 ```toml
-[panels]
-"templates"    = true
-"stats"        = true
-"vl"           = true
-"cve-program"  = true
-"gcve-identifier" = false
+[server]
+mode = "local" # local or multiuser -> Multiuser is still WIP, do not use in prod
+```
+
+`local` (the default) auto-authenticates every request as a single
+internal user — there's no login/registration at all. This user has to be
+created once, separately from the database migrations:
+
+```bash
+uv run flask --app vulniverse_api init-local-user
+```
+
+Without it, every request gets "Authentication required" even in local
+mode, since `db upgrade` only creates the `user` table, not this row —
+see [Get started](setup.md). `multiuser` enables real accounts
+(registration/login), but is explicitly still work in progress and isn't
+meant for a real deployment yet.
+
+### `[features]`
+
+```toml
+[features]
+cpeVendors = true
+cpeProducts = true
+cpeEntries = false
+cwe = true
+capec = true
+```
+
+Which vendor/product/CPE/CWE/CAPEC autocomplete lookups the editor's
+repository is allowed to perform. `cpeVendors`/`cpeProducts` are backed by
+a local catalog synced via `flask cpe sync` (see
+[Architecture](../development/architecture.md)) —
+no outbound request at search time either way. `cpeEntries` (full
+CPE-identifier suggestions) has no local catalog to serve it from yet, so
+it stays disabled regardless of this setting. Disabling a feature here is
+enforced on the backend, not just hidden in the UI — the underlying route
+returns 404 if a disabled feature is requested directly.
+
+### `[panels]` / `[actions]`
+
+```toml
+[panels.stats]
+enabled = false
+
+[panels.vl]
+enabled = true
+
+[panels.cve-program]
+enabled = false
+
+[panels.record-quality]
+enabled = true
+
+[panels.patch2vuln]
+enabled = true
+api_url = "https://patch2vuln.example.org"
+# api_token = ""
+# models = ["qwen3.8:27b"]
+timeout_seconds = 300
 
 [actions]
 "download-json" = true
 ```
 
+A panel id not listed defaults to enabled. Most panels are a plain
+`enabled` flag; `[panels.patch2vuln]` additionally carries its own
+operational settings (`api_url`/`api_token`/`models`/`timeout_seconds`)
+for reaching an external
+[Patch2Vuln](https://github.com/gcve-eu/gcve-lab-patch2vuln) web service
+instance — see the comments in `config/vulniverse.toml.sample` for the
+full set.
+
+As with `[features]`, disabling a panel here is enforced on the backend:
+the underlying routes for a disabled panel return 404, not just a hidden
+button in the UI.
+
 CNA-publication credentials — "Vulnerability-Lookup" (target id `vl`) and
 "CVE Program" (target id `cve-program`) — are **not** configured here.
-Each registered user sets their own under their account's CNA credentials
-page; they're stored per-user, encrypted at rest. See [Running in
-production](production.md).
+Each registered user sets their own under the standalone app's own
+`/cna-credentials` page; they're stored per-user, encrypted at rest using
+`CNA_CREDENTIAL_ENCRYPTION_KEY` (see below).
 
 ## Backend environment (`.env`)
 
@@ -83,4 +149,3 @@ server: {
 
 If the backend runs on a different host/port during development, this is
 the line to change.
-
