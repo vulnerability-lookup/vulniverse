@@ -50,6 +50,7 @@ export {
 
 export {
   cveProgramPanel,
+  patch2vulnPanel,
   recordQualityPanel,
   templatesPanel,
   vulnerabilityLookupPanel,
