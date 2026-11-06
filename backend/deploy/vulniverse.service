@@ -26,8 +26,12 @@ Environment=CNA_CREDENTIAL_ENCRYPTION_KEY=replace-with-a-real-generated-fernet-k
 # a no-op once already at the latest revision.
 ExecStartPre=/opt/vulniverse/backend/.venv/bin/flask --app vulniverse_api db upgrade
 
+# gthread: Patch2Vuln's live-status stream holds its thread for the whole
+# analysis; with plain sync workers two open streams block every request.
 ExecStart=/opt/vulniverse/backend/.venv/bin/gunicorn \
+    --worker-class gthread \
     --workers 2 \
+    --threads 8 \
     --bind 127.0.0.1:8000 \
     wsgi:app
 

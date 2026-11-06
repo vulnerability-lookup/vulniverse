@@ -445,6 +445,27 @@ def test_updating_placeholder_record_rejects_publish_without_identifier(client) 
     assert response.status_code == 400
 
 
+def test_updating_placeholder_record_publishes_with_a_real_identifier_in_one_save(client) -> None:
+    create_response = client.post(
+        "/api/v1/records",
+        json={"record": {}, "profile": "cve-5.2.0", "isDraft": True},
+    )
+    placeholder = create_response.get_json()["identifier"]
+
+    response = client.put(
+        f"/api/v1/records/{placeholder}",
+        json={
+            "record": minimal_cve_record("CVE-2026-00043"),
+            "profile": "cve-5.2.0",
+            "isDraft": False,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["identifier"] == "CVE-2026-00043"
+    assert response.get_json()["isDraft"] is False
+
+
 def test_updating_placeholder_record_conflicts_when_identifier_already_taken(client) -> None:
     create_draft(client, "CVE-2026-00020")
 

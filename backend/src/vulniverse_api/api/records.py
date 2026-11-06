@@ -333,7 +333,7 @@ def update_record(identifier: str) -> tuple[dict, int]:
             exclude_id=record.id,
         ):
             return {"message": "The record already exists."}, 409
-        elif not is_draft:
+        elif not is_draft and not real_identifier:
             return {
                 "message": "A record needs a CVE/GCVE identifier before it can be published.",
             }, 400

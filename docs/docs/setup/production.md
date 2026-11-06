@@ -84,11 +84,12 @@ outside development.
 
 1. Start the app using gunicorn:
    ```bash
-   uv run gunicorn --workers 2 --bind 127.0.0.1:8000 wsgi:app
+   uv run gunicorn --worker-class gthread --workers 2 --threads 8 --bind 127.0.0.1:8000 wsgi:app
    ```
    Two workers is deliberate, not a placeholder: SQLite allows only one
    writer at a time, so more worker *processes* sharing the one SQLite
-   file risks lock contention under real concurrent writes.
+   file risks lock contention under real concurrent writes. 
+
 2. Confirm it's actually answering:
    ```bash
    curl http://127.0.0.1:8000/api/v1/health
