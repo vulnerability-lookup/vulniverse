@@ -153,6 +153,13 @@
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
 }
 
+// Two columns of metric dropdowns (and CVSS 4.0's extra groups) need
+// more room than a confirm dialog.
+.cvss-calculator-dialog {
+  width: 56rem;
+  max-width: 95vw;
+}
+
 .editor-dialog::backdrop {
   background: rgba(15, 23, 33, 0.35);
 }

@@ -23,7 +23,7 @@ import {
   useCollapsibleItems,
 } from "../../common/use-collapsible-items";
 
-import CvssCalculatorDialog from "./CvssCalculatorDialog.vue";
+import CvssCalculatorDialog from "../../common/cvss/CvssCalculatorDialog.vue";
 
 const props = defineProps({
   ...rendererProps<ControlElement>(),

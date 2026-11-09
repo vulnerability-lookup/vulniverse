@@ -3,7 +3,7 @@
  * (CpeApplicabilityRenderer.vue / CpeConditionDialog.vue) — kept free
  * of Vue so the trickiest part (the version-constraint <-> raw schema
  * field conversion) is easy to reason about and test in isolation,
- * same idea as cvss-calculator.ts next to it.
+ * same idea as common/cvss/cvss-calculator.ts.
  *
  * Schema shape (schemas/upstream/cve/5.2.0/CVE_Record_Format_bundled.json,
  * $defs cpeApplicabilityElement/cpe_node/cpe_match):
