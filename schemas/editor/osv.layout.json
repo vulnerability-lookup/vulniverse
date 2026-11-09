@@ -1,0 +1,72 @@
+{
+  "sections": [
+    {
+      "id": "metadata",
+      "label": "Metadata",
+      "paths": [
+        "schema_version",
+        "id",
+        "modified",
+        "published",
+        "withdrawn",
+        "aliases",
+        "related",
+        "upstream"
+      ]
+    },
+    {
+      "id": "summary",
+      "label": "Summary",
+      "paths": [
+        "summary",
+        "details"
+      ]
+    },
+    {
+      "id": "affected",
+      "label": "Affected packages",
+      "paths": [
+        "affected"
+      ]
+    },
+    {
+      "id": "severity",
+      "label": "Severity",
+      "paths": [
+        "severity"
+      ]
+    },
+    {
+      "id": "references",
+      "label": "References",
+      "paths": [
+        "references"
+      ]
+    },
+    {
+      "id": "credits",
+      "label": "Credits",
+      "paths": [
+        "credits",
+        "database_specific"
+      ]
+    }
+  ],
+  "hiddenPaths": [],
+  "controlOptions": {
+    "schema_version": {
+      "readonly": true
+    },
+    "id": {
+      "label": "ID"
+    },
+    "details": {
+      "multi": true
+    },
+    "references": {
+      "detail": "GENERATED",
+      "showSortButtons": true,
+      "elementLabelProp": "url"
+    }
+  }
+}

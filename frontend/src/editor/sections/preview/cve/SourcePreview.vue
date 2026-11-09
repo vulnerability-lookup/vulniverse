@@ -16,6 +16,7 @@ import {
   formatValue,
   formatValueJson,
   isComplexValue,
+  safeUrl,
 } from "../common/utils";
 
 
@@ -422,11 +423,8 @@ function referencesOf(
 
 function referenceUrl(
   reference: AnyRecord,
-): string {
-  return typeof reference.url ===
-    "string"
-    ? reference.url
-    : "";
+): string | undefined {
+  return safeUrl(reference.url);
 }
 
 

@@ -1,0 +1,112 @@
+[
+  {
+    "path": "schema_version",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "id",
+    "title": "Currently supported home database identifier prefixes",
+    "type": "string"
+  },
+  {
+    "path": "modified",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "published",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "withdrawn",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "summary",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "details",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "severity[].type",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "severity[].score",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "severity[].source",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].package.ecosystem",
+    "title": "Currently supported ecosystems",
+    "type": "string"
+  },
+  {
+    "path": "affected[].package.name",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].package.purl",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].severity[].type",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].severity[].score",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].severity[].source",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].ranges[].type",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].ranges[].repo",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "references[].type",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "references[].url",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "credits[].name",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "credits[].type",
+    "title": null,
+    "type": "string"
+  }
+]

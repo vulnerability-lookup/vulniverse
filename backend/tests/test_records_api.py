@@ -523,3 +523,36 @@ def test_publication_rows_stay_attached_when_an_identifier_is_assigned(app, clie
     with app.app_context():
         publication = CnaPublication.query.filter_by(record_id=rid).one()
         assert publication.status == "RESERVED"
+
+
+def minimal_osv_record(osv_id: str) -> dict[str, Any]:
+    return {
+        "schema_version": "1.9.2",
+        "id": osv_id,
+        "modified": "2026-11-09T10:00:00Z",
+        "affected": [
+            {"package": {"ecosystem": "PyPI", "name": "widget"}, "versions": ["1.0.0"]},
+        ],
+    }
+
+
+def test_osv_record_is_published_with_its_id_as_identifier(client) -> None:
+    response = client.post(
+        "/api/v1/records",
+        json={"record": minimal_osv_record("PYSEC-2026-1"), "profile": "osv-1.9.2", "isDraft": False},
+    )
+
+    assert response.status_code == 201, response.get_json()
+    assert response.get_json()["identifier"] == "PYSEC-2026-1"
+
+
+def test_osv_record_that_breaks_the_schema_is_not_published(client) -> None:
+    document = minimal_osv_record("PYSEC-2026-2")
+    del document["modified"]
+
+    response = client.post(
+        "/api/v1/records",
+        json={"record": document, "profile": "osv-1.9.2", "isDraft": False},
+    )
+
+    assert response.status_code == 422

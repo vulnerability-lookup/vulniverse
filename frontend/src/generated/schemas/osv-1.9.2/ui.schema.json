@@ -1,0 +1,145 @@
+{
+  "type": "Categorization",
+  "elements": [
+    {
+      "type": "Category",
+      "id": "metadata",
+      "label": "Metadata",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/schema_version",
+          "label": "Schema version",
+          "options": {
+            "readonly": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/id",
+          "label": "ID"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/modified",
+          "label": "Modified"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/published",
+          "label": "Published"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/withdrawn",
+          "label": "Withdrawn"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/aliases",
+          "label": "Aliases"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/related",
+          "label": "Related",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/upstream",
+          "label": "Upstream",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "summary",
+      "label": "Summary",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/summary",
+          "label": "Summary"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/details",
+          "label": "Details",
+          "options": {
+            "multi": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "affected",
+      "label": "Affected packages",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/affected",
+          "label": "Affected"
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "severity",
+      "label": "Severity",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/severity",
+          "label": "Severity"
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "references",
+      "label": "References",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/references",
+          "label": "References",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true,
+            "elementLabelProp": "url"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "credits",
+      "label": "Credits",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/credits",
+          "label": "Credits",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/database_specific",
+          "label": "Database specific"
+        }
+      ]
+    }
+  ]
+}

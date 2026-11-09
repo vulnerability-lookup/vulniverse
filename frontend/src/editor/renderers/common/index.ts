@@ -1,6 +1,7 @@
 import {
   and,
   isBooleanControl,
+  isObjectControl,
   isStringControl,
   rankWith,
   schemaMatches,
@@ -23,8 +24,30 @@ import ArrayCardRenderer from
 import BooleanSelectRenderer from
   "./BooleanSelectRenderer.vue";
 
+import FreeFormObjectRenderer from
+  "./FreeFormObjectRenderer.vue";
+
 
 const LONG_TEXT_MIN_LENGTH = 4096;
+
+
+// An object the schema says nothing about: no fields, no
+// composition, so a generated form would have nothing to show.
+const isFreeFormObjectControl = and(
+  isObjectControl,
+
+  schemaMatches(
+    (schema) => (
+      schema.properties === undefined
+      && schema.patternProperties === undefined
+      && schema.additionalProperties !== false
+      && schema.oneOf === undefined
+      && schema.anyOf === undefined
+      && schema.allOf === undefined
+      && schema.$ref === undefined
+    ),
+  ),
+);
 
 
 const isLongTextControl = and(
@@ -73,6 +96,17 @@ export const COMMON_RENDERERS:
 
     {
       renderer:
+        FreeFormObjectRenderer,
+
+      tester:
+        rankWith(
+          5,
+          isFreeFormObjectControl,
+        ),
+    },
+
+    {
+      renderer:
         ArrayCardRenderer,
 
       tester:
@@ -87,4 +121,5 @@ export const COMMON_RENDERERS:
 export {
   ArrayCardRenderer,
   BooleanSelectRenderer,
+  FreeFormObjectRenderer,
 };

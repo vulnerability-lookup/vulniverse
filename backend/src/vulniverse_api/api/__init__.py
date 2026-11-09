@@ -6,6 +6,7 @@ from flask import Blueprint, request
 from flask_login import current_user
 
 from ..app_config import load_app_config
+from ..services.profiles import load_manifest
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -76,10 +77,7 @@ def capabilities() -> dict:
 
     return {
         "apiVersion": "1.0",
-        "recordProfiles": [
-            "cve-5.2.0",
-            "gcve-bcp-05",
-        ],
+        "recordProfiles": sorted(load_manifest()["profiles"]),
         "features": {
             "recordStorage": True,
             "validation": True,

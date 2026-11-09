@@ -74,10 +74,15 @@
       "version": "1.7"
     },
     "osv-1.9.2": {
-      "baseProfile": "osv-1.9.2",
+      "baseSchema": "upstream/osv/1.9.2/schema.json",
+      "editor": {
+        "layout": "editor/osv.layout.json"
+      },
       "identifier": {
         "strategy": "osv"
       },
+      "kind": "osv",
+      "label": "OSV 1.9.2",
       "version": "1.9.2"
     }
   },
