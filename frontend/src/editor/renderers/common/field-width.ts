@@ -30,7 +30,7 @@ export function fieldWidth(
   }
 
   // Custom renderers and multi-line text bring their own layout.
-  if (!schema || options.renderer || options.multi) {
+  if (!schema || options.renderer || options.multi || options.wrap) {
     return "full";
   }
 

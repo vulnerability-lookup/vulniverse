@@ -1,8 +1,10 @@
 import {
   and,
   isBooleanControl,
+  isDateTimeControl,
   isObjectControl,
   isStringControl,
+  optionIs,
   or,
   rankWith,
   schemaMatches,
@@ -26,11 +28,17 @@ import ArrayCardRenderer from
 import BooleanSelectRenderer from
   "./BooleanSelectRenderer.vue";
 
+import DateTimeRenderer from
+  "./DateTimeRenderer.vue";
+
 import FreeFormObjectRenderer from
   "./FreeFormObjectRenderer.vue";
 
 import GridLayoutRenderer from
   "./GridLayoutRenderer.vue";
+
+import WrappingTextRenderer from
+  "./WrappingTextRenderer.vue";
 
 
 const LONG_TEXT_MIN_LENGTH = 4096;
@@ -117,6 +125,33 @@ export const COMMON_RENDERERS:
 
     {
       renderer:
+        DateTimeRenderer,
+
+      // Above vanilla's DateTimeControlRenderer (2).
+      tester:
+        rankWith(
+          3,
+          isDateTimeControl,
+        ),
+    },
+
+    {
+      renderer:
+        WrappingTextRenderer,
+
+      // Opt-in per field via controlOptions.<path>.wrap.
+      tester:
+        rankWith(
+          4,
+          and(
+            isStringControl,
+            optionIs("wrap", true),
+          ),
+        ),
+    },
+
+    {
+      renderer:
         FreeFormObjectRenderer,
 
       tester:
@@ -142,6 +177,8 @@ export const COMMON_RENDERERS:
 export {
   ArrayCardRenderer,
   BooleanSelectRenderer,
+  DateTimeRenderer,
   FreeFormObjectRenderer,
   GridLayoutRenderer,
+  WrappingTextRenderer,
 };

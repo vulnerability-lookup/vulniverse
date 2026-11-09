@@ -68,7 +68,10 @@
         {
           "type": "Control",
           "scope": "#/properties/summary",
-          "label": "Summary"
+          "label": "Summary",
+          "options": {
+            "wrap": true
+          }
         },
         {
           "type": "Control",

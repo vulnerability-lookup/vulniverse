@@ -29,6 +29,7 @@ describe("fieldWidth", () => {
     expect(fieldWidth({ type: "string", maxLength: 4096 })).toBe("full");
     expect(fieldWidth({ oneOf: [{ type: "string" }, { type: "number" }] })).toBe("full");
     expect(fieldWidth({ type: "string" }, { multi: true })).toBe("full");
+    expect(fieldWidth({ type: "string", maxLength: 256 }, { wrap: true })).toBe("full");
     expect(fieldWidth({ type: "string", pattern: "x" }, { renderer: "vulniverse-tags" })).toBe("full");
     expect(fieldWidth(undefined)).toBe("full");
   });

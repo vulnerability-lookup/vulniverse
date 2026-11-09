@@ -61,6 +61,9 @@
     "id": {
       "label": "ID"
     },
+    "summary": {
+      "wrap": true
+    },
     "details": {
       "multi": true
     },

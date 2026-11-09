@@ -456,6 +456,14 @@
     field-sizing: content;
   }
 
+  // WrappingTextRenderer: one line that wraps and grows (sized in JS),
+  // so none of the multi-line text box defaults above apply.
+  .control > .wrapper .text-area.editor-wrap-text {
+    min-height: 0;
+    resize: none;
+    overflow: hidden;
+  }
+
   .control > .wrapper .input:focus,
   .control > .wrapper .select:focus,
   .control > .wrapper .text-area:focus {
