@@ -55,7 +55,8 @@
   "hiddenPaths": [],
   "controlOptions": {
     "schema_version": {
-      "readonly": true
+      "readonly": true,
+      "width": "short"
     },
     "id": {
       "label": "ID"

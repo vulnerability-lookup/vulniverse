@@ -3,9 +3,11 @@ import {
   isBooleanControl,
   isObjectControl,
   isStringControl,
+  or,
   rankWith,
   schemaMatches,
   schemaTypeIs,
+  uiTypeIs,
 } from "@jsonforms/core";
 
 import type {
@@ -26,6 +28,9 @@ import BooleanSelectRenderer from
 
 import FreeFormObjectRenderer from
   "./FreeFormObjectRenderer.vue";
+
+import GridLayoutRenderer from
+  "./GridLayoutRenderer.vue";
 
 
 const LONG_TEXT_MIN_LENGTH = 4096;
@@ -72,6 +77,22 @@ const isLongTextControl = and(
 
 export const COMMON_RENDERERS:
   JsonFormsRendererRegistryEntry[] = [
+    {
+      renderer:
+        GridLayoutRenderer,
+
+      // Above vanilla's LayoutRenderer (1) and GroupRenderer (2).
+      tester:
+        rankWith(
+          3,
+          or(
+            uiTypeIs("VerticalLayout"),
+            uiTypeIs("Group"),
+            uiTypeIs("Category"),
+          ),
+        ),
+    },
+
     {
       renderer:
         BooleanSelectRenderer,
@@ -122,4 +143,5 @@ export {
   ArrayCardRenderer,
   BooleanSelectRenderer,
   FreeFormObjectRenderer,
+  GridLayoutRenderer,
 };

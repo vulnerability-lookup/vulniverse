@@ -171,7 +171,7 @@ function applyCalculator(
 
         <input
           type="text"
-          class="form-control font-monospace"
+          class="form-control"
           :aria-label="`Severity ${index + 1} score`"
           :value="entry.score ?? ''"
           :disabled="!control.enabled"

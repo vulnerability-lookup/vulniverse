@@ -11,7 +11,8 @@
           "scope": "#/properties/schema_version",
           "label": "Schema version",
           "options": {
-            "readonly": true
+            "readonly": true,
+            "width": "short"
           }
         },
         {

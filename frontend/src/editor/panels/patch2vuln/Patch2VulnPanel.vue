@@ -14,6 +14,7 @@ import type {
 } from "../../contracts";
 
 import {
+  useEditorContext,
   useEditorRepository,
 } from "../../core/context";
 
@@ -51,7 +52,8 @@ const versionType = ref("");
 const job = shallowRef<Patch2VulnJob | null>(null);
 const submitting = ref(false);
 const error = ref<string | null>(null);
-const message = ref<string | null>(null);
+// The editor's toast stack, shared with Save and Apply JSON.
+const editor = useEditorContext();
 
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let mounted = false;
@@ -297,7 +299,6 @@ async function submit(): Promise<void> {
 
   submitting.value = true;
   error.value = null;
-  message.value = null;
   job.value = null;
 
   const urls = commitUrls.value
@@ -397,8 +398,14 @@ function applyResult(): void {
     count++;
   }
 
-  message.value = `Applied ${count} field(s) to the editor.`;
+  if (count === 0) {
+    error.value = "None of the selected fields are in the generated record.";
+    return;
+  }
+
   error.value = null;
+  editor.notice.value =
+    `Applied ${count} ${count === 1 ? "field" : "fields"} from patch2vuln. Save to keep the changes.`;
 }
 
 
@@ -562,13 +569,6 @@ onBeforeUnmount(() => {
         class="alert alert-danger mt-3"
       >
         {{ error }}
-      </div>
-
-      <div
-        v-if="message"
-        class="alert alert-success mt-3"
-      >
-        {{ message }}
       </div>
 
       <div
