@@ -19,6 +19,9 @@ export function useEditorState() {
   const identifier =
     ref<string | null>(null);
 
+  const vulnerabilityId =
+    ref<string | null>(null);
+
   const profile =
     ref<string | null>(null);
 
@@ -53,6 +56,9 @@ export function useEditorState() {
       structuredClone(loaded.record);
 
     identifier.value = loaded.identifier;
+    vulnerabilityId.value = loaded.vulnerabilityId === undefined
+      ? loaded.identifier
+      : loaded.vulnerabilityId;
     profile.value = loaded.profile;
     isDraft.value = loaded.isDraft;
 
@@ -63,6 +69,7 @@ export function useEditorState() {
     record.value = null;
     originalRecord.value = null;
     identifier.value = null;
+    vulnerabilityId.value = null;
     profile.value = null;
     isDraft.value = false;
     loadError.value = null;
@@ -75,6 +82,7 @@ export function useEditorState() {
     record,
     originalRecord,
     identifier,
+    vulnerabilityId,
     profile,
     isDraft,
     loading,

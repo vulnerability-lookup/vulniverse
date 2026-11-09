@@ -89,9 +89,9 @@ class CnaPublicationService:
 
     # ----- lookups -----
 
-    def get_or_create(self, record_identifier: str) -> CnaPublication:
+    def get_or_create(self, record_id: int) -> CnaPublication:
         publication = CnaPublication.query.filter_by(
-            record_identifier=record_identifier,
+            record_id=record_id,
             target=self.target,
         ).first()
 
@@ -99,7 +99,7 @@ class CnaPublicationService:
             return publication
 
         publication = CnaPublication(
-            record_identifier=record_identifier,
+            record_id=record_id,
             target=self.target,
             status=PublicationStatus.LOCAL_ONLY.value,
         )
@@ -113,10 +113,10 @@ class CnaPublicationService:
 
     def reserve_cve_id(
         self,
-        record_identifier: str,
+        record_id: int,
         year: int,
     ) -> CnaPublication:
-        publication = self.get_or_create(record_identifier)
+        publication = self.get_or_create(record_id)
         self._assert_can_transition(publication, PublicationStatus.RESERVED)
 
         params = {
@@ -166,19 +166,17 @@ class CnaPublicationService:
 
         return publication
 
-    def publish(self, record_identifier: str) -> CnaPublication:
-        publication = self.get_or_create(record_identifier)
+    def publish(self, record_id: int) -> CnaPublication:
+        publication = self.get_or_create(record_id)
         self._assert_can_transition(publication, PublicationStatus.PUBLISHED)
 
         if not publication.cve_id:
             raise ValueError("Reserve a CVE ID before publishing.")
 
-        record = VulnerabilityRecord.query.filter_by(
-            identifier=record_identifier,
-        ).first()
+        record = db.session.get(VulnerabilityRecord, record_id)
 
         if record is None:
-            raise ValueError(f"Unknown record: {record_identifier}")
+            raise ValueError(f"Unknown record: {record_id}")
 
         cna_container = (record.document.get("containers") or {}).get("cna")
 
@@ -211,11 +209,11 @@ class CnaPublicationService:
 
         return publication
 
-    def reject(self, record_identifier: str, reason: str) -> CnaPublication:
+    def reject(self, record_id: int, reason: str) -> CnaPublication:
         if not reason.strip():
             raise ValueError("A rejection reason is required.")
 
-        publication = self.get_or_create(record_identifier)
+        publication = self.get_or_create(record_id)
         self._assert_can_transition(publication, PublicationStatus.REJECTED)
 
         if not publication.cve_id:
@@ -253,8 +251,8 @@ class CnaPublicationService:
 
         return publication
 
-    def abort(self, record_identifier: str) -> CnaPublication:
-        publication = self.get_or_create(record_identifier)
+    def abort(self, record_id: int) -> CnaPublication:
+        publication = self.get_or_create(record_id)
         self._assert_can_transition(publication, PublicationStatus.ABORTED)
 
         publication.status = PublicationStatus.ABORTED.value

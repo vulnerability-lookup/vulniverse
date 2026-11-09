@@ -129,6 +129,13 @@ rather than breaking:
 
 See [Architecture](../development/architecture.md) for the full interface.
 
+`LoadedRecord.identifier` is an opaque key the repository addresses the
+record by — the standalone app uses its database id, a host can use
+anything stable (Vulnerability-Lookup uses the GCVE ID). The editor shows
+`LoadedRecord.vulnerabilityId` as the record's name; a host that omits it
+gets `identifier` shown instead, and `null` means "no CVE/GCVE/OSV ID
+yet".
+
 `lifecycleTransitions?: LifecycleTransition[]` is a property, not a
 method, and its three possible states each mean something different:
 
@@ -199,8 +206,8 @@ building block for embedding hosts.
 | Event | `detail` | Fires when |
 | --- | --- | --- |
 | `ready` | — | The editor has mounted and finished its initial setup. |
-| `loaded` | `identifier: string` | A record has been loaded, created, or saved. |
-| `deleted` | `identifier: string` | A record was deleted. |
+| `loaded` | `identifier: string` (the record key) | A record has been loaded, created, or saved. |
+| `deleted` | `identifier: string` (the record key) | A record was deleted. |
 | `dirtyChange` | `dirty: boolean` | The record's unsaved-changes state changed. |
 | `error` | `error: Error` | An operation against `repository` failed. |
 

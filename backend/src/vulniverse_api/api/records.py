@@ -1,7 +1,14 @@
+"""CRUD endpoints for vulnerability records.
+
+Records are addressed by their database ``id``. The vulnerability identifier
+(CVE/GCVE/OSV id) is read from the document according to its profile, and is
+NULL for a draft that doesn't have one yet.
+"""
+
 from __future__ import annotations
 
-import uuid
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, TypeAlias
 
 from flask import request
 from flask_login import current_user
@@ -9,101 +16,68 @@ from sqlalchemy import func, or_
 
 from ..extensions import db
 from ..models import CnaPublication, VulnerabilityRecord
+from ..services.identifiers import extract_identifier
 from ..services.profiles import known_profiles
-from ..services.record_validation import (
-    find_x_gcve_occurrences,
-    validate_record,
-)
+from ..services.record_validation import validate_record
 from . import api_bp
 
-
-def has_blocking_errors(errors: list[dict[str, Any]]) -> bool:
-    return any(
-        error.get("severity", "error") == "error"
-        for error in errors
-    )
+ApiResponse: TypeAlias = tuple[dict[str, Any], int]
+DEFAULT_PROFILE = "cve-5.2.0"
 
 
-def gcve_vuln_id(document: dict[str, Any]) -> str | None:
-    """The real GCVE-BCP-05 identifier, read from wherever x_gcve
-    actually appears in the document
-    """
-    occurrences = find_x_gcve_occurrences(document)
+@dataclass(frozen=True)
+class RecordInput:
+    """Validated fields accepted by the create and update endpoints."""
 
-    if not occurrences:
+    document: dict[str, Any]
+    profile: str
+    is_draft: bool
+
+
+# ---------------------------------------------------------------------------
+# Request and publication validation
+# ---------------------------------------------------------------------------
+
+
+def read_record_input(
+    *,
+    default_profile: str = DEFAULT_PROFILE,
+    default_is_draft: bool = True,
+) -> RecordInput | ApiResponse:
+    """Parse a record request or return a (JSON body, HTTP status) error."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return {"message": "A JSON object is required."}, 400
+
+    document = payload.get("record")
+    profile = payload.get("profile", default_profile)
+    is_draft = payload.get("isDraft", default_is_draft)
+
+    if not isinstance(document, dict):
+        return {"message": "A record object is required."}, 400
+    if not isinstance(profile, str) or profile not in known_profiles():
+        return {"message": f"Unknown profile: {profile!r}"}, 400
+    if not isinstance(is_draft, bool):
+        return {"message": "isDraft must be a boolean."}, 400
+
+    return RecordInput(document=document, profile=profile, is_draft=is_draft)
+
+
+def publication_error(data: RecordInput) -> ApiResponse | None:
+    """Only published records must pass full schema/semantic validation."""
+    if data.is_draft:
         return None
 
-    _path, extensions = occurrences[0]
+    errors = validate_record(data.document, data.profile)
+    if any(error.get("severity", "error") == "error" for error in errors):
+        return {"message": "The record is not publishable.", "errors": errors}, 422
 
-    if not isinstance(extensions, list) or not extensions:
-        return None
-
-    first = extensions[0]
-    vuln_id = first.get("vulnId") if isinstance(first, dict) else None
-
-    return vuln_id if isinstance(vuln_id, str) else None
+    return None
 
 
-def is_gcve_profile(profile: str) -> bool:
-    return profile.startswith("gcve-")
-
-
-def extract_identifier(
-    document: dict[str, Any],
-    profile: str,
-) -> str | None:
-    """Mirrors PreviewSection.vue's primaryIdentifier exactly: for a
-    gcve-* profile, the real GCVE-BCP-05 x_gcve[].vulnId (or its
-    non-standard cveMetadata.vulnId stand-in) wins over cveId; for any
-    other profile, cveId wins — a plain cve-5.2.0 draft can carry a
-    stray x_gcve key (drafts skip schema validation), and that
-    shouldn't out-rank its actual cveId just because it happens to be
-    present.
-    """
-    metadata = document.get("cveMetadata")
-    cve_metadata = metadata if isinstance(metadata, dict) else {}
-
-    vuln_id = gcve_vuln_id(document) or cve_metadata.get("vulnId")
-    cve_id = cve_metadata.get("cveId")
-
-    identifier = vuln_id if is_gcve_profile(profile) and vuln_id else (cve_id or vuln_id)
-
-    return identifier if isinstance(identifier, str) else None
-
-
-def identifier_still_present(
-    document: dict[str, Any],
-    identifier: str,
-) -> bool:
-    """A record's identifier, once assigned at creation, is pinned to
-    this row forever
-    """
-    metadata = document.get("cveMetadata")
-    cve_metadata = metadata if isinstance(metadata, dict) else {}
-
-    candidates = (
-        gcve_vuln_id(document),
-        cve_metadata.get("vulnId"),
-        cve_metadata.get("cveId"),
-    )
-
-    # Case-insensitive: CVE/GCVE identifiers are conventionally
-    # uppercase, but a hand-typed or externally-sourced one may not be
-    # — "GCVE-1-2026-1" and "gcve-1-2026-1" are the same identifier, not
-    # a fabricated identity change.
-    identifier_lower = identifier.lower()
-
-    return any(
-        isinstance(candidate, str) and candidate.lower() == identifier_lower
-        for candidate in candidates
-    )
-
-
-def find_record_by_identifier(identifier: str) -> VulnerabilityRecord | None:
-    """Case-insensitive lookup — see identifier_still_present()."""
-    return VulnerabilityRecord.query.filter(
-        func.lower(VulnerabilityRecord.identifier) == identifier.lower(),
-    ).first()
+# ---------------------------------------------------------------------------
+# Identifier handling
+# ---------------------------------------------------------------------------
 
 
 def record_identifier_taken(
@@ -111,79 +85,92 @@ def record_identifier_taken(
     *,
     exclude_id: int | None = None,
 ) -> bool:
-    """Case-insensitive "does another record already use this
-    identifier" check — see identifier_still_present()."""
     query = VulnerabilityRecord.query.filter(
         func.lower(VulnerabilityRecord.identifier) == identifier.lower(),
     )
-
     if exclude_id is not None:
         query = query.filter(VulnerabilityRecord.id != exclude_id)
 
-    return db.session.query(query.exists()).scalar()
+    return bool(db.session.query(query.exists()).scalar())
 
 
-PLACEHOLDER_PREFIX = "draft-"
+def identifier_error(
+    identifier: str | None,
+    *,
+    is_draft: bool,
+    existing_record: VulnerabilityRecord | None = None,
+) -> ApiResponse | None:
+    """Check assignment, uniqueness, and immutability in one place.
 
-
-def is_placeholder_identifier(identifier: str) -> bool:
-    """True for the "draft-<id>" placeholder create_record() assigns
-    when a record is saved with no vulnId/cveId yet — a real CVE/GCVE
-    identifier can never start with this (their formats are fixed:
-    "CVE-YYYY-NNNN", "GCVE-N-YYYY-NNNNN"), so it's unambiguous. Plain
-    letters/digits/hyphens only — deliberately not e.g. a "#" prefix,
-    which would need percent-encoding in every URL it appears in and
-    breaks outright if any call site (including a test, as one did
-    here) forgets to.
+    A new record (or a draft without one yet) may acquire its first
+    identifier. Once assigned, it cannot change, even while still a draft.
     """
-    return identifier.startswith(PLACEHOLDER_PREFIX)
+    if not identifier and not is_draft:
+        return {"message": "A record identifier is required before publication."}, 400
+
+    if existing_record is not None and existing_record.identifier is not None:
+        if (
+            not identifier
+            or identifier.casefold() != existing_record.identifier.casefold()
+        ):
+            return {"message": "The record identifier cannot be changed."}, 400
+        return None
+
+    if identifier and record_identifier_taken(
+        identifier,
+        exclude_id=existing_record.id if existing_record is not None else None,
+    ):
+        return {"message": "The record already exists."}, 409
+
+    return None
 
 
-def reassign_identifier(record: VulnerabilityRecord, new_identifier: str) -> None:
-    """Moves a record off its "draft-<id>" placeholder onto a real
-    identifier — the one-time transition from "created with no ID"
-    to "has an ID" (see create_record()). Also re-keys any
-    CnaPublication rows filed under the placeholder (e.g. from
-    reserving a CVE ID before ever typing one in) so a reservation
-    made before this moment isn't silently orphaned. Skips a
-    particular (target) re-key only in the pathological case where a
-    row already exists under the new identifier for that target —
-    exceedingly unlikely, but safer than crashing on the unique
-    constraint.
-    """
-    old_identifier = record.identifier
-    record.identifier = new_identifier
-
-    for publication in CnaPublication.query.filter_by(
-        record_identifier=old_identifier,
-    ).all():
-        conflict = CnaPublication.query.filter_by(
-            record_identifier=new_identifier,
-            target=publication.target,
-        ).first()
-
-        if conflict is None:
-            publication.record_identifier = new_identifier
+# ---------------------------------------------------------------------------
+# Access checks and API serialization
+# ---------------------------------------------------------------------------
 
 
-def is_visible(record: VulnerabilityRecord) -> bool:
-    """A draft is visible only to its own owner (or an admin); a
-    published record is visible to any logged-in user, exactly like
-    today's flat access model. Enforced on every read/write route
-    below, not just the list — otherwise a non-owner who somehow
-    knew/guessed an identifier could still reach a draft that isn't
-    supposed to be visible to them at all.
-    """
-    if not record.is_draft:
-        return True
+def is_owner(record: VulnerabilityRecord) -> bool:
+    return (
+        record.created_by_id is not None
+        and record.created_by_id == current_user.id
+    )
 
-    return current_user.is_admin or record.created_by_id == current_user.id
+
+def can_read_record(record: VulnerabilityRecord) -> bool:
+    """Published records are readable; drafts belong to their owner/admin."""
+    return not record.is_draft or current_user.is_admin or is_owner(record)
+
+
+def can_modify_record(record: VulnerabilityRecord) -> bool:
+    """Only the owner or an administrator may change or delete a record."""
+    return current_user.is_admin or is_owner(record)
+
+
+def find_record(record_id: int) -> VulnerabilityRecord | None:
+    """The record, or None if it doesn't exist or this user may not read it."""
+    record = db.session.get(VulnerabilityRecord, record_id)
+    return record if record is not None and can_read_record(record) else None
+
+
+def record_response(record: VulnerabilityRecord) -> dict[str, Any]:
+    return {
+        "id": record.id,
+        "identifier": record.identifier,
+        "profile": record.profile,
+        "record": record.document,
+        "isDraft": record.is_draft,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Record endpoints
+# ---------------------------------------------------------------------------
 
 
 @api_bp.get("/records")
-def list_records() -> tuple[dict, int]:
+def list_records() -> ApiResponse:
     query = VulnerabilityRecord.query
-
     if not current_user.is_admin:
         query = query.filter(
             or_(
@@ -192,17 +179,15 @@ def list_records() -> tuple[dict, int]:
             ),
         )
 
-    # id DESC as a tiebreak: sqlite's CURRENT_TIMESTAMP only has
-    # second-level precision, so two records created within the
-    # same second would otherwise sort ambiguously.
     records = query.order_by(
         VulnerabilityRecord.updated_at.desc(),
-        VulnerabilityRecord.id.desc(),
+        VulnerabilityRecord.id.desc(),  # Stable order for equal timestamps.
     ).all()
 
     return {
         "records": [
             {
+                "id": record.id,
                 "identifier": record.identifier,
                 "profile": record.profile,
                 "isDraft": record.is_draft,
@@ -214,173 +199,96 @@ def list_records() -> tuple[dict, int]:
     }, 200
 
 
-@api_bp.get("/records/<string:identifier>")
-def get_record(identifier: str) -> tuple[dict, int]:
-    record = find_record_by_identifier(identifier)
-
-    if record is None or not is_visible(record):
+@api_bp.get("/records/<int:record_id>")
+def get_record(record_id: int) -> ApiResponse:
+    record = find_record(record_id)
+    if record is None:
         return {"message": "Record not found."}, 404
 
-    return {
-        "identifier": record.identifier,
-        "profile": record.profile,
-        "record": record.document,
-        "isDraft": record.is_draft,
-    }, 200
+    return record_response(record), 200
 
 
 @api_bp.post("/records")
-def create_record() -> tuple[dict, int]:
-    payload = request.get_json(silent=True)
+def create_record() -> ApiResponse:
+    data = read_record_input()
+    if isinstance(data, tuple):
+        return data
 
-    if not isinstance(payload, dict):
-        return {"message": "A JSON object is required."}, 400
+    identifier = extract_identifier(data.document, data.profile)
+    error = identifier_error(identifier, is_draft=data.is_draft)
+    if error is not None:
+        return error
 
-    document = payload.get("record")
-    profile = payload.get("profile", "cve-5.2.0")
-    is_draft = bool(payload.get("isDraft", True))
-
-    if not isinstance(document, dict):
-        return {"message": "A record object is required."}, 400
-
-    if profile not in known_profiles():
-        return {"message": f"Unknown profile: {profile!r}"}, 400
-
-    identifier = extract_identifier(document, profile)
-
-    if not identifier and not is_draft:
-        return {
-            "message": "A record needs a CVE/GCVE identifier before it can be published.",
-        }, 400
-
-    if identifier and record_identifier_taken(identifier):
-        return {"message": "The record already exists."}, 409
-
-    # Incomplete drafts should be saveable.
-    if not is_draft:
-        errors = validate_record(document, profile)
-
-        if has_blocking_errors(errors):
-            return {
-                "message": "The record is not publishable.",
-                "errors": errors,
-            }, 422
+    error = publication_error(data)
+    if error is not None:
+        return error
 
     record = VulnerabilityRecord(
-        # A globally-unique placeholder, temporary only within this
-        # transaction — reassign_identifier() (via the PLACEHOLDER_PREFIX
-        # scheme) replaces it below once the row has a real id to build
-        # that from. Random, not "", so two concurrent identifier-less
-        # creates can never collide on the unique constraint before
-        # either gets its real placeholder assigned.
-        identifier=identifier or f"{PLACEHOLDER_PREFIX}pending-{uuid.uuid4().hex}",
-        profile=profile,
-        document=document,
-        is_draft=is_draft,
+        identifier=identifier,
+        profile=data.profile,
+        document=data.document,
+        is_draft=data.is_draft,
         created_by_id=current_user.id,
     )
-
     db.session.add(record)
+    db.session.commit()
+    return record_response(record), 201
 
-    if not identifier:
-        db.session.flush()
-        record.identifier = f"{PLACEHOLDER_PREFIX}{record.id}"
 
+@api_bp.put("/records/<int:record_id>")
+def update_record(record_id: int) -> ApiResponse:
+    record = find_record(record_id)
+    if record is None:
+        return {"message": "Record not found."}, 404
+    if not can_modify_record(record):
+        return {"message": "You cannot modify this record."}, 403
+
+    data = read_record_input(
+        default_profile=record.profile,
+        default_is_draft=record.is_draft,
+    )
+    if isinstance(data, tuple):
+        return data
+
+    # Reject a format change before modifying the record or publications.
+    if data.profile != record.profile:
+        return {"message": "The record profile cannot be changed."}, 400
+
+    document_identifier = extract_identifier(data.document, record.profile)
+    error = identifier_error(
+        document_identifier,
+        is_draft=data.is_draft,
+        existing_record=record,
+    )
+    if error is not None:
+        return error
+
+    error = publication_error(data)
+    if error is not None:
+        return error
+
+    # No mutations occur until all validation has succeeded.
+    if record.identifier is None:
+        record.identifier = document_identifier
+
+    record.document = data.document
+    record.is_draft = data.is_draft
     db.session.commit()
 
-    return {
-        "identifier": record.identifier,
-        "profile": profile,
-        "record": document,
-        "isDraft": is_draft,
-    }, 201
+    return record_response(record), 200
 
 
-@api_bp.put("/records/<string:identifier>")
-def update_record(identifier: str) -> tuple[dict, int]:
-    record = find_record_by_identifier(identifier)
-
-    if record is None or not is_visible(record):
+@api_bp.delete("/records/<int:record_id>")
+def delete_record(record_id: int) -> ApiResponse:
+    record = find_record(record_id)
+    if record is None:
         return {"message": "Record not found."}, 404
+    if not can_modify_record(record):
+        return {"message": "You cannot modify this record."}, 403
 
-    payload = request.get_json(silent=True)
-
-    if not isinstance(payload, dict):
-        return {"message": "A JSON object is required."}, 400
-
-    document = payload.get("record")
-    profile = payload.get("profile", record.profile)
-    is_draft = bool(payload.get("isDraft", record.is_draft))
-
-    if not isinstance(document, dict):
-        return {"message": "A record object is required."}, 400
-
-    if profile not in known_profiles():
-        return {"message": f"Unknown profile: {profile!r}"}, 400
-
-    is_placeholder = is_placeholder_identifier(identifier)
-    # Only meaningful while is_placeholder — extract_identifier() looks
-    # at vulnId/cveId directly, unlike identifier_still_present()'s
-    # "did the pinned one survive" check used once a real one exists.
-    real_identifier = extract_identifier(document, profile) if is_placeholder else None
-
-    if is_placeholder:
-        # Not pinned to anything real yet — the first real vulnId/cveId
-        # the document picks up (if any) becomes the record's identifier
-        # for good, exactly as if it had been supplied at creation.
-        if real_identifier and record_identifier_taken(
-            real_identifier,
-            exclude_id=record.id,
-        ):
-            return {"message": "The record already exists."}, 409
-        elif not is_draft and not real_identifier:
-            return {
-                "message": "A record needs a CVE/GCVE identifier before it can be published.",
-            }, 400
-    elif not identifier_still_present(document, identifier):
-        return {
-            "message": "The record identifier cannot be changed.",
-        }, 400
-
-    if not is_draft:
-        errors = validate_record(document, profile)
-
-        if has_blocking_errors(errors):
-            return {
-                "message": "The record is not publishable.",
-                "errors": errors,
-            }, 422
-
-    if real_identifier:
-        reassign_identifier(record, real_identifier)
-
-    record.profile = profile
-    record.document = document
-    record.is_draft = is_draft
-
-    db.session.commit()
-
-    return {
-        "identifier": record.identifier,
-        "profile": profile,
-        "record": document,
-        "isDraft": is_draft,
-    }, 200
-
-
-@api_bp.delete("/records/<string:identifier>")
-def delete_record(identifier: str) -> tuple[dict, int]:
-    record = find_record_by_identifier(identifier)
-
-    if record is None or not is_visible(record):
-        return {"message": "Record not found."}, 404
-
-    # Publication Cleanup on record deletion
-    CnaPublication.query.filter(
-        func.lower(CnaPublication.record_identifier) == record.identifier.lower(),
-    ).delete(synchronize_session=False)
-
+    CnaPublication.query.filter_by(record_id=record.id).delete(
+        synchronize_session=False,
+    )
     db.session.delete(record)
     db.session.commit()
-
-    return {"identifier": identifier}, 200
+    return {"id": record_id}, 200

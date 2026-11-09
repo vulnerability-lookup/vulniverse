@@ -1,7 +1,8 @@
 {
   "currentProfiles": {
     "cve": "cve-5.2.0",
-    "gcve": "gcve-bcp-05-1.7"
+    "gcve": "gcve-bcp-05-1.7",
+    "osv": "osv-1.9.2"
   },
   "profiles": {
     "cve-5.0": {
@@ -71,6 +72,13 @@
         }
       },
       "version": "1.7"
+    },
+    "osv-1.9.2": {
+      "baseProfile": "osv-1.9.2",
+      "identifier": {
+        "strategy": "osv"
+      },
+      "version": "1.9.2"
     }
   },
   "schemaManifestVersion": 2

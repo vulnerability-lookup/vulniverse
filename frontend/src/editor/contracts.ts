@@ -93,7 +93,13 @@ export interface CveRecord {
 }
 
 export interface LoadedRecord {
+  /** Opaque key the repository addresses this record by (the standalone
+   * app uses its database id; a host may use anything stable). */
   identifier: string;
+  /** The CVE/GCVE/OSV identifier, for display only. null = the record
+   * has none yet. Omitted by a host whose key already is that
+   * identifier — the editor then shows `identifier` instead. */
+  vulnerabilityId?: string | null;
   profile: string;
   record: EditorDocument;
   isDraft: boolean;
@@ -158,7 +164,7 @@ export type PublicationTarget = "vl" | "cve-program";
 
 export interface CnaPublication {
   id: number;
-  recordIdentifier: string;
+  recordId: number;
   target: PublicationTarget;
   status: string;
   cveId: string | null;

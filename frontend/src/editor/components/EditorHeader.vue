@@ -9,6 +9,7 @@ defineProps<{
   canDelete: boolean;
   canReject: boolean;
   identifier: string | null;
+  vulnerabilityId: string | null;
   profile: string | null;
   isDraft: boolean;
   isRejected: boolean;
@@ -75,7 +76,7 @@ function transitionButtonClass(
       >
         <div>
           <h1 class="h5 mb-1">
-            {{ displayIdentifier(identifier) }}
+            {{ displayIdentifier(vulnerabilityId, Boolean(identifier)) }}
           </h1>
 
           <div

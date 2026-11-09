@@ -40,11 +40,33 @@ import {
  * <vulniverse-editor> element itself ever needs.
  */
 export interface RecordSummary {
-  identifier: string;
+  id: number;
+  /** The CVE/GCVE/OSV identifier; null for a draft without one yet. */
+  identifier: string | null;
   profile: string;
   isDraft: boolean;
   updatedAt: string;
   createdBy: string | null;
+}
+
+/** The backend addresses records by database id; the editor contract
+ * calls that opaque key `identifier` and shows `vulnerabilityId`. */
+interface RecordResponse {
+  id: number;
+  identifier: string | null;
+  profile: string;
+  record: EditorDocument;
+  isDraft: boolean;
+}
+
+function toLoadedRecord(response: RecordResponse): LoadedRecord {
+  return {
+    identifier: String(response.id),
+    vulnerabilityId: response.identifier,
+    profile: response.profile,
+    record: response.record,
+    isDraft: response.isDraft,
+  };
 }
 
 /*
@@ -259,9 +281,9 @@ export class HttpRepository
   async loadRecord(
     identifier: string,
   ): Promise<LoadedRecord> {
-    return this.request<LoadedRecord>(
+    return toLoadedRecord(await this.request<RecordResponse>(
       `/records/${encodeURIComponent(identifier)}`,
-    );
+    ));
   }
 
   async createRecord(
@@ -269,7 +291,7 @@ export class HttpRepository
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
-    return this.request<LoadedRecord>(
+    return toLoadedRecord(await this.request<RecordResponse>(
       "/records",
       {
         method: "POST",
@@ -279,7 +301,7 @@ export class HttpRepository
           isDraft,
         }),
       },
-    );
+    ));
   }
 
   async updateRecord(
@@ -288,7 +310,7 @@ export class HttpRepository
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
-    return this.request<LoadedRecord>(
+    return toLoadedRecord(await this.request<RecordResponse>(
       `/records/${encodeURIComponent(identifier)}`,
       {
         method: "PUT",
@@ -298,7 +320,7 @@ export class HttpRepository
           isDraft,
         }),
       },
-    );
+    ));
   }
 
   async validateRecord(

@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     DateTime,
+    ForeignKey,
     String,
     Text,
     UniqueConstraint,
@@ -24,7 +25,7 @@ class CnaPublication(
 
     __table_args__ = (
         UniqueConstraint(
-            "record_identifier",
+            "record_id",
             "target",
             name=(
                 "uq_cna_publication_"
@@ -37,14 +38,8 @@ class CnaPublication(
         primary_key=True,
     )
 
-    # Vulniverse VulnerabilityRecord.identifier this publication tracks.
-    #
-    # This deliberately is not a foreign key because records can be
-    # deleted or renamed independently of publication history.
-    record_identifier: Mapped[
-        str
-    ] = mapped_column(
-        String(128),
+    record_id: Mapped[int] = mapped_column(
+        ForeignKey("vulnerability_record.id"),
         nullable=False,
         index=True,
     )

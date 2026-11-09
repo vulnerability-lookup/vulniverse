@@ -96,7 +96,7 @@ const filteredRecords = computed(() => {
   const text = searchText.value.trim().toLowerCase();
 
   return records.value.filter((record) => {
-    if (text && !record.identifier.toLowerCase().includes(text)) {
+    if (text && !(record.identifier ?? "").toLowerCase().includes(text)) {
       return false;
     }
 
@@ -253,16 +253,16 @@ const filteredRecords = computed(() => {
     >
       <div
         v-for="record in filteredRecords"
-        :key="record.identifier"
+        :key="record.id"
         class="col-md-6 col-lg-4"
       >
         <RouterLink
-          :to="`/editor/${record.identifier}`"
+          :to="`/editor/${record.id}`"
           class="card h-100 text-decoration-none text-body"
         >
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start">
-              <span class="fw-semibold">{{ displayIdentifier(record.identifier) }}</span>
+              <span class="fw-semibold">{{ displayIdentifier(record.identifier, true) }}</span>
 
               <span
                 v-if="record.isDraft"
