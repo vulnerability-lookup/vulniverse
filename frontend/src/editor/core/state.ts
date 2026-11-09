@@ -33,6 +33,8 @@ export function useEditorState() {
   const saveError = ref<Error | null>(null);
   const validationErrors = ref<ValidationError[]>([]);
   const validationSucceeded = ref(false);
+  // Short success message for the toast stack, e.g. "Draft saved.".
+  const notice = ref<string | null>(null);
 
   const dirty = computed(() => {
     if (
@@ -76,6 +78,7 @@ export function useEditorState() {
     saveError.value = null;
     validationErrors.value = [];
     validationSucceeded.value = false;
+    notice.value = null;
   }
 
   return {
@@ -91,6 +94,7 @@ export function useEditorState() {
     saveError,
     validationErrors,
     validationSucceeded,
+    notice,
     dirty,
     replaceRecord,
     clear,

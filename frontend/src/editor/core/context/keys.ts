@@ -14,6 +14,7 @@ import type {
 
 export type EditorSaveOptions = {
   silent?: boolean;
+  notice?: string;
 };
 
 

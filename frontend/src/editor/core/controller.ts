@@ -53,6 +53,17 @@ interface EditorControllerOptions {
   onDirtyChange(dirty: boolean): void;
 }
 
+function saveNotice(
+  wasDraft: boolean,
+  isDraft: boolean,
+): string {
+  if (wasDraft && !isDraft) return "Record published.";
+  if (!wasDraft && isDraft) return "Record reverted to draft.";
+
+  return isDraft ? "Draft saved." : "Record saved.";
+}
+
+
 export function useEditorController(
   options: EditorControllerOptions,
 ) {
@@ -202,6 +213,7 @@ export function useEditorController(
     isDraft = state.isDraft.value,
     saveOptions: {
       silent?: boolean;
+      notice?: string;
     } = {},
   ): Promise<string | null> {
     if (
@@ -213,6 +225,8 @@ export function useEditorController(
 
     state.saving.value = true;
     state.saveError.value = null;
+
+    const wasDraft = state.isDraft.value;
 
     const currentProfile =
       state.profile.value ??
@@ -259,6 +273,8 @@ export function useEditorController(
       state.validationErrors.value = [];
 
       if (!saveOptions.silent) {
+        state.notice.value = saveOptions.notice ?? saveNotice(wasDraft, saved.isDraft);
+
         options.onLoaded(
           saved.identifier,
         );
@@ -348,7 +364,7 @@ export function useEditorController(
       reason,
     );
 
-    await save(false);
+    await save(false, { notice: "Record rejected." });
   }
 
   watch(
