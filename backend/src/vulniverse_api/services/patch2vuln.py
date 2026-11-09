@@ -209,6 +209,30 @@ def get_job_status(job_id: str) -> dict[str, Any]:
     return {"status": STATUS_MAP.get(payload.get("status"), "failed")}
 
 
+def _drop_nulls(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _drop_nulls(item) for key, item in value.items() if item is not None}
+
+    if isinstance(value, list):
+        return [_drop_nulls(item) for item in value if item is not None]
+
+    return value
+
+
+def _without_nulls(cna: dict[str, Any]) -> dict[str, Any]:
+    """patch2vuln emits null for fields it has no value for (e.g.
+    affected[].collectionURL), but the CVE schema has no nullable
+    fields, so applying them would make the record invalid. Absent is
+    what "no value" means there. x_gcve is left as-is: the patch2vuln
+    extension does allow null (commit, subject).
+    """
+    return {
+        key: value if key == "x_gcve" else _drop_nulls(value)
+        for key, value in cna.items()
+        if value is not None
+    }
+
+
 def get_job_result(job_id: str) -> dict[str, Any]:
     """Fetch a succeeded patch2vuln job's result, reshaped to
     {"record": ..., "analysis": ...}, same validation the old synchronous
@@ -249,6 +273,8 @@ def get_job_result(job_id: str) -> dict[str, Any]:
         or not isinstance(record["containers"].get("cna"), dict)
     ):
         raise RuntimeError("Invalid Patch2Vuln record")
+
+    record["containers"]["cna"] = _without_nulls(record["containers"]["cna"])
 
     return {
         "record": record,

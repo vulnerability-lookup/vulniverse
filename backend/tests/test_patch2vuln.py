@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import Any
 
@@ -312,6 +313,36 @@ def test_get_job_result_reshapes_response(
         "record": VALID_CVE_RECORD,
         "analysis": {"summary": "ok"},
     }
+
+
+def test_get_job_result_drops_nulls_the_cve_schema_rejects(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        patch2vuln, "get_patch2vuln_config", enabled_config,
+    )
+
+    record = copy.deepcopy(VALID_CVE_RECORD)
+    record["containers"]["cna"].update({
+        "title": None,
+        "affected": [
+            {"vendor": "Acme", "product": "Widget", "collectionURL": None, "versions": [None]},
+        ],
+        "x_gcve": [{"extensions": {"bcp-05-x-02": {"x_patch2vuln": {"commit": None}}}}],
+    })
+
+    monkeypatch.setattr(
+        patch2vuln.httpx,
+        "get",
+        lambda url, *, headers, timeout: FakeResponse(200, {"records": {"cve": record}}),
+    )
+
+    cna = patch2vuln.get_job_result("job-123")["record"]["containers"]["cna"]
+
+    assert "title" not in cna
+    assert cna["affected"] == [{"vendor": "Acme", "product": "Widget", "versions": []}]
+    # The patch2vuln extension allows null, so x_gcve is untouched.
+    assert cna["x_gcve"][0]["extensions"]["bcp-05-x-02"]["x_patch2vuln"]["commit"] is None
 
 
 def test_get_job_result_raises_lookup_error_on_404(
