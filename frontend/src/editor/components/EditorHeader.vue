@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import vulniverseLogo from "../../assets/vulniverse-logo.png";
+import vulniverseLogo from "../../assets/vulniverse-logo.webp";
 
 import { displayIdentifier } from "../identifier";
 

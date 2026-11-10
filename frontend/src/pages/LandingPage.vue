@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAuthStore } from "@/stores/auth";
-import vulniverseLogo from "@/assets/vulniverse-logo.png";
+import vulniverseLogo from "@/assets/vulniverse-logo.webp";
 
 const auth = useAuthStore();
 
