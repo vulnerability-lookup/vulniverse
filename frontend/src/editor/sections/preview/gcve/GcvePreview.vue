@@ -405,13 +405,3 @@ function pathLabel(
     </div>
   </div>
 </template>
-
-
-<style scoped>
-.preview-json-value {
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 20rem;
-  overflow-y: auto;
-}
-</style>

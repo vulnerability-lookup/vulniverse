@@ -375,6 +375,20 @@
     border-bottom-color: var(--bs-primary) !important;
   }
 
+  // Long JSON values in the CVE/GCVE previews and the GCVE extension's
+  // extra fields: wrap, and scroll past 20rem instead of growing.
+  //
+  // Editor components keep their styles here, not in <style> blocks:
+  // only .ce.vue files get theirs into the custom element's shadow DOM,
+  // so a <style> block elsewhere never applies in an embedding host.
+  .preview-json-value,
+  .extra-fields-preview {
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 20rem;
+    overflow-y: auto;
+  }
+
   // Form grid (renderers/common/GridLayoutRenderer.vue): short fields
   // share a row, medium ones take two columns, full ones the whole
   // row. auto-fill drops to one column on narrow screens by itself.

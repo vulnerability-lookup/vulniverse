@@ -890,12 +890,3 @@ function addEntry(): void {
     </div>
   </fieldset>
 </template>
-
-<style scoped>
-.extra-fields-preview {
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 20rem;
-  overflow-y: auto;
-}
-</style>
