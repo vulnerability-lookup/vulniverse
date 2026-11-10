@@ -1,3 +1,4 @@
+import re
 from typing import Any, Callable
 
 from .profiles import resolve_profile
@@ -75,3 +76,38 @@ def extract_identifier(
         )
 
     return IDENTIFIER_STRATEGIES[strategy](document)
+
+
+# A CVE/GCVE ID's only letters are its prefix, and that is case-insensitive
+# (VL even hands out "gcve-…"); everything after it is kept as written.
+ID_SHAPE = re.compile(r"^(?:cve|gcve-[0-9]+)-[0-9]{4}-", re.IGNORECASE)
+ID_PREFIX = re.compile(r"^g?cve", re.IGNORECASE)
+
+
+def canonical_id(value: Any) -> Any:
+    """Uppercase the cve/gcve prefix of a CVE/GCVE-shaped ID; anything
+    else (OSV IDs like GHSA-xxxx-xxxx-xxxx, non-strings) is unchanged."""
+    if isinstance(value, str) and ID_SHAPE.match(value):
+        return ID_PREFIX.sub(lambda match: match.group().upper(), value)
+
+    return value
+
+
+def normalize_id_case(document: dict[str, Any]) -> None:
+    """Canonicalize the document's CVE/GCVE ID fields in place, so a typed
+    "gcve-1-2026-0001" is stored as "GCVE-1-2026-0001"."""
+    metadata = document.get("cveMetadata")
+
+    if isinstance(metadata, dict):
+        for key in ("cveId", "vulnId"):
+            if key in metadata:
+                metadata[key] = canonical_id(metadata[key])
+
+    containers = document.get("containers")
+    cna = containers.get("cna") if isinstance(containers, dict) else None
+    entries = cna.get("x_gcve") if isinstance(cna, dict) else None
+
+    if isinstance(entries, list):
+        for entry in entries:
+            if isinstance(entry, dict) and "vulnId" in entry:
+                entry["vulnId"] = canonical_id(entry["vulnId"])

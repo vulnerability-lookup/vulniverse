@@ -127,6 +127,44 @@ def test_reserve_falls_back_to_vuln_id_when_cve_id_blank(
     assert publication.cve_id == "GCVE-0-2026-00099"
 
 
+def test_reserve_stores_vls_lowercase_gcve_id_in_uppercase(
+    app: Flask,
+    configured_vl: User,
+    record_id: int,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # VL returns its GCVE IDs lowercased (its internal key form).
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        return FakeResponse({
+            "cve_ids": [{"cve_id": "", "vuln_id": "gcve-65535-2026-20128"}],
+        })
+
+    monkeypatch.setattr(service_module.httpx, "request", fake_request)
+
+    publication = CnaPublicationService(configured_vl.id, "vl").reserve_cve_id(record_id, 2026)
+
+    assert publication.cve_id == "GCVE-65535-2026-20128"
+
+
+def test_reserve_uppercases_only_the_id_prefix(
+    app: Flask,
+    configured_vl: User,
+    record_id: int,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        return FakeResponse({
+            "cve_ids": [{"cve_id": "", "vuln_id": "gcve-1-2026-abc1"}],
+        })
+
+    monkeypatch.setattr(service_module.httpx, "request", fake_request)
+
+    publication = CnaPublicationService(configured_vl.id, "vl").reserve_cve_id(record_id, 2026)
+
+    # Only "gcve" is case-insensitive; the rest is kept exactly.
+    assert publication.cve_id == "GCVE-1-2026-abc1"
+
+
 def test_reserve_fails_when_neither_cve_id_nor_vuln_id_present(
     app: Flask, configured_vl: User, record_id: int, monkeypatch: pytest.MonkeyPatch,
 ) -> None:

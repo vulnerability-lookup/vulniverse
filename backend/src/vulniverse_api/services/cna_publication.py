@@ -10,6 +10,7 @@ import httpx
 from ..extensions import db
 from ..models import CnaPublication, VulnerabilityRecord
 from .cna_credentials import get_credential
+from .identifiers import canonical_id
 
 REQUEST_TIMEOUT_SECONDS = 30.0
 
@@ -158,7 +159,8 @@ class CnaPublicationService:
             raise ValueError("Upstream returned no reserved identifier.") from exc
 
         publication.status = PublicationStatus.RESERVED.value
-        publication.cve_id = reserved_id
+        # VL hands out its GCVE IDs lowercased (its internal key form).
+        publication.cve_id = canonical_id(reserved_id)
         publication.reserved_at = datetime.now(UTC)
         publication.last_response = self._scrub(json.dumps(data))
         publication.last_error = None

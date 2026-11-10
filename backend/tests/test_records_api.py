@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+from sqlalchemy.exc import IntegrityError
+
 from vulniverse_api.extensions import db
 from vulniverse_api.models import CnaPublication, VulnerabilityRecord
 
@@ -268,6 +271,49 @@ def test_update_record_allows_removing_vulnid_when_cveid_still_matches(client) -
 
     assert response.status_code == 200
     assert "vulnId" not in response.get_json()["record"]["cveMetadata"]
+
+
+def test_typed_lowercase_gcve_id_is_saved_with_uppercase_prefix(client) -> None:
+    rid = create_identifierless_draft(client, profile="gcve-bcp-05-1.7")
+
+    response = client.put(
+        f"/api/v1/records/{rid}",
+        json={"record": minimal_gcve_record("gcve-65535-2026-20128"), "profile": "gcve-bcp-05-1.7", "isDraft": True},
+    )
+
+    body = response.get_json()
+    assert response.status_code == 200
+    assert body["identifier"] == "GCVE-65535-2026-20128"
+    assert body["record"]["containers"]["cna"]["x_gcve"][0]["vulnId"] == "GCVE-65535-2026-20128"
+
+
+def test_typed_lowercase_cve_id_is_saved_with_uppercase_prefix(client) -> None:
+    response = create_draft(client, "cve-2026-0042")
+
+    body = response.get_json()
+    assert body["identifier"] == "CVE-2026-0042"
+    assert body["record"]["cveMetadata"]["cveId"] == "CVE-2026-0042"
+
+
+def test_osv_ids_keep_their_case(client) -> None:
+    response = client.post(
+        "/api/v1/records",
+        json={"record": minimal_osv_record("GHSA-q7jr-4jmj-7c77"), "profile": "osv-1.9.2", "isDraft": True},
+    )
+
+    assert response.get_json()["identifier"] == "GHSA-q7jr-4jmj-7c77"
+
+
+def test_database_rejects_an_identifier_differing_only_in_case(app, test_user) -> None:
+    """The app checks first; this is the backstop for two saves racing."""
+    insert_record(app, "GCVE-1-2026-0001", test_user.id, is_draft=True, profile="gcve-bcp-05-1.7")
+
+    with pytest.raises(IntegrityError):
+        insert_record(app, "gcve-1-2026-0001", test_user.id, is_draft=True, profile="gcve-bcp-05-1.7")
+
+
+def test_several_identifierless_drafts_pass_the_case_insensitive_index(client) -> None:
+    assert create_identifierless_draft(client) != create_identifierless_draft(client)
 
 
 def test_update_record_rejects_real_identifier_change(client) -> None:

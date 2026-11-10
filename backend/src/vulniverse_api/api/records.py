@@ -13,10 +13,11 @@ from typing import Any, TypeAlias
 from flask import request
 from flask_login import current_user
 from sqlalchemy import func, or_
+from sqlalchemy.exc import IntegrityError
 
 from ..extensions import db
 from ..models import CnaPublication, VulnerabilityRecord
-from ..services.identifiers import extract_identifier
+from ..services.identifiers import extract_identifier, normalize_id_case
 from ..services.profiles import known_profiles
 from ..services.record_validation import validate_record
 from . import api_bp
@@ -59,6 +60,9 @@ def read_record_input(
         return {"message": f"Unknown profile: {profile!r}"}, 400
     if not isinstance(is_draft, bool):
         return {"message": "isDraft must be a boolean."}, 400
+
+    # Before the identifier is read from it, so both get the same spelling.
+    normalize_id_case(document)
 
     return RecordInput(document=document, profile=profile, is_draft=is_draft)
 
@@ -231,8 +235,24 @@ def create_record() -> ApiResponse:
         created_by_id=current_user.id,
     )
     db.session.add(record)
-    db.session.commit()
+    error = commit_or_conflict()
+    if error is not None:
+        return error
     return record_response(record), 201
+
+
+def commit_or_conflict() -> ApiResponse | None:
+    """identifier_error checks uniqueness first, but two requests can pass
+    that check at the same time; the database's case-insensitive unique
+    index then rejects the second one.
+    """
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {"message": "The record already exists."}, 409
+
+    return None
 
 
 @api_bp.put("/records/<int:record_id>")
@@ -267,13 +287,18 @@ def update_record(record_id: int) -> ApiResponse:
     if error is not None:
         return error
 
-    # No mutations occur until all validation has succeeded.
-    if record.identifier is None:
+    # No mutations occur until all validation has succeeded. Past
+    # identifier_error, the document's identifier is either the first
+    # one or the stored one in a different case (e.g. a lowercased GCVE
+    # ID corrected by hand), which may update the stored spelling.
+    if document_identifier:
         record.identifier = document_identifier
 
     record.document = data.document
     record.is_draft = data.is_draft
-    db.session.commit()
+    error = commit_or_conflict()
+    if error is not None:
+        return error
 
     return record_response(record), 200
 
