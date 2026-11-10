@@ -245,6 +245,10 @@ export interface Patch2VulnContext {
   affectedVersion?: string;
   fixedVersion?: string;
   versionType?: string;
+  // Shown to the model, so it can change the analysis.
+  packageUrl?: string;
+  // Only fills in the OSV output's package ecosystem.
+  osvEcosystem?: string;
 }
 
 export interface Patch2VulnInput {
@@ -255,12 +259,14 @@ export interface Patch2VulnInput {
 
 export interface Patch2VulnResult {
   record: CveRecord;
+  // The same analysis as an OSV record, for OSV profiles.
+  osv?: EditorDocument | null;
   analysis: unknown;
 }
 
 export interface Patch2VulnJob {
   jobId: string;
-  status: "queued" | "running" | "completed" | "failed";
+  status: BackgroundJobStatus;
   result?: Patch2VulnResult;
   error?: string;
 }
@@ -270,7 +276,8 @@ export type BackgroundJobStatus =
   | "queued"
   | "running"
   | "completed"
-  | "failed";
+  | "failed"
+  | "canceled";
 
 export interface BackgroundJobEvent {
   jobId: string;
@@ -409,6 +416,12 @@ export interface EditorRepository {
   ): Promise<Patch2VulnJob>;
 
   getPatch2VulnJob?(
+    jobId: string,
+  ): Promise<Patch2VulnJob>;
+
+  // A queued job is canceled at once; a running one reports "running"
+  // until its worker stops, then "canceled" through the job's status.
+  cancelPatch2VulnJob?(
     jobId: string,
   ): Promise<Patch2VulnJob>;
 

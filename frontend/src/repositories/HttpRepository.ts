@@ -386,6 +386,15 @@ export class HttpRepository
     );
   }
 
+  async cancelPatch2VulnJob(
+    jobId: string,
+  ): Promise<Patch2VulnJob> {
+    return this.request<Patch2VulnJob>(
+      `/patch2vuln/jobs/${encodeURIComponent(jobId)}`,
+      { method: "DELETE" },
+    );
+  }
+
   async getReferenceList(
     kind: "cwe" | "capec",
   ): Promise<ReferenceListItem[]> {

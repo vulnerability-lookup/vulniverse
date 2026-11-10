@@ -96,6 +96,8 @@ def test_submit_job_builds_request_and_returns_job_id(
             "affectedVersion": "1.0",
             "fixedVersion": "1.1",
             "versionType": "semver",
+            "packageUrl": "pkg:pypi/widget",
+            "osvEcosystem": "PyPI",
         },
     )
 
@@ -111,11 +113,11 @@ def test_submit_job_builds_request_and_returns_job_id(
         "product": "Widget",
         "affected_version": "1.0",
         "fixed_version": "1.1",
+        "version_type": "semver",
+        "package_url": "pkg:pypi/widget",
+        "osv_ecosystem": "PyPI",
         "models": ["qwen3.8:27b"],
     }
-    # versionType has no equivalent on the web service — must not leak through.
-    assert "version_type" not in captured["json"]
-    assert "versionType" not in captured["json"]
 
 
 def test_submit_job_sends_bearer_token_when_configured(
@@ -232,7 +234,7 @@ def test_submit_job_raises_when_no_job_id_returned(
         ("running", "running"),
         ("succeeded", "completed"),
         ("failed", "failed"),
-        ("canceled", "failed"),
+        ("canceled", "canceled"),
         ("something-unknown", "failed"),
     ],
 )
@@ -286,6 +288,60 @@ def test_get_job_status_raises_on_connection_error(
         patch2vuln.get_job_status("job-123")
 
 
+# --- cancel_job ------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("http_status", "remote_status", "expected"),
+    [
+        (200, "canceled", "canceled"),  # queued: canceled at once
+        (202, "running", "running"),  # running: asked to stop
+        (200, "succeeded", "completed"),  # finished meanwhile: kept
+    ],
+)
+def test_cancel_job_reports_the_resulting_status(
+    monkeypatch: pytest.MonkeyPatch,
+    http_status: int,
+    remote_status: str,
+    expected: str,
+) -> None:
+    monkeypatch.setattr(
+        patch2vuln, "get_patch2vuln_config", enabled_config,
+    )
+
+    captured: dict[str, Any] = {}
+
+    def fake_delete(url: str, *, params: Any, headers: Any, timeout: Any) -> FakeResponse:
+        captured["url"] = url
+        captured["params"] = params
+        return FakeResponse(http_status, {"id": "job-123", "status": remote_status})
+
+    monkeypatch.setattr(patch2vuln.httpx, "delete", fake_delete)
+
+    assert patch2vuln.cancel_job("job-123") == {"status": expected}
+    assert captured == {
+        "url": "https://patch2vuln.example.org/api/v1/jobs/job-123",
+        # Never delete a result that finished in the meantime.
+        "params": {"cancel_only": "true"},
+    }
+
+
+def test_cancel_job_raises_lookup_error_on_404(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        patch2vuln, "get_patch2vuln_config", enabled_config,
+    )
+    monkeypatch.setattr(
+        patch2vuln.httpx,
+        "delete",
+        lambda url, *, params, headers, timeout: FakeResponse(404, {}),
+    )
+
+    with pytest.raises(LookupError):
+        patch2vuln.cancel_job("job-123")
+
+
 # --- get_job_result --------------------------------------------------------
 
 
@@ -311,6 +367,7 @@ def test_get_job_result_reshapes_response(
 
     assert patch2vuln.get_job_result("job-123") == {
         "record": VALID_CVE_RECORD,
+        "osv": None,
         "analysis": {"summary": "ok"},
     }
 
@@ -343,6 +400,38 @@ def test_get_job_result_drops_nulls_the_cve_schema_rejects(
     assert cna["affected"] == [{"vendor": "Acme", "product": "Widget", "versions": []}]
     # The patch2vuln extension allows null, so x_gcve is untouched.
     assert cna["x_gcve"][0]["extensions"]["bcp-05-x-02"]["x_patch2vuln"]["commit"] is None
+
+
+def test_get_job_result_passes_the_osv_record_through_without_nulls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        patch2vuln, "get_patch2vuln_config", enabled_config,
+    )
+
+    osv = {
+        "id": "GCVE-1-2026-0001",
+        "summary": "Path traversal",
+        "aliases": None,
+        "affected": [{"package": {"ecosystem": "PyPI", "name": "widget", "purl": None}}],
+        "database_specific": {"x_gcve": {"commit": None}},
+    }
+
+    monkeypatch.setattr(
+        patch2vuln.httpx,
+        "get",
+        lambda url, *, headers, timeout: FakeResponse(
+            200, {"records": {"cve": copy.deepcopy(VALID_CVE_RECORD), "osv": osv}},
+        ),
+    )
+
+    assert patch2vuln.get_job_result("job-123")["osv"] == {
+        "id": "GCVE-1-2026-0001",
+        "summary": "Path traversal",
+        "affected": [{"package": {"ecosystem": "PyPI", "name": "widget"}}],
+        # Free-form in OSV, so null is valid and kept.
+        "database_specific": {"x_gcve": {"commit": None}},
+    }
 
 
 def test_get_job_result_raises_lookup_error_on_404(

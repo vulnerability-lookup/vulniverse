@@ -96,6 +96,32 @@ def test_create_job_submits_and_returns_opaque_token(
     assert body["jobId"] != "real-job-id"
 
 
+def test_create_job_forwards_package_url_and_osv_ecosystem(
+    client: FlaskClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict = {}
+
+    def fake_submit(sources, patches, context):
+        captured.update(context)
+        return {"jobId": "real-job-id", "status": "queued"}
+
+    monkeypatch.setattr(patch2vuln_api, "submit_job", fake_submit)
+
+    response = client.post(
+        "/api/v1/patch2vuln/jobs",
+        data={
+            "commitUrls": '["https://github.com/o/r/commit/abcdef1.patch"]',
+            "packageUrl": " pkg:pypi/widget ",
+            "osvEcosystem": "PyPI",
+            "fixedVersion": "",
+        },
+    )
+
+    assert response.status_code == 202
+    assert captured == {"packageUrl": "pkg:pypi/widget", "osvEcosystem": "PyPI"}
+
+
 def test_create_job_maps_submit_failure_to_502(
     client: FlaskClient,
     monkeypatch: pytest.MonkeyPatch,
@@ -131,6 +157,44 @@ def test_get_job_rejects_another_users_token(
     token = _token_for(app, "job-123", other_user)
 
     response = client.get(f"/api/v1/patch2vuln/jobs/{token}")
+
+    assert response.status_code == 404
+
+
+def test_cancel_job_returns_the_new_status(
+    app: Flask,
+    client: FlaskClient,
+    test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    token = _token_for(app, "job-123", test_user)
+    cancelled: list[str] = []
+
+    def fake_cancel(job_id: str) -> dict:
+        cancelled.append(job_id)
+        return {"status": "canceled"}
+
+    monkeypatch.setattr(patch2vuln_api, "cancel_job", fake_cancel)
+
+    response = client.delete(f"/api/v1/patch2vuln/jobs/{token}")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"jobId": token, "status": "canceled"}
+    assert cancelled == ["job-123"]
+
+
+def test_cancel_job_rejects_another_users_token(
+    app: Flask,
+    client: FlaskClient,
+    other_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    token = _token_for(app, "job-123", other_user)
+    monkeypatch.setattr(
+        patch2vuln_api, "cancel_job", lambda job_id: pytest.fail("must not cancel"),
+    )
+
+    response = client.delete(f"/api/v1/patch2vuln/jobs/{token}")
 
     assert response.status_code == 404
 

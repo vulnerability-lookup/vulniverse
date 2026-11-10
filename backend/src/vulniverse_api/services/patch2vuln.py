@@ -22,7 +22,7 @@ JOBS_PATH = "/api/v1/jobs"
 # generated record), so it alone uses the full configured timeout.
 REQUEST_TIMEOUT_SECONDS = 10
 
-TERMINAL_STATUSES = {"completed", "failed"}
+TERMINAL_STATUSES = {"completed", "failed", "canceled"}
 POLL_INTERVAL_SECONDS = 2
 HEARTBEAT_INTERVAL_SECONDS = 15
 
@@ -33,7 +33,7 @@ STATUS_MAP = {
     "running": "running",
     "succeeded": "completed",
     "failed": "failed",
-    "canceled": "failed",
+    "canceled": "canceled",
 }
 
 
@@ -111,15 +111,18 @@ def _build_job_body(
     }
 
     # Maps Vulniverse's own camelCase context keys (see api/patch2vuln.py)
-    # to the web service's snake_case ones. versionType has no equivalent
-    # on the web service's side (not in its documented request schema),
-    # so it's deliberately dropped rather than forwarded — the service
-    # rejects unknown JSON properties outright.
+    # to the web service's snake_case ones (its AnalysisRequest model).
+    # osv_ecosystem only fills in the OSV output's package ecosystem; it
+    # isn't shown to the model. package_url is, so it can change the
+    # analysis itself.
     field_names = {
         "vendor": "vendor",
         "product": "product",
         "affectedVersion": "affected_version",
         "fixedVersion": "fixed_version",
+        "versionType": "version_type",
+        "packageUrl": "package_url",
+        "osvEcosystem": "osv_ecosystem",
     }
 
     for context_key, remote_key in field_names.items():
@@ -219,18 +222,48 @@ def _drop_nulls(value: Any) -> Any:
     return value
 
 
-def _without_nulls(cna: dict[str, Any]) -> dict[str, Any]:
+def _without_nulls(container: dict[str, Any], keep: str) -> dict[str, Any]:
     """patch2vuln emits null for fields it has no value for (e.g.
-    affected[].collectionURL), but the CVE schema has no nullable
-    fields, so applying them would make the record invalid. Absent is
-    what "no value" means there. x_gcve is left as-is: the patch2vuln
-    extension does allow null (commit, subject).
+    affected[].collectionURL), but neither the CVE nor the OSV schema
+    accepts null there, so applying them would make the record invalid.
+    Absent is what "no value" means. `keep` names the one free-form
+    key where null is allowed and left as-is: CVE's x_gcve (the
+    patch2vuln extension's commit/subject) and OSV's database_specific.
     """
     return {
-        key: value if key == "x_gcve" else _drop_nulls(value)
-        for key, value in cna.items()
+        key: value if key == keep else _drop_nulls(value)
+        for key, value in container.items()
         if value is not None
     }
+
+
+def cancel_job(job_id: str) -> dict[str, Any]:
+    """Ask patch2vuln to cancel a job. Returns {"status": ...}: a queued
+    job is "canceled" at once, a running one stays "running" until its
+    worker stops. cancel_only keeps a job that finished in the meantime
+    (and its result) instead of deleting it.
+    """
+    config = get_patch2vuln_config()
+
+    try:
+        response = httpx.delete(
+            f"{config.api_url}{JOBS_PATH}/{job_id}",
+            params={"cancel_only": "true"},
+            headers=_auth_headers(config),
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+    except httpx.TimeoutException as exc:
+        raise RuntimeError("Patch2Vuln did not respond in time") from exc
+    except httpx.HTTPError as exc:
+        raise RuntimeError("Could not reach the Patch2Vuln service") from exc
+
+    if response.status_code == 404:
+        raise LookupError("Patch2Vuln job not found")
+
+    if response.status_code not in (200, 202):
+        raise RuntimeError(_error_message(response))
+
+    return {"status": STATUS_MAP.get(response.json().get("status"), "failed")}
 
 
 def get_job_result(job_id: str) -> dict[str, Any]:
@@ -274,10 +307,16 @@ def get_job_result(job_id: str) -> dict[str, Any]:
     ):
         raise RuntimeError("Invalid Patch2Vuln record")
 
-    record["containers"]["cna"] = _without_nulls(record["containers"]["cna"])
+    record["containers"]["cna"] = _without_nulls(record["containers"]["cna"], "x_gcve")
+
+    # Every response carries an OSV rendering of the same analysis, used
+    # by the panel for OSV records. Missing or malformed is not fatal,
+    # since CVE records don't need it.
+    osv = records.get("osv")
 
     return {
         "record": record,
+        "osv": _without_nulls(osv, "database_specific") if isinstance(osv, dict) else None,
         "analysis": records.get("analysis"),
     }
 

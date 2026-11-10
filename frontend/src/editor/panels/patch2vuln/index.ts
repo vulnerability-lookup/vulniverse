@@ -17,6 +17,7 @@ export const patch2vulnPanel: EditorPanel = {
     return [
       "cve-5.2.0",
       "gcve-bcp-05-1.7",
+      "osv-1.9.2",
     ].includes(context.profile);
   },
 };
