@@ -379,7 +379,7 @@ def test_get_job_result_drops_nulls_the_cve_schema_rejects(
         patch2vuln, "get_patch2vuln_config", enabled_config,
     )
 
-    record = copy.deepcopy(VALID_CVE_RECORD)
+    record: dict[str, Any] = copy.deepcopy(VALID_CVE_RECORD)
     record["containers"]["cna"].update({
         "title": None,
         "affected": [

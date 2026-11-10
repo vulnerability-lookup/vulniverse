@@ -8,7 +8,7 @@ NULL for a draft that doesn't have one yet.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, TypeAlias
+from typing import Any
 
 from flask import request
 from flask_login import current_user
@@ -22,7 +22,7 @@ from ..services.profiles import known_profiles
 from ..services.record_validation import validate_record
 from . import api_bp
 
-ApiResponse: TypeAlias = tuple[dict[str, Any], int]
+type ApiResponse = tuple[dict[str, Any], int]
 DEFAULT_PROFILE = "cve-5.2.0"
 
 

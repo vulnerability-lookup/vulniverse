@@ -1,8 +1,8 @@
 import re
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from .profiles import resolve_profile
-from .record_validation import find_x_gcve_occurrences
 
 
 def extract_cve_identifier(
