@@ -18,6 +18,7 @@ import {
   defaultSelection,
   parseVectorString,
   severityFor3x,
+  unknownVectorParts,
 } from "./cvss-calculator";
 
 import type {
@@ -38,6 +39,8 @@ const dialog = ref<HTMLDialogElement | null>(null);
 const version = ref<"2.0" | "3.0" | "3.1" | "4.0">("3.1");
 const selection = ref<MetricSelection>({});
 const showAdvanced = ref(false);
+// Metrics from the opened vector that have no dropdown here; re-added on apply.
+const keptParts = ref<string[]>([]);
 
 const metrics = computed(() => {
   if (version.value === "2.0") return CVSS2_METRICS;
@@ -66,11 +69,14 @@ const vectorPrefix = computed(() => {
 });
 
 const vectorString = computed(() => {
-  return buildVectorString(
-    allMetrics.value,
-    selection.value,
-    vectorPrefix.value,
-  );
+  return [
+    buildVectorString(
+      allMetrics.value,
+      selection.value,
+      vectorPrefix.value,
+    ),
+    ...keptParts.value,
+  ].join("/");
 });
 
 const baseScore = computed(() => {
@@ -104,6 +110,10 @@ function open(
   selection.value = currentVectorString
     ? parseVectorString(allMetrics.value, currentVectorString)
     : defaultSelection(allMetrics.value);
+
+  keptParts.value = currentVectorString
+    ? unknownVectorParts(allMetrics.value, currentVectorString)
+    : [];
 
   dialog.value?.showModal();
 }
@@ -297,6 +307,14 @@ defineExpose({
         </div>
 
         <code>{{ vectorString }}</code>
+
+        <div
+          v-if="keptParts.length"
+          class="small text-secondary mt-1"
+        >
+          Kept from the existing vector (not editable here):
+          <code>{{ keptParts.join("/") }}</code>
+        </div>
 
         <div
           v-if="baseScore !== null"

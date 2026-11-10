@@ -9,6 +9,7 @@ from flask_login import current_user
 from itsdangerous import BadSignature, URLSafeSerializer
 
 from ..services.patch2vuln import (
+    cancel_job,
     get_job_result,
     get_job_status,
     get_patch2vuln_config,
@@ -172,6 +173,8 @@ def create_patch2vuln_job():
         "affectedVersion",
         "fixedVersion",
         "versionType",
+        "packageUrl",
+        "osvEcosystem",
     ):
         value = request.form.get(field, "").strip()
 
@@ -238,6 +241,27 @@ def get_patch2vuln_job(token: str):
             "status": "failed",
             "error": "Patch analysis failed",
         }, 200
+
+    return {
+        "jobId": token,
+        "status": status,
+    }, 200
+
+
+@api_bp.delete("/patch2vuln/jobs/<string:token>")
+@require_panel("patch2vuln")
+def cancel_patch2vuln_job(token: str):
+    try:
+        job_id = _decode_job_token(token)
+    except LookupError:
+        return {"message": "Job not found"}, 404
+
+    try:
+        status = cancel_job(job_id)["status"]
+    except LookupError:
+        return {"message": "Job not found"}, 404
+    except RuntimeError as exc:
+        return {"message": str(exc)}, 502
 
     return {
         "jobId": token,

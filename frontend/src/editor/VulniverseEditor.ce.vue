@@ -29,6 +29,8 @@ import {
 import EditorError from
   "./components/EditorError.vue";
 
+import { displayIdentifier } from "./identifier";
+
 import EditorHeader from
   "./components/EditorHeader.vue";
 
@@ -205,7 +207,7 @@ async function handleDelete(): Promise<void> {
   }
 
   const confirmed = window.confirm(
-    `Delete ${identifier}? This cannot be undone.`,
+    `Delete ${displayIdentifier(state.vulnerabilityId.value, true)}? This cannot be undone.`,
   );
 
   if (!confirmed) {
@@ -231,6 +233,7 @@ onMounted(controller.load);
   <div class="vulniverse-editor">
     <EditorHeader
       :identifier="state.identifier.value"
+      :vulnerability-id="state.vulnerabilityId.value"
       :profile="state.profile.value"
       :is-draft="state.isDraft.value"
       :is-rejected="controller.isRejected.value"

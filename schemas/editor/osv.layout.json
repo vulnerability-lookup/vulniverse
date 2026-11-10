@@ -1,0 +1,91 @@
+{
+  "sections": [
+    {
+      "id": "metadata",
+      "label": "Metadata",
+      "paths": [
+        "schema_version",
+        "id",
+        "modified",
+        "published",
+        "withdrawn",
+        "aliases",
+        "related",
+        "upstream"
+      ]
+    },
+    {
+      "id": "summary",
+      "label": "Summary",
+      "paths": [
+        "summary",
+        "details"
+      ]
+    },
+    {
+      "id": "affected",
+      "label": "Affected packages",
+      "paths": [
+        "affected"
+      ]
+    },
+    {
+      "id": "severity",
+      "label": "Severity",
+      "paths": [
+        "severity"
+      ]
+    },
+    {
+      "id": "references",
+      "label": "References",
+      "paths": [
+        "references"
+      ]
+    },
+    {
+      "id": "credits",
+      "label": "Credits",
+      "paths": [
+        "credits",
+        "database_specific"
+      ]
+    },
+    {
+      "id": "gcve-extension",
+      "label": "GCVE extension",
+      "paths": [
+        "database_specific.x_gcve"
+      ]
+    }
+  ],
+  "hiddenPaths": [],
+  "controlOptions": {
+    "schema_version": {
+      "readonly": true,
+      "width": "short"
+    },
+    "id": {
+      "label": "ID"
+    },
+    "summary": {
+      "wrap": true
+    },
+    "details": {
+      "multi": true
+    },
+    "database_specific": {
+      "freeForm": true
+    },
+    "database_specific.x_gcve": {
+      "renderer": "vulniverse-gcve-extension",
+      "detail": "GENERATED",
+      "showSortButtons": true
+    },
+    "references": {
+      "detail": "GENERATED",
+      "showSortButtons": true,
+      "elementLabelProp": "url"
+    }
+  }
+}

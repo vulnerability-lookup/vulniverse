@@ -53,3 +53,14 @@ export function formatValueJson(
     2,
   );
 }
+
+
+// Records are shared between users; only ever link http(s), never
+// javascript:, data: and friends.
+export function safeUrl(
+  value: unknown,
+): string | undefined {
+  return typeof value === "string" && /^https?:\/\//i.test(value)
+    ? value
+    : undefined;
+}

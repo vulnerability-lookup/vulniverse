@@ -153,6 +153,13 @@
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
 }
 
+// Two columns of metric dropdowns (and CVSS 4.0's extra groups) need
+// more room than a confirm dialog.
+.cvss-calculator-dialog {
+  width: 56rem;
+  max-width: 95vw;
+}
+
 .editor-dialog::backdrop {
   background: rgba(15, 23, 33, 0.35);
 }
@@ -368,6 +375,50 @@
     border-bottom-color: var(--bs-primary) !important;
   }
 
+  // Long JSON values in the CVE/GCVE previews and the GCVE extension's
+  // extra fields: wrap, and scroll past 20rem instead of growing.
+  //
+  // Editor components keep their styles here, not in <style> blocks:
+  // only .ce.vue files get theirs into the custom element's shadow DOM,
+  // so a <style> block elsewhere never applies in an embedding host.
+  .preview-json-value,
+  .extra-fields-preview {
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 20rem;
+    overflow-y: auto;
+  }
+
+  // Form grid (renderers/common/GridLayoutRenderer.vue): short fields
+  // share a row, medium ones take two columns, full ones the whole
+  // row. auto-fill drops to one column on narrow screens by itself.
+  .editor-field-grid {
+    container-type: inline-size;
+    display: grid;
+    // 16rem fits a full ISO timestamp (2026-11-09T10:00:00.000Z) and
+    // the browser's date-time picker, which some browsers draw wider.
+    grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
+    column-gap: 1rem;
+    align-items: start;
+  }
+
+  // Lets wide content (code, long values) shrink inside its cell.
+  .editor-field-grid > * {
+    min-width: 0;
+  }
+
+  .editor-field-full {
+    grid-column: 1 / -1;
+  }
+
+  // Only span two columns when two fit; spanning more tracks than
+  // exist would make the grid overflow sideways.
+  @container (min-width: 29rem) {
+    .editor-field-medium {
+      grid-column: span 2;
+    }
+  }
+
   .control {
     margin-bottom: 1rem;
   }
@@ -417,6 +468,14 @@
     min-height: 6rem;
     resize: vertical;
     field-sizing: content;
+  }
+
+  // WrappingTextRenderer: one line that wraps and grows (sized in JS),
+  // so none of the multi-line text box defaults above apply.
+  .control > .wrapper .text-area.editor-wrap-text {
+    min-height: 0;
+    resize: none;
+    overflow: hidden;
   }
 
   .control > .wrapper .input:focus,

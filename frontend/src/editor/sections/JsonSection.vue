@@ -56,7 +56,7 @@ function setSelectionRange(
 
 /*
  * A plain textarea treats Tab as "move focus to the next element"
- * (here, the Reset button) rather than typing anything, which makes
+ * (here, the Discard edits button) rather than typing anything, which makes
  * it unusable for editing indented JSON. This intercepts Tab/Shift+
  * Tab to indent/outdent instead, matching how code editors behave.
  */
@@ -243,6 +243,7 @@ function apply(): void {
       parsed as EditorDocument;
 
     parseError.value = null;
+    editor.notice.value = "JSON applied. Save to keep the changes.";
   } catch (error) {
     parseError.value =
       error instanceof Error
@@ -295,7 +296,7 @@ function apply(): void {
         class="btn btn-outline-secondary"
         @click="reset"
       >
-        Reset
+        Discard edits
       </button>
 
       <button

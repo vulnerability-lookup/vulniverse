@@ -19,6 +19,9 @@ export function useEditorState() {
   const identifier =
     ref<string | null>(null);
 
+  const vulnerabilityId =
+    ref<string | null>(null);
+
   const profile =
     ref<string | null>(null);
 
@@ -30,6 +33,8 @@ export function useEditorState() {
   const saveError = ref<Error | null>(null);
   const validationErrors = ref<ValidationError[]>([]);
   const validationSucceeded = ref(false);
+  // Short success message for the toast stack, e.g. "Draft saved.".
+  const notice = ref<string | null>(null);
 
   const dirty = computed(() => {
     if (
@@ -53,6 +58,9 @@ export function useEditorState() {
       structuredClone(loaded.record);
 
     identifier.value = loaded.identifier;
+    vulnerabilityId.value = loaded.vulnerabilityId === undefined
+      ? loaded.identifier
+      : loaded.vulnerabilityId;
     profile.value = loaded.profile;
     isDraft.value = loaded.isDraft;
 
@@ -63,18 +71,21 @@ export function useEditorState() {
     record.value = null;
     originalRecord.value = null;
     identifier.value = null;
+    vulnerabilityId.value = null;
     profile.value = null;
     isDraft.value = false;
     loadError.value = null;
     saveError.value = null;
     validationErrors.value = [];
     validationSucceeded.value = false;
+    notice.value = null;
   }
 
   return {
     record,
     originalRecord,
     identifier,
+    vulnerabilityId,
     profile,
     isDraft,
     loading,
@@ -83,6 +94,7 @@ export function useEditorState() {
     saveError,
     validationErrors,
     validationSucceeded,
+    notice,
     dirty,
     replaceRecord,
     clear,

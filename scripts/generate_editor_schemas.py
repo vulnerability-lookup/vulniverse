@@ -595,6 +595,9 @@ def make_control(
     ):
         options.update(copy.deepcopy(configured_options))
 
+    # A layout "label" names the control instead of the schema title.
+    control["label"] = options.pop("label", label)
+
     if options:
         control["options"] = options
 
@@ -915,6 +918,10 @@ def create_authoring_schema(
             dict,
         ):
             raise GenerationError("Expanded root schema is not an object.")
+
+        # Every local $ref is inlined now.
+        expanded.pop("$defs", None)
+        expanded.pop("definitions", None)
 
         authoring_schema = expanded
 
@@ -1250,7 +1257,11 @@ def generate(
         editor_config=editor_config,
     )
 
-    authoring_schema["$schema"] = official_schema.get("$schema")
+    # The editor's Ajv only speaks draft-07. Inlined $refs leave plain
+    # draft-07 keywords for CVE and OSV.
+    # shortcut: 2020-12-only keywords (prefixItems, unevaluated*) would be
+    # ignored by the editor; switch editorAjv to Ajv2020 if a profile needs them.
+    authoring_schema["$schema"] = "http://json-schema.org/draft-07/schema#"
 
     authoring_schema["$id"] = (
         f"https://vulniverse.invalid/schemas/{profile_id}/authoring.schema.json"

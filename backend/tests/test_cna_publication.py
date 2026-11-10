@@ -74,12 +74,24 @@ def configured_vl(app: Flask, user: User) -> User:
     return user
 
 
+@pytest.fixture
+def record_id(app: Flask) -> int:
+    record = VulnerabilityRecord(
+        profile="gcve-bcp-05-1.7",
+        document={"containers": {"cna": {}}},
+        is_draft=True,
+    )
+    db.session.add(record)
+    db.session.commit()
+    return record.id
+
+
 def test_raises_when_target_not_configured(configured_vl: User) -> None:
     with pytest.raises(IntegrationNotConfiguredError):
         CnaPublicationService(configured_vl.id, "cve-program")
 
 
-def test_reserve_success(app: Flask, configured_vl: User, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_reserve_success(app: Flask, configured_vl: User, record_id: int, monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
         assert method == "POST"
         assert url == "http://test/api/cna/cve-id"
@@ -88,7 +100,7 @@ def test_reserve_success(app: Flask, configured_vl: User, monkeypatch: pytest.Mo
     monkeypatch.setattr(service_module.httpx, "request", fake_request)
 
     service = CnaPublicationService(configured_vl.id, "vl")
-    publication = service.reserve_cve_id("GCVE-0-2026-00001", 2026)
+    publication = service.reserve_cve_id(record_id, 2026)
 
     assert publication.status == PublicationStatus.RESERVED.value
     assert publication.cve_id == "CVE-2026-00001"
@@ -97,7 +109,7 @@ def test_reserve_success(app: Flask, configured_vl: User, monkeypatch: pytest.Mo
 
 
 def test_reserve_falls_back_to_vuln_id_when_cve_id_blank(
-    app: Flask, configured_vl: User, monkeypatch: pytest.MonkeyPatch,
+    app: Flask, configured_vl: User, record_id: int, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     # VL's own GNA-shaped reservation response: no official CVE assigned
     # yet (cve_id is blank), the real identifier is the GCVE-format vuln_id.
@@ -109,14 +121,52 @@ def test_reserve_falls_back_to_vuln_id_when_cve_id_blank(
     monkeypatch.setattr(service_module.httpx, "request", fake_request)
 
     service = CnaPublicationService(configured_vl.id, "vl")
-    publication = service.reserve_cve_id("GCVE-0-2026-00099", 2026)
+    publication = service.reserve_cve_id(record_id, 2026)
 
     assert publication.status == PublicationStatus.RESERVED.value
     assert publication.cve_id == "GCVE-0-2026-00099"
 
 
+def test_reserve_stores_vls_lowercase_gcve_id_in_uppercase(
+    app: Flask,
+    configured_vl: User,
+    record_id: int,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # VL returns its GCVE IDs lowercased (its internal key form).
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        return FakeResponse({
+            "cve_ids": [{"cve_id": "", "vuln_id": "gcve-65535-2026-20128"}],
+        })
+
+    monkeypatch.setattr(service_module.httpx, "request", fake_request)
+
+    publication = CnaPublicationService(configured_vl.id, "vl").reserve_cve_id(record_id, 2026)
+
+    assert publication.cve_id == "GCVE-65535-2026-20128"
+
+
+def test_reserve_uppercases_only_the_id_prefix(
+    app: Flask,
+    configured_vl: User,
+    record_id: int,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        return FakeResponse({
+            "cve_ids": [{"cve_id": "", "vuln_id": "gcve-1-2026-abc1"}],
+        })
+
+    monkeypatch.setattr(service_module.httpx, "request", fake_request)
+
+    publication = CnaPublicationService(configured_vl.id, "vl").reserve_cve_id(record_id, 2026)
+
+    # Only "gcve" is case-insensitive; the rest is kept exactly.
+    assert publication.cve_id == "GCVE-1-2026-abc1"
+
+
 def test_reserve_fails_when_neither_cve_id_nor_vuln_id_present(
-    app: Flask, configured_vl: User, monkeypatch: pytest.MonkeyPatch,
+    app: Flask, configured_vl: User, record_id: int, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
         return FakeResponse({"cve_ids": [{"cve_id": ""}]})
@@ -126,11 +176,11 @@ def test_reserve_fails_when_neither_cve_id_nor_vuln_id_present(
     service = CnaPublicationService(configured_vl.id, "vl")
 
     with pytest.raises(ValueError, match="no reserved identifier"):
-        service.reserve_cve_id("GCVE-0-2026-00098", 2026)
+        service.reserve_cve_id(record_id, 2026)
 
 
 def test_reserve_upstream_error_sets_pending_and_scrubs_key(
-    app: Flask, configured_vl: User, monkeypatch: pytest.MonkeyPatch,
+    app: Flask, configured_vl: User, record_id: int, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
         return FakeResponse(
@@ -143,9 +193,9 @@ def test_reserve_upstream_error_sets_pending_and_scrubs_key(
     service = CnaPublicationService(configured_vl.id, "vl")
 
     with pytest.raises(httpx.HTTPStatusError):
-        service.reserve_cve_id("GCVE-0-2026-00002", 2026)
+        service.reserve_cve_id(record_id, 2026)
 
-    publication = service.get_or_create("GCVE-0-2026-00002")
+    publication = service.get_or_create(record_id)
 
     assert publication.status == PublicationStatus.RESERVATION_PENDING.value
     assert publication.last_error is not None
@@ -153,13 +203,13 @@ def test_reserve_upstream_error_sets_pending_and_scrubs_key(
     assert "[REDACTED]" in publication.last_error
 
 
-def test_publish_before_reserve_is_blocked(app: Flask, configured_vl: User) -> None:
+def test_publish_before_reserve_is_blocked(app: Flask, configured_vl: User, record_id: int) -> None:
     # LOCAL_ONLY isn't in ALLOWED_TRANSITIONS[PUBLISHED] — the transition
     # guard rejects this before the cve_id check is ever reached.
     service = CnaPublicationService(configured_vl.id, "vl")
 
     with pytest.raises(ValueError, match="cannot transition"):
-        service.publish("GCVE-0-2026-00003")
+        service.publish(record_id)
 
 
 def test_publish_success(app: Flask, configured_vl: User, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -192,8 +242,8 @@ def test_publish_success(app: Flask, configured_vl: User, monkeypatch: pytest.Mo
     monkeypatch.setattr(service_module.httpx, "request", fake_request)
 
     service = CnaPublicationService(configured_vl.id, "vl")
-    service.reserve_cve_id("GCVE-0-2026-00004", 2026)
-    publication = service.publish("GCVE-0-2026-00004")
+    service.reserve_cve_id(record.id, 2026)
+    publication = service.publish(record.id)
 
     assert publication.status == PublicationStatus.PUBLISHED.value
     assert publication.published_at is not None
@@ -231,34 +281,34 @@ def test_publish_does_not_override_existing_provider_metadata(
     monkeypatch.setattr(service_module.httpx, "request", fake_request)
 
     service = CnaPublicationService(configured_vl.id, "vl")
-    service.reserve_cve_id("GCVE-0-2026-00009", 2026)
-    service.publish("GCVE-0-2026-00009")
+    service.reserve_cve_id(record.id, 2026)
+    service.publish(record.id)
 
 
-def test_reject_requires_nonempty_reason(app: Flask, configured_vl: User) -> None:
+def test_reject_requires_nonempty_reason(app: Flask, configured_vl: User, record_id: int) -> None:
     service = CnaPublicationService(configured_vl.id, "vl")
 
     with pytest.raises(ValueError, match="rejection reason"):
-        service.reject("GCVE-0-2026-00005", "   ")
+        service.reject(record_id, "   ")
 
 
-def test_reject_before_reserve_is_blocked(app: Flask, configured_vl: User) -> None:
+def test_reject_before_reserve_is_blocked(app: Flask, configured_vl: User, record_id: int) -> None:
     service = CnaPublicationService(configured_vl.id, "vl")
 
     with pytest.raises(ValueError, match="cannot transition"):
-        service.reject("GCVE-0-2026-00006", "duplicate of CVE-2020-0001")
+        service.reject(record_id, "duplicate of CVE-2020-0001")
 
 
-def test_abort_from_local_only(app: Flask, configured_vl: User) -> None:
+def test_abort_from_local_only(app: Flask, configured_vl: User, record_id: int) -> None:
     service = CnaPublicationService(configured_vl.id, "vl")
-    publication = service.abort("GCVE-0-2026-00007")
+    publication = service.abort(record_id)
 
     assert publication.status == PublicationStatus.ABORTED.value
 
 
-def test_abort_twice_is_blocked(app: Flask, configured_vl: User) -> None:
+def test_abort_twice_is_blocked(app: Flask, configured_vl: User, record_id: int) -> None:
     service = CnaPublicationService(configured_vl.id, "vl")
-    service.abort("GCVE-0-2026-00008")
+    service.abort(record_id)
 
     with pytest.raises(ValueError, match="cannot transition"):
-        service.abort("GCVE-0-2026-00008")
+        service.abort(record_id)

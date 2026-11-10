@@ -10,16 +10,23 @@ import {
 import type {
   CveRecord,
   EditorContext,
+  EditorDocument,
   Patch2VulnJob,
 } from "../../contracts";
 
 import {
+  useEditorContext,
   useEditorRepository,
 } from "../../core/context";
 
 import {
   mergeGcveExtensions,
 } from "../../gcve";
+
+import {
+  recallJob,
+  rememberJob,
+} from "./job-storage";
 
 
 const props = defineProps<{
@@ -45,29 +52,51 @@ const product = ref("");
 const affectedVersion = ref("");
 const fixedVersion = ref("");
 const versionType = ref("");
+const packageUrl = ref("");
+
+// OSV records apply patch2vuln's OSV output instead of its CVE record.
+const isOsv = computed(() => props.context.profile.startsWith("osv-"));
+
+function firstEcosystem(record: EditorDocument): string {
+  const affected = (record as { affected?: { package?: { ecosystem?: unknown } }[] }).affected;
+  const ecosystem = affected?.[0]?.package?.ecosystem;
+
+  return typeof ecosystem === "string" && ecosystem !== "Unknown" ? ecosystem : "";
+}
+
+// Optional: it only fills in the generated package ecosystem, so it can
+// just as well be set afterwards under Affected packages.
+const osvEcosystem = ref(isOsv.value ? firstEcosystem(props.context.record) : "");
 
 
 // Job state
 const job = shallowRef<Patch2VulnJob | null>(null);
 const submitting = ref(false);
 const error = ref<string | null>(null);
-const message = ref<string | null>(null);
+// The editor's toast stack, shared with Save and Apply JSON.
+const editor = useEditorContext();
 
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let mounted = false;
 let unsubscribeJobEvents: (() => void) | null = null;
 
 
-// Persist the current job when switching panels.
-const storageKey = computed(
-  () => `patch2vuln:${props.context.identifier ?? "unsaved"}`,
+// Set once Cancel was pressed on a running job, until it stops.
+const cancelRequested = ref(false);
+
+const canCancel = computed(
+  () =>
+    Boolean(repository.value?.cancelPatch2VulnJob) &&
+    (job.value?.status === "queued" || job.value?.status === "running"),
 );
 
 
 const generatedRecord = computed(
-  () => job.value?.status === "completed"
-    ? job.value.result?.record
-    : undefined,
+  () => job.value?.status !== "completed"
+    ? undefined
+    : isOsv.value
+      ? job.value.result?.osv ?? undefined
+      : job.value.result?.record,
 );
 
 
@@ -80,7 +109,7 @@ const isRunning = computed(
 
 
 // Supported CNA fields for selective merging.
-const FIELDS = [
+const CVE_FIELDS = [
   { id: "title", label: "Title" },
   { id: "descriptions", label: "Descriptions" },
   { id: "affected", label: "Affected products" },
@@ -94,6 +123,24 @@ const FIELDS = [
   { id: "x_gcve", label: "GCVE metadata / AI provenance" },
 ] as const;
 
+// Top-level OSV fields. id, schema_version, modified, published and
+// withdrawn are never offered: they belong to this record, not to the
+// generated one.
+const OSV_FIELDS = [
+  { id: "summary", label: "Summary" },
+  { id: "details", label: "Details" },
+  { id: "aliases", label: "Aliases" },
+  { id: "affected", label: "Affected packages" },
+  { id: "severity", label: "Severity (CVSS)" },
+  { id: "references", label: "References" },
+  { id: "credits", label: "Credits" },
+  { id: "database_specific", label: "Database specific (CWE, CAPEC, SSVC, GCVE)" },
+] as const;
+
+const fields = computed<readonly { id: string; label: string }[]>(
+  () => isOsv.value ? OSV_FIELDS : CVE_FIELDS,
+);
+
 const PROTECTED_FIELDS = new Set([
   "providerMetadata",
   "datePublic",
@@ -104,7 +151,7 @@ const PROTECTED_FIELDS = new Set([
 ]);
 
 const selectedFields = ref<string[]>(
-  FIELDS.map((field) => field.id),
+  fields.value.map((field) => field.id),
 );
 
 // handle gcve extensions
@@ -210,7 +257,8 @@ function startWatchingJob(jobId: string): void {
 
       if (
         event.status === "completed" ||
-        event.status === "failed"
+        event.status === "failed" ||
+        event.status === "canceled"
       ) {
         // Update status immediately.
         job.value = {
@@ -297,8 +345,8 @@ async function submit(): Promise<void> {
 
   submitting.value = true;
   error.value = null;
-  message.value = null;
   job.value = null;
+  cancelRequested.value = false;
 
   const urls = commitUrls.value
     .split("\n")
@@ -315,15 +363,15 @@ async function submit(): Promise<void> {
           vendor: vendor.value,
           product: product.value,
           affectedVersion: affectedVersion.value,
+          packageUrl: packageUrl.value,
+          osvEcosystem: isOsv.value ? osvEcosystem.value : "",
           fixedVersion: fixedVersion.value,
           versionType: versionType.value,
         },
       });
 
-    sessionStorage.setItem(
-      storageKey.value,
-      result.jobId,
-    );
+    // Persist the job so it survives switching panels.
+    rememberJob(editor, props.context.identifier, result.jobId);
 
     if (mounted) {
       job.value = result;
@@ -342,20 +390,60 @@ async function submit(): Promise<void> {
 }
 
 
-// Apply selected generated fields to the live editor record.
-function applyResult(): void {
-  const generated = generatedRecord.value;
+// Cancel the current job. patch2vuln cancels a queued job at once and
+// asks a running one to stop; the job's status then reports "canceled".
+async function cancel(): Promise<void> {
+  const jobId = job.value?.jobId;
+
+  if (!jobId || !repository.value?.cancelPatch2VulnJob) {
+    return;
+  }
+
+  cancelRequested.value = true;
+  error.value = null;
+
+  try {
+    const result = await repository.value.cancelPatch2VulnJob(jobId);
+
+    if (!mounted || job.value?.jobId !== jobId) {
+      return;
+    }
+
+    if (result.status === "completed") {
+      // Finished just before the cancel arrived: show its result.
+      stopWatchingJob();
+      void refreshJob(jobId);
+    } else if (result.status !== "queued" && result.status !== "running") {
+      stopWatchingJob();
+      job.value = { jobId, status: result.status };
+    }
+    // Still running: keep watching until it reports "canceled".
+  } catch (err) {
+    cancelRequested.value = false;
+
+    if (mounted) {
+      error.value = err instanceof Error
+        ? err.message
+        : "Could not cancel the analysis.";
+    }
+  }
+}
+
+
+// Copies the selected CNA fields; null when nothing may be applied.
+function applyCveFields(): number | null {
+  const generated = generatedRecord.value as CveRecord | undefined;
 
   if (!generated?.containers?.cna) {
     error.value = "No generated CNA container available.";
-    return;
+    return null;
   }
 
   const current = props.context.record as CveRecord;
 
   if (current.cveMetadata?.state === "REJECTED") {
     error.value = "Cannot modify a rejected record.";
-    return;
+    return null;
   }
 
   current.containers ??= {};
@@ -397,8 +485,53 @@ function applyResult(): void {
     count++;
   }
 
-  message.value = `Applied ${count} field(s) to the editor.`;
+  return count;
+}
+
+
+// Copies the selected top-level fields of patch2vuln's OSV record.
+function applyOsvFields(): number | null {
+  const generated = generatedRecord.value as Record<string, unknown> | undefined;
+
+  if (!generated) {
+    error.value = "No generated OSV record available.";
+    return null;
+  }
+
+  const target = props.context.record as Record<string, unknown>;
+
+  let count = 0;
+
+  for (const field of selectedFields.value) {
+    if (generated[field] === undefined) {
+      continue;
+    }
+
+    target[field] = JSON.parse(JSON.stringify(generated[field]));
+
+    count++;
+  }
+
+  return count;
+}
+
+
+// Apply selected generated fields to the live editor record.
+function applyResult(): void {
+  const count = isOsv.value ? applyOsvFields() : applyCveFields();
+
+  if (count === null) {
+    return;
+  }
+
+  if (count === 0) {
+    error.value = "None of the selected fields are in the generated record.";
+    return;
+  }
+
   error.value = null;
+  editor.notice.value =
+    `Applied ${count} ${count === 1 ? "field" : "fields"} from patch2vuln. Save to keep the changes.`;
 }
 
 
@@ -406,9 +539,7 @@ function applyResult(): void {
 onMounted(() => {
   mounted = true;
 
-  const savedJobId = sessionStorage.getItem(
-    storageKey.value,
-  );
+  const savedJobId = recallJob(editor, props.context.identifier);
 
   if (savedJobId) {
     job.value = {
@@ -530,6 +661,60 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="mb-3">
+        <label
+          class="form-label"
+          for="patch2vuln-package-url"
+        >
+          Package URL
+        </label>
+
+        <input
+          id="patch2vuln-package-url"
+          v-model="packageUrl"
+          class="form-control"
+          placeholder="e.g. pkg:pypi/widget"
+          aria-describedby="patch2vuln-package-url-help"
+          :disabled="isRunning"
+        >
+
+        <div
+          id="patch2vuln-package-url-help"
+          class="form-text"
+        >
+          Given to the analysis, so it can improve the result. Leave out the version.
+        </div>
+      </div>
+
+      <div
+        v-if="isOsv"
+        class="mb-3"
+      >
+        <label
+          class="form-label"
+          for="patch2vuln-osv-ecosystem"
+        >
+          OSV ecosystem
+        </label>
+
+        <input
+          id="patch2vuln-osv-ecosystem"
+          v-model="osvEcosystem"
+          class="form-control"
+          placeholder="e.g. PyPI, npm, Go, Debian"
+          aria-describedby="patch2vuln-osv-ecosystem-help"
+          :disabled="isRunning"
+        >
+
+        <div
+          id="patch2vuln-osv-ecosystem-help"
+          class="form-text"
+        >
+          Optional. It doesn't change the analysis; if left empty, set it
+          afterwards under Affected packages.
+        </div>
+      </div>
+
+      <div class="mb-3">
         <label class="form-label">
           Version type
         </label>
@@ -557,18 +742,21 @@ onBeforeUnmount(() => {
         {{ isRunning ? "Analyzing..." : "Analyze patches" }}
       </button>
 
+      <button
+        v-if="canCancel"
+        type="button"
+        class="btn btn-outline-danger ms-2"
+        :disabled="cancelRequested"
+        @click="cancel"
+      >
+        {{ cancelRequested ? "Cancelling..." : "Cancel analysis" }}
+      </button>
+
       <div
         v-if="error"
         class="alert alert-danger mt-3"
       >
         {{ error }}
-      </div>
-
-      <div
-        v-if="message"
-        class="alert alert-success mt-3"
-      >
-        {{ message }}
       </div>
 
       <div
@@ -591,6 +779,13 @@ onBeforeUnmount(() => {
         />
 
         <div
+          v-if="job.status === 'canceled'"
+          class="alert alert-secondary"
+        >
+          Analysis canceled.
+        </div>
+
+        <div
           v-if="job.status === 'failed'"
           class="alert alert-danger"
         >
@@ -605,7 +800,7 @@ onBeforeUnmount(() => {
           <h6>Apply generated information</h6>
 
           <div
-            v-for="field in FIELDS"
+            v-for="field in fields"
             :key="field.id"
             class="form-check"
           >

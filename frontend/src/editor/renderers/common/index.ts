@@ -1,10 +1,15 @@
 import {
   and,
   isBooleanControl,
+  isDateTimeControl,
+  isObjectControl,
   isStringControl,
+  optionIs,
+  or,
   rankWith,
   schemaMatches,
   schemaTypeIs,
+  uiTypeIs,
 } from "@jsonforms/core";
 
 import type {
@@ -23,8 +28,45 @@ import ArrayCardRenderer from
 import BooleanSelectRenderer from
   "./BooleanSelectRenderer.vue";
 
+import DateTimeRenderer from
+  "./DateTimeRenderer.vue";
+
+import FreeFormObjectRenderer from
+  "./FreeFormObjectRenderer.vue";
+
+import GridLayoutRenderer from
+  "./GridLayoutRenderer.vue";
+
+import WrappingTextRenderer from
+  "./WrappingTextRenderer.vue";
+
 
 const LONG_TEXT_MIN_LENGTH = 4096;
+
+
+// An object the schema says nothing about: no fields, no
+// composition, so a generated form would have nothing to show. The
+// layout option freeForm opts in an object that declares a few keys
+// edited elsewhere (see FreeFormObjectRenderer.vue).
+const isFreeFormObjectControl = and(
+  isObjectControl,
+
+  or(
+    optionIs("freeForm", true),
+
+    schemaMatches(
+      (schema) => (
+        schema.properties === undefined
+        && schema.patternProperties === undefined
+        && schema.additionalProperties !== false
+        && schema.oneOf === undefined
+        && schema.anyOf === undefined
+        && schema.allOf === undefined
+        && schema.$ref === undefined
+      ),
+    ),
+  ),
+);
 
 
 const isLongTextControl = and(
@@ -51,6 +93,22 @@ export const COMMON_RENDERERS:
   JsonFormsRendererRegistryEntry[] = [
     {
       renderer:
+        GridLayoutRenderer,
+
+      // Above vanilla's LayoutRenderer (1) and GroupRenderer (2).
+      tester:
+        rankWith(
+          3,
+          or(
+            uiTypeIs("VerticalLayout"),
+            uiTypeIs("Group"),
+            uiTypeIs("Category"),
+          ),
+        ),
+    },
+
+    {
+      renderer:
         BooleanSelectRenderer,
 
       tester:
@@ -73,6 +131,44 @@ export const COMMON_RENDERERS:
 
     {
       renderer:
+        DateTimeRenderer,
+
+      // Above vanilla's DateTimeControlRenderer (2).
+      tester:
+        rankWith(
+          3,
+          isDateTimeControl,
+        ),
+    },
+
+    {
+      renderer:
+        WrappingTextRenderer,
+
+      // Opt-in per field via controlOptions.<path>.wrap.
+      tester:
+        rankWith(
+          4,
+          and(
+            isStringControl,
+            optionIs("wrap", true),
+          ),
+        ),
+    },
+
+    {
+      renderer:
+        FreeFormObjectRenderer,
+
+      tester:
+        rankWith(
+          5,
+          isFreeFormObjectControl,
+        ),
+    },
+
+    {
+      renderer:
         ArrayCardRenderer,
 
       tester:
@@ -87,4 +183,8 @@ export const COMMON_RENDERERS:
 export {
   ArrayCardRenderer,
   BooleanSelectRenderer,
+  DateTimeRenderer,
+  FreeFormObjectRenderer,
+  GridLayoutRenderer,
+  WrappingTextRenderer,
 };

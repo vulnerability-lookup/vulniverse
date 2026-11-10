@@ -16,6 +16,7 @@ import {
   formatValue,
   formatValueJson,
   isComplexValue,
+  safeUrl,
 } from "../common/utils";
 
 
@@ -422,11 +423,8 @@ function referencesOf(
 
 function referenceUrl(
   reference: AnyRecord,
-): string {
-  return typeof reference.url ===
-    "string"
-    ? reference.url
-    : "";
+): string | undefined {
+  return safeUrl(reference.url);
 }
 
 
@@ -989,13 +987,3 @@ function isEmptySource(
     </div>
   </div>
 </template>
-
-
-<style scoped>
-.preview-json-value {
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 20rem;
-  overflow-y: auto;
-}
-</style>

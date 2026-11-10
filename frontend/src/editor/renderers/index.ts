@@ -14,11 +14,16 @@ import {
   GCVE_RENDERERS,
 } from "./gcve";
 
+import {
+  OSV_RENDERERS,
+} from "./osv";
+
 
 export {
   COMMON_RENDERERS,
   CVE_RENDERERS,
   GCVE_RENDERERS,
+  OSV_RENDERERS,
 };
 
 
@@ -32,4 +37,5 @@ export const customRenderers:
     ...COMMON_RENDERERS,
     ...CVE_RENDERERS,
     ...GCVE_RENDERERS,
+    ...OSV_RENDERERS,
   ];

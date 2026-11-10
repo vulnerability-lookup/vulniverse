@@ -6,6 +6,10 @@ import {
   gcveBcp05Profile,
 } from "./gcve-bcp-05-1.7";
 
+import {
+  osv192Profile,
+} from "./osv-1.9.2";
+
 import type {
   EditorProfileDefinition,
 } from "./types";
@@ -19,6 +23,7 @@ export const EDITOR_PROFILES:
   EditorProfileDefinition[] = [
   cve52Profile,
   gcveBcp05Profile,
+  osv192Profile,
 ];
 
 

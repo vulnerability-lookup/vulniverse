@@ -393,6 +393,27 @@ export function parseVectorString(
   return selection;
 }
 
+/**
+ * The parts of an existing vector the calculator has no dropdown for
+ * (e.g. CVSS 3.x temporal/environmental "E:P", "RL:O"), in their
+ * original order, so re-applying the calculator keeps them instead of
+ * silently dropping them. The "CVSS:x.y" prefix is never included.
+ */
+export function unknownVectorParts(
+  metrics: MetricDefinition[],
+  vectorString: string,
+): string[] {
+  return vectorString
+    .split("/")
+    .filter((part) => {
+      const key = part.split(":")[0];
+
+      return part.includes(":")
+        && key !== "CVSS"
+        && !metrics.some((def) => def.key === key);
+    });
+}
+
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }

@@ -1,0 +1,402 @@
+[
+  {
+    "path": "schema_version",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "id",
+    "title": "Currently supported home database identifier prefixes",
+    "type": "string"
+  },
+  {
+    "path": "modified",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "published",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "withdrawn",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "summary",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "details",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "severity[].type",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "severity[].score",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "severity[].source",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].package.ecosystem",
+    "title": "Currently supported ecosystems",
+    "type": "string"
+  },
+  {
+    "path": "affected[].package.name",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].package.purl",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].severity[].type",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].severity[].score",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].severity[].source",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].ranges[].type",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "affected[].ranges[].repo",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "references[].type",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "references[].url",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "credits[].name",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "credits[].type",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].vulnId",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].recordType",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].language",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].scope",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].gna_source",
+    "title": null,
+    "type": "integer"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].field_name",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].description",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].ai_level",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].review_status",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].models[].name",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].models[].gna_source",
+    "title": null,
+    "type": "integer"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].models[].version",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].models[].provider",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].models[].source",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].models[].identifier",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-01.ai_annotations[].models[].url",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.generator",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.generatedAt",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.model",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.source",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.patchSha256",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.patchTruncated",
+    "title": null,
+    "type": "boolean"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.confidence",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.fixSummary",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.patchSummary",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.credits[].lang",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.credits[].value",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.credits[].type",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.cvssRationale",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.weaknessRationale[].cweId",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.weaknessRationale[].rationale",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.capecRationale[].capecId",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.capecRationale[].rationale",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-02.x_patch2vuln.draft",
+    "title": null,
+    "type": "boolean"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.entities[].id",
+    "title": "Entity ID",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.entities[].category",
+    "title": "Category",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.entities[].name",
+    "title": "Name",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.entities[].description",
+    "title": "Description",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.events[].id",
+    "title": "Event ID",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.events[].type",
+    "title": "Event Type",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.events[].timestamp",
+    "title": "Timestamp",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.events[].actor",
+    "title": "Actor",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.events[].description",
+    "title": "Description",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].framework",
+    "title": "Framework",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].jurisdiction",
+    "title": "Jurisdiction",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].assessment",
+    "title": "Assessment",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].trigger",
+    "title": "Trigger",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].awarenessAt",
+    "title": "Awareness At",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].notifications[].type",
+    "title": "Notification Type",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].notifications[].triggerEvent",
+    "title": "Trigger Event",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].notifications[].dueAt",
+    "title": "Due At",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].notifications[].submittedAt",
+    "title": "Submitted At",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].notifications[].status",
+    "title": "Status",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].notifications[].channel",
+    "title": "Channel",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].notifications[].reference",
+    "title": "Reference",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].notifications[].basis",
+    "title": "Basis",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].notifications[].notes",
+    "title": "Notes",
+    "type": "string"
+  },
+  {
+    "path": "database_specific.x_gcve[].extensions.bcp-05-x-03.x_timeline.regulatory[].notes",
+    "title": "Notes",
+    "type": "string"
+  }
+]

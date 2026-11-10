@@ -13,7 +13,9 @@ Example:
         --cve-ref v5.2.0 \
         --cve-version 5.2.0 \
         --gcve-ref main \
-        --gcve-version 1.7
+        --gcve-version 1.7 \
+        --osv-ref v1.9.2 \
+        --osv-version 1.9.2
 
 Older CVE versions may publish their bundled schema at another path:
 
@@ -55,6 +57,13 @@ GCVE_REPOSITORY = "https://github.com/gcve-eu/bcp-validator.git"
 GCVE_SCHEMA_SOURCE = Path("bcp-05/schema/gcve-bcp-05.schema.json")
 
 GCVE_OUTPUT_FILENAME = "gcve-bcp-05.schema.json"
+
+
+OSV_REPOSITORY = "https://github.com/ossf/osv-schema.git"
+
+OSV_SCHEMA_SOURCE = Path("validation/schema.json")
+
+OSV_OUTPUT_FILENAME = "schema.json"
 
 
 class UpdateError(ScriptError):
@@ -269,6 +278,19 @@ def validate_gcve_schema(
             raise UpdateError(
                 f"The selected GCVE schema does not contain {required_term!r}."
             )
+
+
+def validate_osv_schema(
+    schema: dict[str, Any],
+) -> None:
+    properties = schema.get("properties")
+
+    if (
+        schema.get("title") != "Open Source Vulnerability"
+        or not isinstance(properties, dict)
+        or not {"id", "modified", "affected"} <= properties.keys()
+    ):
+        raise UpdateError("The selected file does not look like the OSV schema.")
 
 
 def ensure_safe_version_label(
@@ -525,11 +547,51 @@ def update_gcve_profile(
     profiles[profile_id] = profile
 
 
+def update_osv_profile(
+    profiles: dict[str, Any],
+    *,
+    profile_id: str,
+    version: str,
+    schema_path: Path,
+    gcve_schema_path: Path,
+) -> None:
+    existing = profiles.get(profile_id)
+
+    if not isinstance(existing, dict):
+        existing = {}
+
+    # OSV is standalone; drop any stale baseProfile.
+    existing.pop("baseProfile", None)
+
+    # No editor.variant: the OSV schema has no root oneOf to pick from.
+    # patch2vuln puts GCVE-BCP-05 x_gcve data into database_specific; the
+    # overlay declares it there and the GCVE validator checks it.
+    profiles[profile_id] = {
+        "editor": {
+            "layout": "editor/osv.layout.json",
+            "augmenters": ["gcve-extensions"],
+        },
+        "identifier": {"strategy": "osv"},
+        "schemaOverlay": {
+            "path": f"overlays/{profile_id}.json",
+            "applyTo": "root",
+        },
+        "semanticValidator": "gcve-bcp-05",
+        **existing,
+        "kind": "osv",
+        "label": existing.get("label", f"OSV {version}"),
+        "version": version,
+        "baseSchema": schema_path.as_posix(),
+        "extensionSchemas": [gcve_schema_path.as_posix()],
+    }
+
+
 def update_manifest(
     *,
     schema_root: Path,
     cve_version: str,
     gcve_version: str,
+    osv_version: str,
     dry_run: bool,
 ) -> None:
     manifest_path = schema_root / "manifest.json"
@@ -580,6 +642,16 @@ def update_manifest(
         extension_schema_path=gcve_schema_path,
     )
 
+    osv_profile_id = f"osv-{osv_version}"
+
+    update_osv_profile(
+        profiles,
+        profile_id=osv_profile_id,
+        version=osv_version,
+        schema_path=Path("upstream") / "osv" / osv_version / OSV_OUTPUT_FILENAME,
+        gcve_schema_path=gcve_schema_path,
+    )
+
     current_profiles = manifest.setdefault(
         "currentProfiles",
         {},
@@ -591,11 +663,13 @@ def update_manifest(
     ):
         raise UpdateError("manifest currentProfiles must be an object.")
 
-    # Only update profiles owned by this updater. A future CSAF,
-    # OSV, etc. entry remains untouched.
+    # Only update profiles owned by this updater. A future CSAF
+    # etc. entry remains untouched.
     current_profiles["cve"] = cve_profile_id
 
     current_profiles["gcve"] = gcve_profile_id
+
+    current_profiles["osv"] = osv_profile_id
 
     if dry_run:
         console.info(f"Dry run: would update {manifest_path}")
@@ -613,7 +687,7 @@ def parse_arguments() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(
         description=(
-            "Fetch the upstream CVE and GCVE schemas used by Vulniverse.")
+            "Fetch the upstream CVE, GCVE and OSV schemas used by Vulniverse.")
     )
 
     parser.add_argument(
@@ -666,6 +740,24 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "--osv-ref",
+        default="v1.9.2",
+        help=("ossf/osv-schema Git tag, branch, or commit."),
+    )
+
+    parser.add_argument(
+        "--osv-version",
+        default="1.9.2",
+        help=("OSV schema version."),
+    )
+
+    parser.add_argument(
+        "--osv-repository",
+        default=OSV_REPOSITORY,
+        help=("Override the OSV schema repository."),
+    )
+
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help=("Fetch and validate schemas without modifying the repository."),
@@ -685,6 +777,11 @@ def main() -> int:
     ensure_safe_version_label(
         args.gcve_version,
         "--gcve-version",
+    )
+
+    ensure_safe_version_label(
+        args.osv_version,
+        "--osv-version",
     )
 
     ensure_relative_source_path(
@@ -750,6 +847,20 @@ def main() -> int:
 
         validate_gcve_schema(gcve_schema)
 
+        osv_commit = fetch_repository(
+            args.osv_repository,
+            args.osv_ref,
+            temporary_root / "osv-schema",
+        )
+
+        osv_source = temporary_root / "osv-schema" / OSV_SCHEMA_SOURCE
+
+        validate_osv_schema(load_json_object(osv_source))
+
+        osv_destination = (
+            schema_root / "upstream" / "osv" / args.osv_version / OSV_OUTPUT_FILENAME
+        )
+
         cve_destination = (
             schema_root / "upstream" / "cve" / args.cve_version / CVE_OUTPUT_FILENAME
         )
@@ -768,6 +879,8 @@ def main() -> int:
 
             console.info(f"Dry run: would install {gcve_destination}")
 
+            console.info(f"Dry run: would install {osv_destination}")
+
         else:
             copy_file_atomic(
                 cve_source,
@@ -779,10 +892,16 @@ def main() -> int:
                 gcve_destination,
             )
 
+            copy_file_atomic(
+                osv_source,
+                osv_destination,
+            )
+
     update_manifest(
         schema_root=schema_root,
         cve_version=args.cve_version,
         gcve_version=args.gcve_version,
+        osv_version=args.osv_version,
         dry_run=args.dry_run,
     )
 
@@ -791,6 +910,8 @@ def main() -> int:
     console.info(f"CVE ref {args.cve_ref!r} resolved to {cve_commit}")
 
     console.info(f"GCVE ref {args.gcve_ref!r} resolved to {gcve_commit}")
+
+    console.info(f"OSV ref {args.osv_ref!r} resolved to {osv_commit}")
 
     return 0
 

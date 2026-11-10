@@ -68,8 +68,30 @@ watch(
 );
 
 
+let noticeTimeout:
+  ReturnType<typeof setTimeout> | undefined;
+
+
+watch(
+  state.notice,
+  (notice) => {
+    clearTimeout(noticeTimeout);
+
+    if (notice) {
+      noticeTimeout = setTimeout(
+        () => {
+          state.notice.value = null;
+        },
+        SUCCESS_TOAST_DURATION_MS,
+      );
+    }
+  },
+);
+
+
 onUnmounted(() => {
   clearTimeout(successToastTimeout);
+  clearTimeout(noticeTimeout);
 });
 </script>
 
@@ -87,6 +109,21 @@ onUnmounted(() => {
         class="btn-close"
         aria-label="Close"
         @click="state.saveError.value = null"
+      />
+    </div>
+
+    <div
+      v-if="state.notice.value"
+      class="alert alert-success alert-dismissible mb-2 shadow-sm"
+      role="status"
+    >
+      {{ state.notice.value }}
+
+      <button
+        type="button"
+        class="btn-close"
+        aria-label="Close"
+        @click="state.notice.value = null"
       />
     </div>
 
