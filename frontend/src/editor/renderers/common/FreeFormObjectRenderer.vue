@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  computed,
   ref,
   watch,
 } from "vue";
@@ -18,6 +19,11 @@ import {
   useVanillaControl,
 } from "@jsonforms/vue-vanilla";
 
+import {
+  undeclaredEntries,
+  withUndeclaredEntries,
+} from "./free-form";
+
 const props = defineProps({
   ...rendererProps<ControlElement>(),
 });
@@ -28,6 +34,11 @@ const props = defineProps({
  * group with nothing to edit. Edit them as raw JSON instead: only a
  * valid JSON object (or an empty box, which unsets the field) is
  * written back, so a half-typed value never reaches the record.
+ *
+ * With the layout option freeForm, an object that does declare some
+ * keys (database_specific.x_gcve, edited by the GCVE editor) uses this
+ * too: the box then shows and edits only the other keys and keeps the
+ * declared ones as they are.
  */
 const jsonForms =
   useJsonFormsControl(props);
@@ -40,12 +51,27 @@ const {
   controlWrapper,
 } = useVanillaControl(jsonForms);
 
+const declared = computed(
+  () => Object.keys(control.value.schema.properties ?? {}),
+);
+
 function format(
   value: unknown,
 ): string {
-  return value === undefined
+  const shown = undeclaredEntries(value, declared.value);
+
+  return shown === undefined
     ? ""
-    : JSON.stringify(value, null, 2);
+    : JSON.stringify(shown, null, 2);
+}
+
+function write(
+  edited: Record<string, unknown> | undefined,
+): void {
+  jsonForms.handleChange(
+    control.value.path,
+    withUndeclaredEntries(control.value.data, declared.value, edited),
+  );
 }
 
 const text =
@@ -73,7 +99,7 @@ function onInput(
 
   if (text.value.trim() === "") {
     parseError.value = null;
-    jsonForms.handleChange(control.value.path, undefined);
+    write(undefined);
     return;
   }
 
@@ -95,8 +121,17 @@ function onInput(
     return;
   }
 
+  const editedElsewhere = Object.keys(parsed).find(
+    (key) => declared.value.includes(key),
+  );
+
+  if (editedElsewhere) {
+    parseError.value = `"${editedElsewhere}" has its own section; edit it there.`;
+    return;
+  }
+
   parseError.value = null;
-  jsonForms.handleChange(control.value.path, parsed);
+  write(parsed as Record<string, unknown>);
 }
 
 function onBlur(): void {

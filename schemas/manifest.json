@@ -76,13 +76,24 @@
     "osv-1.9.2": {
       "baseSchema": "upstream/osv/1.9.2/schema.json",
       "editor": {
+        "augmenters": [
+          "gcve-extensions"
+        ],
         "layout": "editor/osv.layout.json"
       },
+      "extensionSchemas": [
+        "upstream/gcve/bcp-05/1.7/gcve-bcp-05.schema.json"
+      ],
       "identifier": {
         "strategy": "osv"
       },
       "kind": "osv",
       "label": "OSV 1.9.2",
+      "schemaOverlay": {
+        "applyTo": "root",
+        "path": "overlays/osv-1.9.2.json"
+      },
+      "semanticValidator": "gcve-bcp-05",
       "version": "1.9.2"
     }
   },

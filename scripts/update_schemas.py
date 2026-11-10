@@ -553,6 +553,7 @@ def update_osv_profile(
     profile_id: str,
     version: str,
     schema_path: Path,
+    gcve_schema_path: Path,
 ) -> None:
     existing = profiles.get(profile_id)
 
@@ -563,14 +564,25 @@ def update_osv_profile(
     existing.pop("baseProfile", None)
 
     # No editor.variant: the OSV schema has no root oneOf to pick from.
+    # patch2vuln puts GCVE-BCP-05 x_gcve data into database_specific; the
+    # overlay declares it there and the GCVE validator checks it.
     profiles[profile_id] = {
-        "editor": {"layout": "editor/osv.layout.json"},
+        "editor": {
+            "layout": "editor/osv.layout.json",
+            "augmenters": ["gcve-extensions"],
+        },
         "identifier": {"strategy": "osv"},
+        "schemaOverlay": {
+            "path": f"overlays/{profile_id}.json",
+            "applyTo": "root",
+        },
+        "semanticValidator": "gcve-bcp-05",
         **existing,
         "kind": "osv",
         "label": existing.get("label", f"OSV {version}"),
         "version": version,
         "baseSchema": schema_path.as_posix(),
+        "extensionSchemas": [gcve_schema_path.as_posix()],
     }
 
 
@@ -637,6 +649,7 @@ def update_manifest(
         profile_id=osv_profile_id,
         version=osv_version,
         schema_path=Path("upstream") / "osv" / osv_version / OSV_OUTPUT_FILENAME,
+        gcve_schema_path=gcve_schema_path,
     )
 
     current_profiles = manifest.setdefault(

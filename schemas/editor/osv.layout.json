@@ -50,6 +50,13 @@
         "credits",
         "database_specific"
       ]
+    },
+    {
+      "id": "gcve-extension",
+      "label": "GCVE extension",
+      "paths": [
+        "database_specific.x_gcve"
+      ]
     }
   ],
   "hiddenPaths": [],
@@ -66,6 +73,14 @@
     },
     "details": {
       "multi": true
+    },
+    "database_specific": {
+      "freeForm": true
+    },
+    "database_specific.x_gcve": {
+      "renderer": "vulniverse-gcve-extension",
+      "detail": "GENERATED",
+      "showSortButtons": true
     },
     "references": {
       "detail": "GENERATED",

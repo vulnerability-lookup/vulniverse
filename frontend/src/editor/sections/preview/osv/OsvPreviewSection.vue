@@ -12,8 +12,18 @@ import {
   safeUrl,
 } from "../common/utils";
 
+import {
+  findXGcveOccurrences,
+} from "../../../gcve";
+
 import MetadataPreview from
   "../cve/MetadataPreview.vue";
+
+import GcvePreview from
+  "../gcve/GcvePreview.vue";
+
+import SchemaValuePreview from
+  "../common/SchemaValuePreview.vue";
 
 import type {
   PreviewDate,
@@ -94,6 +104,29 @@ const references =
 
 const credits =
   computed(() => list(record.value.credits));
+
+// GCVE-BCP-05 data patch2vuln puts in database_specific.x_gcve.
+const gcveOccurrences =
+  computed(() => findXGcveOccurrences(record.value));
+
+// The rest of database_specific (e.g. patch2vuln's cwe_ids, capec_ids,
+// ssvc); x_gcve has its own card below.
+const databaseSpecific =
+  computed(() => {
+    const value = record.value.database_specific;
+
+    return typeof value === "object" && value !== null && !Array.isArray(value)
+      ? Object.entries(value).filter(([key, entry]) => key !== "x_gcve" && entry !== undefined)
+      : [];
+  });
+
+function keyLabel(
+  key: string,
+): string {
+  const words = key.replace(/_/g, " ");
+
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
 
 
 const affected =
@@ -344,5 +377,36 @@ const affected =
         </ul>
       </div>
     </div>
+
+    <div
+      v-if="databaseSpecific.length"
+      class="card mb-4"
+    >
+      <div class="card-body">
+        <h3 class="h6 text-secondary text-uppercase">
+          Database specific
+        </h3>
+
+        <dl class="row mb-0 small">
+          <template
+            v-for="[key, value] in databaseSpecific"
+            :key="key"
+          >
+            <dt class="col-sm-3 text-secondary">
+              {{ keyLabel(key) }}
+            </dt>
+
+            <dd class="col-sm-9">
+              <SchemaValuePreview :value="value" />
+            </dd>
+          </template>
+        </dl>
+      </div>
+    </div>
+
+    <GcvePreview
+      v-if="gcveOccurrences.length"
+      :occurrences="gcveOccurrences"
+    />
   </section>
 </template>

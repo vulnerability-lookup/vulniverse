@@ -1,0 +1,31 @@
+{
+  "$comment": "Deliberately permissive, like overlays/gcve-bcp-05-1.7.json. patch2vuln puts the GCVE-BCP-05 x_gcve list into OSV's free-form database_specific; this only declares it there so the editor has a control to bind the GCVE extension editor to. Real strictness comes from the vendored GCVE schema through the gcve-bcp-05 semantic validator.",
+  "properties": {
+    "database_specific": {
+      "properties": {
+        "x_gcve": {
+          "title": "GCVE extension (database_specific)",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "vulnId": {
+                "type": "string"
+              },
+              "recordType": {
+                "type": "string"
+              },
+              "relationships": {
+                "type": "array"
+              },
+              "language": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}

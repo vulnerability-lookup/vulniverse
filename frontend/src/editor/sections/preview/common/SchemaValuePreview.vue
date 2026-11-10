@@ -5,6 +5,10 @@ type AnySchema = Record<string, unknown> | undefined;
 const props = defineProps<{
   schema?: AnySchema;
   value: unknown;
+  // Skip the label of a single-key wrapper object, e.g. a GCVE
+  // extension's {x_patch2vuln: {...}}. Top level only: nested
+  // single-key objects (SSVC's options) need their key as a label.
+  unwrapSingleKey?: boolean;
 }>();
 
 function propertySchema(
@@ -117,7 +121,8 @@ function objectEntries(
 
   <template v-else-if="isPlainObject(value)">
     <!--
-      An object with exactly one property (e.g. a GCVE extension's
+      With unwrapSingleKey (top level only), an object with exactly
+      one property (e.g. a GCVE extension's
       own {ai_annotations: [...]} / {x_patch2vuln: {...}} wrapper) is
       unwrapped rather than given its own dt/dd row — that single
       property already carries the extension's *entire* content, so
@@ -127,7 +132,7 @@ function objectEntries(
       extension. A genuinely multi-property object still gets full
       labeled rows below.
     -->
-    <template v-if="objectEntries(value).length === 1">
+    <template v-if="unwrapSingleKey && objectEntries(value).length === 1">
       <template
         v-for="[key, entryValue] in objectEntries(value)"
         :key="key"

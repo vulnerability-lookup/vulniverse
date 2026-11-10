@@ -22,6 +22,7 @@ import {
 
 import {
   COMMON_RENDERERS,
+  GCVE_RENDERERS,
   OSV_RENDERERS,
 } from "../renderers";
 
@@ -60,6 +61,8 @@ export const osv192Profile:
   renderers: [
     ...COMMON_RENDERERS,
     ...OSV_RENDERERS,
+    // database_specific.x_gcve (GCVE-BCP-05 data from patch2vuln).
+    ...GCVE_RENDERERS,
   ],
 
   previewComponent:

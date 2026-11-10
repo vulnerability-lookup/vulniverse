@@ -141,7 +141,27 @@
         {
           "type": "Control",
           "scope": "#/properties/database_specific",
-          "label": "Database specific"
+          "label": "Database specific",
+          "options": {
+            "freeForm": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "gcve-extension",
+      "label": "GCVE extension",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/database_specific/properties/x_gcve",
+          "label": "GCVE extension (database_specific)",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true,
+            "renderer": "vulniverse-gcve-extension"
+          }
         }
       ]
     }

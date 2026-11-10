@@ -343,6 +343,7 @@ function pathLabel(
               :value="
                 extensionValue
               "
+              unwrap-single-key
             />
           </div>
         </div>

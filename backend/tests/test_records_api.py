@@ -602,3 +602,33 @@ def test_osv_record_that_breaks_the_schema_is_not_published(client) -> None:
     )
 
     assert response.status_code == 422
+
+
+def osv_record_with_gcve(vuln_id: str) -> dict[str, Any]:
+    document = minimal_osv_record("GHSA-q7jr-4jmj-7c77")
+    # Where patch2vuln puts GCVE-BCP-05 data in an OSV record.
+    document["database_specific"] = {
+        "cwe_ids": ["CWE-22"],
+        "x_gcve": [{"vulnId": vuln_id, "recordType": "advisory"}],
+    }
+    return document
+
+
+def test_osv_record_with_valid_x_gcve_is_published(client) -> None:
+    response = client.post(
+        "/api/v1/records",
+        json={"record": osv_record_with_gcve("GCVE-1-2026-0001"), "profile": "osv-1.9.2", "isDraft": False},
+    )
+
+    assert response.status_code == 201, response.get_json()
+
+
+def test_osv_record_x_gcve_is_checked_by_the_gcve_validator(client) -> None:
+    response = client.post(
+        "/api/v1/records",
+        json={"record": osv_record_with_gcve("not-a-gcve-id"), "profile": "osv-1.9.2", "isDraft": False},
+    )
+
+    assert response.status_code == 422
+    paths = [error["path"] for error in response.get_json()["errors"]]
+    assert ["database_specific", "x_gcve", 0, "vulnId"] in paths

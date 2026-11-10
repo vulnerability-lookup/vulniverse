@@ -45,19 +45,25 @@ const LONG_TEXT_MIN_LENGTH = 4096;
 
 
 // An object the schema says nothing about: no fields, no
-// composition, so a generated form would have nothing to show.
+// composition, so a generated form would have nothing to show. The
+// layout option freeForm opts in an object that declares a few keys
+// edited elsewhere (see FreeFormObjectRenderer.vue).
 const isFreeFormObjectControl = and(
   isObjectControl,
 
-  schemaMatches(
-    (schema) => (
-      schema.properties === undefined
-      && schema.patternProperties === undefined
-      && schema.additionalProperties !== false
-      && schema.oneOf === undefined
-      && schema.anyOf === undefined
-      && schema.allOf === undefined
-      && schema.$ref === undefined
+  or(
+    optionIs("freeForm", true),
+
+    schemaMatches(
+      (schema) => (
+        schema.properties === undefined
+        && schema.patternProperties === undefined
+        && schema.additionalProperties !== false
+        && schema.oneOf === undefined
+        && schema.anyOf === undefined
+        && schema.allOf === undefined
+        && schema.$ref === undefined
+      ),
     ),
   ),
 );
