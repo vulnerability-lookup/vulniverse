@@ -10,7 +10,14 @@
       "baseSchema": "upstream/csaf/2.1/json_schema/csaf.json",
       "editor": {
         "dialect": "2020-12",
-        "layout": "editor/csaf.layout.json"
+        "layout": "editor/csaf.layout.json",
+        "markDefinitions": [
+          "branches_t",
+          "product_id_t",
+          "products_t",
+          "product_group_id_t",
+          "product_groups_t"
+        ]
       },
       "identifier": {
         "strategy": "csaf"
@@ -30,6 +37,7 @@
         "https://www.first.org/cvss/cvss-v4.0.json": "upstream/csaf/2.1/referenced_schema/first/cvss-v4.0.json",
         "https://www.first.org/cvss/meta.json": "upstream/csaf/2.1/referenced_schema/first/meta.json"
       },
+      "semanticValidator": "csaf-2.1",
       "version": "2.1"
     },
     "cve-5.0": {

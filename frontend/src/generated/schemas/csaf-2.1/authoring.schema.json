@@ -177,7 +177,8 @@
                       "examples": [
                         "CSAFPID-0004",
                         "CSAFPID-0008"
-                      ]
+                      ],
+                      "x-vulniverse-definition": "product_id_t"
                     },
                     "product_identification_helper": {
                       "title": "Helper to identify the product",
@@ -428,7 +429,8 @@
                 }
               },
               "additionalProperties": false
-            }
+            },
+            "x-vulniverse-definition": "branches_t"
           },
           "category": {
             "title": "Category of the branch",
@@ -492,7 +494,8 @@
                 "examples": [
                   "CSAFPID-0004",
                   "CSAFPID-0008"
-                ]
+                ],
+                "x-vulniverse-definition": "product_id_t"
               },
               "product_identification_helper": {
                 "title": "Helper to identify the product",
@@ -743,7 +746,8 @@
           }
         },
         "additionalProperties": false
-      }
+      },
+      "x-vulniverse-definition": "branches_t"
     },
     "contact_t": {
       "title": "Contact",
@@ -964,7 +968,8 @@
           "examples": [
             "CSAFPID-0004",
             "CSAFPID-0008"
-          ]
+          ],
+          "x-vulniverse-definition": "product_id_t"
         },
         "product_identification_helper": {
           "title": "Helper to identify the product",
@@ -1281,8 +1286,10 @@
                 "CSAFGID-0001",
                 "CSAFGID-0002",
                 "CSAFGID-0020"
-              ]
-            }
+              ],
+              "x-vulniverse-definition": "product_group_id_t"
+            },
+            "x-vulniverse-definition": "product_groups_t"
           },
           "product_ids": {
             "title": "List of product_ids",
@@ -1298,8 +1305,10 @@
               "examples": [
                 "CSAFPID-0004",
                 "CSAFPID-0008"
-              ]
-            }
+              ],
+              "x-vulniverse-definition": "product_id_t"
+            },
+            "x-vulniverse-definition": "products_t"
           },
           "text": {
             "title": "Note content",
@@ -1332,7 +1341,8 @@
         "CSAFGID-0001",
         "CSAFGID-0002",
         "CSAFGID-0020"
-      ]
+      ],
+      "x-vulniverse-definition": "product_group_id_t"
     },
     "product_groups_t": {
       "title": "List of product_group_ids",
@@ -1349,8 +1359,10 @@
           "CSAFGID-0001",
           "CSAFGID-0002",
           "CSAFGID-0020"
-        ]
-      }
+        ],
+        "x-vulniverse-definition": "product_group_id_t"
+      },
+      "x-vulniverse-definition": "product_groups_t"
     },
     "product_id_t": {
       "title": "Reference token for product instance",
@@ -1360,7 +1372,8 @@
       "examples": [
         "CSAFPID-0004",
         "CSAFPID-0008"
-      ]
+      ],
+      "x-vulniverse-definition": "product_id_t"
     },
     "products_t": {
       "title": "List of product_ids",
@@ -1376,8 +1389,10 @@
         "examples": [
           "CSAFPID-0004",
           "CSAFPID-0008"
-        ]
-      }
+        ],
+        "x-vulniverse-definition": "product_id_t"
+      },
+      "x-vulniverse-definition": "products_t"
     },
     "references_t": {
       "title": "List of references",
@@ -1448,7 +1463,8 @@
           "examples": [
             "CSAFPID-0004",
             "CSAFPID-0008"
-          ]
+          ],
+          "x-vulniverse-definition": "product_id_t"
         }
       },
       "additionalProperties": false
@@ -1826,8 +1842,10 @@
                         "CSAFGID-0001",
                         "CSAFGID-0002",
                         "CSAFGID-0020"
-                      ]
-                    }
+                      ],
+                      "x-vulniverse-definition": "product_group_id_t"
+                    },
+                    "x-vulniverse-definition": "product_groups_t"
                   },
                   "product_ids": {
                     "title": "List of product_ids",
@@ -1843,8 +1861,10 @@
                       "examples": [
                         "CSAFPID-0004",
                         "CSAFPID-0008"
-                      ]
-                    }
+                      ],
+                      "x-vulniverse-definition": "product_id_t"
+                    },
+                    "x-vulniverse-definition": "products_t"
                   },
                   "receiving_entity_refs": {
                     "title": "List of receiving entities",
@@ -2197,8 +2217,10 @@
                     "CSAFGID-0001",
                     "CSAFGID-0002",
                     "CSAFGID-0020"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_group_id_t"
+                },
+                "x-vulniverse-definition": "product_groups_t"
               },
               "product_ids": {
                 "title": "List of product_ids",
@@ -2214,8 +2236,10 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
+                },
+                "x-vulniverse-definition": "products_t"
               },
               "text": {
                 "title": "Note content",
@@ -2751,7 +2775,8 @@
                     "examples": [
                       "CSAFPID-0004",
                       "CSAFPID-0008"
-                    ]
+                    ],
+                    "x-vulniverse-definition": "product_id_t"
                   },
                   "product_identification_helper": {
                     "title": "Helper to identify the product",
@@ -3002,7 +3027,8 @@
               }
             },
             "additionalProperties": false
-          }
+          },
+          "x-vulniverse-definition": "branches_t"
         },
         "full_product_names": {
           "title": "List of full product names",
@@ -3036,7 +3062,8 @@
                 "examples": [
                   "CSAFPID-0004",
                   "CSAFPID-0008"
-                ]
+                ],
+                "x-vulniverse-definition": "product_id_t"
               },
               "product_identification_helper": {
                 "title": "Helper to identify the product",
@@ -3309,7 +3336,8 @@
                   "CSAFGID-0001",
                   "CSAFGID-0002",
                   "CSAFGID-0020"
-                ]
+                ],
+                "x-vulniverse-definition": "product_group_id_t"
               },
               "product_ids": {
                 "title": "List of Product IDs",
@@ -3325,7 +3353,8 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
                 }
               },
               "summary": {
@@ -3365,7 +3394,8 @@
                 "examples": [
                   "CSAFPID-0004",
                   "CSAFPID-0008"
-                ]
+                ],
+                "x-vulniverse-definition": "product_id_t"
               },
               "full_product_name": {
                 "title": "Full product name",
@@ -3394,7 +3424,8 @@
                     "examples": [
                       "CSAFPID-0004",
                       "CSAFPID-0008"
-                    ]
+                    ],
+                    "x-vulniverse-definition": "product_id_t"
                   },
                   "product_identification_helper": {
                     "title": "Helper to identify the product",
@@ -3677,7 +3708,8 @@
                       "examples": [
                         "CSAFPID-0004",
                         "CSAFPID-0008"
-                      ]
+                      ],
+                      "x-vulniverse-definition": "product_id_t"
                     }
                   },
                   "additionalProperties": false
@@ -3892,8 +3924,10 @@
                       "CSAFGID-0001",
                       "CSAFGID-0002",
                       "CSAFGID-0020"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_group_id_t"
+                  },
+                  "x-vulniverse-definition": "product_groups_t"
                 },
                 "product_ids": {
                   "title": "List of product_ids",
@@ -3909,8 +3943,10 @@
                     "examples": [
                       "CSAFPID-0004",
                       "CSAFPID-0008"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_id_t"
+                  },
+                  "x-vulniverse-definition": "products_t"
                 }
               },
               "additionalProperties": false
@@ -3951,8 +3987,10 @@
                       "CSAFGID-0001",
                       "CSAFGID-0002",
                       "CSAFGID-0020"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_group_id_t"
+                  },
+                  "x-vulniverse-definition": "product_groups_t"
                 },
                 "label": {
                   "title": "Label of the flag",
@@ -3980,8 +4018,10 @@
                     "examples": [
                       "CSAFPID-0004",
                       "CSAFPID-0008"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_id_t"
+                  },
+                  "x-vulniverse-definition": "products_t"
                 }
               },
               "additionalProperties": false
@@ -4017,8 +4057,10 @@
                       "CSAFGID-0001",
                       "CSAFGID-0002",
                       "CSAFGID-0020"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_group_id_t"
+                  },
+                  "x-vulniverse-definition": "product_groups_t"
                 },
                 "product_ids": {
                   "title": "List of product_ids",
@@ -4034,8 +4076,10 @@
                     "examples": [
                       "CSAFPID-0004",
                       "CSAFPID-0008"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_id_t"
+                  },
+                  "x-vulniverse-definition": "products_t"
                 },
                 "system_name": {
                   "title": "System name",
@@ -6470,8 +6514,10 @@
                     "examples": [
                       "CSAFPID-0004",
                       "CSAFPID-0008"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_id_t"
+                  },
+                  "x-vulniverse-definition": "products_t"
                 },
                 "source": {
                   "title": "Source",
@@ -6538,8 +6584,10 @@
                       "CSAFGID-0001",
                       "CSAFGID-0002",
                       "CSAFGID-0020"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_group_id_t"
+                  },
+                  "x-vulniverse-definition": "product_groups_t"
                 },
                 "product_ids": {
                   "title": "List of product_ids",
@@ -6555,8 +6603,10 @@
                     "examples": [
                       "CSAFPID-0004",
                       "CSAFPID-0008"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_id_t"
+                  },
+                  "x-vulniverse-definition": "products_t"
                 },
                 "text": {
                   "title": "Note content",
@@ -6600,8 +6650,10 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
+                },
+                "x-vulniverse-definition": "products_t"
               },
               "first_fixed": {
                 "title": "First fixed",
@@ -6617,8 +6669,10 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
+                },
+                "x-vulniverse-definition": "products_t"
               },
               "fixed": {
                 "title": "Fixed",
@@ -6634,8 +6688,10 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
+                },
+                "x-vulniverse-definition": "products_t"
               },
               "known_affected": {
                 "title": "Known affected",
@@ -6651,8 +6707,10 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
+                },
+                "x-vulniverse-definition": "products_t"
               },
               "known_not_affected": {
                 "title": "Known not affected",
@@ -6668,8 +6726,10 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
+                },
+                "x-vulniverse-definition": "products_t"
               },
               "last_affected": {
                 "title": "Last affected",
@@ -6685,8 +6745,10 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
+                },
+                "x-vulniverse-definition": "products_t"
               },
               "recommended": {
                 "title": "Recommended",
@@ -6702,8 +6764,10 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
+                },
+                "x-vulniverse-definition": "products_t"
               },
               "under_investigation": {
                 "title": "Under investigation",
@@ -6719,8 +6783,10 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
+                },
+                "x-vulniverse-definition": "products_t"
               },
               "unknown": {
                 "title": "Unknown",
@@ -6736,8 +6802,10 @@
                   "examples": [
                     "CSAFPID-0004",
                     "CSAFPID-0008"
-                  ]
-                }
+                  ],
+                  "x-vulniverse-definition": "product_id_t"
+                },
+                "x-vulniverse-definition": "products_t"
               }
             },
             "additionalProperties": false
@@ -6849,8 +6917,10 @@
                       "CSAFGID-0001",
                       "CSAFGID-0002",
                       "CSAFGID-0020"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_group_id_t"
+                  },
+                  "x-vulniverse-definition": "product_groups_t"
                 },
                 "product_ids": {
                   "title": "List of product_ids",
@@ -6866,8 +6936,10 @@
                     "examples": [
                       "CSAFPID-0004",
                       "CSAFPID-0008"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_id_t"
+                  },
+                  "x-vulniverse-definition": "products_t"
                 },
                 "restart_required": {
                   "title": "Restart required by remediation",
@@ -6963,8 +7035,10 @@
                       "CSAFGID-0001",
                       "CSAFGID-0002",
                       "CSAFGID-0020"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_group_id_t"
+                  },
+                  "x-vulniverse-definition": "product_groups_t"
                 },
                 "product_ids": {
                   "title": "List of product_ids",
@@ -6980,8 +7054,10 @@
                     "examples": [
                       "CSAFPID-0004",
                       "CSAFPID-0008"
-                    ]
-                  }
+                    ],
+                    "x-vulniverse-definition": "product_id_t"
+                  },
+                  "x-vulniverse-definition": "products_t"
                 }
               },
               "additionalProperties": false

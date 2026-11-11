@@ -1,12 +1,13 @@
 """The authoring schema: what the editor validates and renders a record with.
 
-Built from the profile's upstream schema in four steps:
+Built from the profile's upstream schema in five steps:
 
-1. pick the editor's variant (CVE's root ``oneOf`` branch "Published") or,
+1. mark the definitions listed in ``editor.markDefinitions``,
+2. pick the editor's variant (CVE's root ``oneOf`` branch "Published") or,
    without one, take the whole schema; inline every ``$ref`` either way,
-2. strip nested ``$id`` values,
-3. merge the profile's ``schemaOverlay`` on top,
-4. run the profile's ``editor.augmenters``.
+3. strip nested ``$id`` values,
+4. merge the profile's ``schemaOverlay`` on top,
+5. run the profile's ``editor.augmenters``.
 """
 
 import copy
@@ -27,6 +28,11 @@ EDITOR_DIALECTS = {
     "draft-07": "http://json-schema.org/draft-07/schema#",
     "2020-12": "https://json-schema.org/draft/2020-12/schema",
 }
+
+# Added to the definitions named in editor.markDefinitions, so every inlined
+# copy still says what it is: e.g. CSAF's product ID references, which the
+# editor gives a picker, or which get their own title next to the $ref.
+DEFINITION_MARKER = "x-vulniverse-definition"
 
 # (authoring schema, schemas/ folder, profile), changing the schema in place.
 EditorAugmenter = Callable[[JsonObject, Path, JsonObject], None]
@@ -69,6 +75,24 @@ def expand_whole_schema(
     )
     drop_unused_definitions(expanded)
     return expanded
+
+
+def mark_definitions(official_schema: JsonObject, names: list[str]) -> JsonObject:
+    """A copy of the schema whose named ``$defs``/``definitions`` carry
+    :data:`DEFINITION_MARKER`; ``dereference`` then copies the mark along."""
+    marked = copy.deepcopy(official_schema)
+
+    for name in names:
+        definition = as_dict(marked.get("$defs")).get(name) or as_dict(
+            marked.get("definitions")
+        ).get(name)
+
+        if not isinstance(definition, dict):
+            raise GenerationError(f"editor.markDefinitions: no definition named {name!r}")
+
+        definition[DEFINITION_MARKER] = name
+
+    return marked
 
 
 def deep_merge(base: JsonObject, overlay: JsonObject) -> JsonObject:
@@ -125,6 +149,12 @@ def create_authoring_schema(profile_id: str, profile: JsonObject, schemas_root: 
     official_schema = load_json_object(
         schemas_root
         / require_str(profile.get("baseSchema"), f"{profile_id} baseSchema", GenerationError)
+    )
+    official_schema = mark_definitions(
+        official_schema,
+        str_list(
+            editor_config.get("markDefinitions", []), "editor.markDefinitions", GenerationError
+        ),
     )
     variant = editor_config.get("variant")
 

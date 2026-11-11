@@ -30,7 +30,10 @@
       "id": "product-tree",
       "label": "Product tree",
       "paths": [
-        "product_tree"
+        "product_tree.branches",
+        "product_tree.full_product_names",
+        "product_tree.product_paths",
+        "product_tree.product_groups"
       ]
     },
     {
@@ -58,9 +61,6 @@
     },
     "document.title": {
       "wrap": true
-    },
-    "product_tree": {
-      "json": true
     }
   }
 }

@@ -14,6 +14,7 @@ from jsonschema.validators import validator_for
 from referencing import Registry
 from referencing.jsonschema import DRAFT202012, specification_with
 
+from .csaf_mandatory import validate_csaf_mandatory
 from .profiles import SCHEMAS_ROOT, UnknownProfileError, resolve_profile
 
 GCVE_EXTENSION_REGISTRY_PATH = SCHEMAS_ROOT / "extensions" / "gcve" / "registry.json"
@@ -627,6 +628,7 @@ SEMANTIC_VALIDATORS: dict[
     Callable[[dict[str, Any], str], list[dict[str, Any]]],
 ] = {
     "gcve-bcp-05": validate_gcve_semantics,
+    "csaf-2.1": validate_csaf_mandatory,
 }
 
 

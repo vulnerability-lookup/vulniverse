@@ -80,3 +80,26 @@ def test_nested_ids_are_stripped_but_the_root_id_stays() -> None:
     strip_nested_ids(schema)
 
     assert schema == {"$id": "root", "properties": {"a": {"type": "string"}}}
+
+
+def test_marked_definitions_survive_inlining_and_sibling_titles() -> None:
+    from schematools.authoring import DEFINITION_MARKER, mark_definitions
+
+    schema = {
+        "$defs": {"id_t": {"type": "string"}},
+        "properties": {"ref": {"title": "Own title", "$ref": "#/$defs/id_t"}},
+    }
+
+    marked = mark_definitions(schema, ["id_t"])
+    expanded = dereference(marked, marked)
+
+    assert expanded["properties"]["ref"] == {
+        "type": "string",
+        DEFINITION_MARKER: "id_t",
+        "title": "Own title",
+    }
+    # The upstream schema itself is left alone.
+    assert DEFINITION_MARKER not in schema["$defs"]["id_t"]
+
+    with pytest.raises(GenerationError, match="no definition named 'missing'"):
+        mark_definitions(schema, ["missing"])

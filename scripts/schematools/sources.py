@@ -297,6 +297,15 @@ CSAF_SCHEMA_FILES = (
 )
 
 
+CSAF_MARKED_DEFINITIONS = [
+    "branches_t",
+    "product_id_t",
+    "products_t",
+    "product_group_id_t",
+    "product_groups_t",
+]
+
+
 def csaf_profile_id(version: str) -> str:
     return f"csaf-{version}"
 
@@ -353,8 +362,16 @@ def csaf_profile(existing: JsonObject, versions: Mapping[str, str]) -> JsonObjec
     # No editor.variant: the CSAF schema has no root oneOf to pick from.
     return {
         # 2020-12: the editor must check unevaluatedItems/dependentRequired too.
-        "editor": {"layout": "editor/csaf.layout.json", "dialect": "2020-12"},
+        "editor": {
+            "layout": "editor/csaf.layout.json",
+            "dialect": "2020-12",
+            # The product tree and the product/group ID references get
+            # their own editors; see frontend/src/editor/renderers/csaf/.
+            "markDefinitions": CSAF_MARKED_DEFINITIONS,
+        },
         "identifier": {"strategy": "csaf"},
+        # CSAF's mandatory tests (spec 6.1), backend/.../csaf_mandatory/.
+        "semanticValidator": "csaf-2.1",
         **existing,
         "kind": "csaf",
         "label": existing.get("label", f"CSAF {version}"),

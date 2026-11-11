@@ -110,10 +110,38 @@
       "elements": [
         {
           "type": "Control",
-          "scope": "#/properties/product_tree",
-          "label": "Product tree",
+          "scope": "#/properties/product_tree/properties/branches",
+          "label": "List of branches",
           "options": {
-            "json": true
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/product_tree/properties/full_product_names",
+          "label": "List of full product names",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/product_tree/properties/product_paths",
+          "label": "List of product paths",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/product_tree/properties/product_groups",
+          "label": "List of product groups",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
           }
         }
       ]
