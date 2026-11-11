@@ -41,6 +41,32 @@ jobs:
       - name: pytest
         run: uv run pytest -q
 
+  scripts:
+    name: Schema scripts (ruff, mypy, pytest, generated schemas up to date)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scripts
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.0.1
+        with:
+          python-version: "3.12"
+
+      # The scripts use only the standard library: no project to sync.
+      - name: ruff
+        run: uvx ruff check . && uvx ruff format --check .
+
+      - name: mypy
+        run: uvx --with pytest mypy
+
+      # Includes `generate_editor_schemas.py --all --check`.
+      - name: pytest
+        run: uvx pytest -q
+
   frontend:
     name: Frontend (lint, build)
     runs-on: ubuntu-latest

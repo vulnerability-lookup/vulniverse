@@ -50,11 +50,18 @@ python3 scripts/generate_editor_schemas.py --profile cve-5.2.0 --strict
 python3 scripts/generate_editor_schemas.py --profile gcve-bcp-05-1.7 --strict
 ```
 
-The script writes four files per profile under `schemas/generated/<profile>/`:
+`--all` generates the current profile of every format, and `--check` writes nothing but fails when a generated file is out of date (CI runs `--all --check`):
+
+```bash
+python3 scripts/generate_editor_schemas.py --all --strict
+```
+
+The script writes three files per profile under `frontend/src/generated/schemas/<profile>/`:
 
 - `authoring.schema.json` — the schema the editor's form validation is built from.
 - `ui.schema.json` — the layout/field-ordering schema consumed by the form renderer.
-- `fields.json` — a flat index of every field path in the profile.
-- `generation-report.json` — a report of what the generator did (e.g. fields it couldn't map automatically), useful when a new upstream schema version doesn't translate cleanly.
+- `field-paths.json` — every scalar field path, used by the Templates path autocomplete.
+
+Profiles with the `gcve-extensions` augmenter also write `frontend/src/generated/gcve/extension-schemas.json`. The code of both scripts lives in the `scripts/schematools/` package; its tests run with `pytest` from `scripts/`.
 
 The layout used in the UI can be configured through the `*.layout.json` files in `schemas/editor`.

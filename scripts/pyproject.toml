@@ -1,0 +1,17 @@
+# Tooling for the schema scripts. They use only the standard library, so
+# there is nothing to install besides the tools; CI runs them with uvx.
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["schematools", "tests"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
