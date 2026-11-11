@@ -1,8 +1,8 @@
 """Inline ``$ref`` references, so the editor gets one self-contained schema.
 
 JSON Forms renders a schema by walking its properties; it cannot follow a
-reference into another file, and the editor's validator only knows draft-07.
-So the generator replaces every reference with a copy of its target.
+reference into another file. So the generator replaces every reference with
+a copy of its target.
 """
 
 import copy

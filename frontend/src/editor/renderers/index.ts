@@ -7,6 +7,10 @@ import {
 } from "./common";
 
 import {
+  CSAF_RENDERERS,
+} from "./csaf";
+
+import {
   CVE_RENDERERS,
 } from "./cve";
 
@@ -21,6 +25,7 @@ import {
 
 export {
   COMMON_RENDERERS,
+  CSAF_RENDERERS,
   CVE_RENDERERS,
   GCVE_RENDERERS,
   OSV_RENDERERS,
@@ -38,4 +43,5 @@ export const customRenderers:
     ...CVE_RENDERERS,
     ...GCVE_RENDERERS,
     ...OSV_RENDERERS,
+    ...CSAF_RENDERERS,
   ];

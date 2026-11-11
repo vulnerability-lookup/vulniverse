@@ -352,7 +352,8 @@ def csaf_profile(existing: JsonObject, versions: Mapping[str, str]) -> JsonObjec
     base = UPSTREAM / "csaf" / version
     # No editor.variant: the CSAF schema has no root oneOf to pick from.
     return {
-        "editor": {"layout": "editor/csaf.layout.json"},
+        # 2020-12: the editor must check unevaluatedItems/dependentRequired too.
+        "editor": {"layout": "editor/csaf.layout.json", "dialect": "2020-12"},
         "identifier": {"strategy": "csaf"},
         **existing,
         "kind": "csaf",

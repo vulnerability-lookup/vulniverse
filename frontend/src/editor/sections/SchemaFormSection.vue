@@ -13,7 +13,7 @@ import {
 } from "@jsonforms/vue-vanilla";
 
 import {
-  editorAjv,
+  ajvForSchema,
 } from "../core/ajv";
 
 import {
@@ -39,6 +39,7 @@ const activeProfile = computed(() => {
 
 const schema = computed(() => activeProfile.value.schema);
 const uiSchema = computed(() => activeProfile.value.uiSchema);
+const ajv = computed(() => ajvForSchema(schema.value));
 
 /*
  * Object.freeze opts this array out of Vue's reactivity proxying
@@ -81,7 +82,7 @@ function handleChange(event: {
     :schema="schema"
     :uischema="uiSchema"
     :renderers="renderers"
-    :ajv="editorAjv"
+    :ajv="ajv"
     validation-mode="ValidateAndShow"
     @change="handleChange"
   />

@@ -19,10 +19,14 @@ from .files import load_json_object
 from .jsontypes import JsonObject, as_dict, require_dict, require_str, str_list
 from .refs import dereference, drop_unused_definitions, strip_nested_ids
 
-# Ajv only speaks draft-07. Inlined $refs leave plain draft-07 keywords.
-# shortcut: 2020-12-only keywords (prefixItems, unevaluated*) would be
-# ignored by the editor; switch editorAjv to Ajv2020 if a profile needs them.
-EDITOR_DIALECT = "http://json-schema.org/draft-07/schema#"
+# The editor picks its validator (Ajv or Ajv2020) from the authoring
+# schema's $schema. Inlined $refs leave plain draft-07 keywords for CVE and
+# OSV; a profile using 2020-12-only keywords (CSAF's unevaluatedItems,
+# dependentRequired) sets editor.dialect to "2020-12".
+EDITOR_DIALECTS = {
+    "draft-07": "http://json-schema.org/draft-07/schema#",
+    "2020-12": "https://json-schema.org/draft/2020-12/schema",
+}
 
 # (authoring schema, schemas/ folder, profile), changing the schema in place.
 EditorAugmenter = Callable[[JsonObject, Path, JsonObject], None]
@@ -138,7 +142,11 @@ def create_authoring_schema(profile_id: str, profile: JsonObject, schemas_root: 
     label = label if isinstance(label, str) else profile_id
     variant_suffix = f" {variant}" if variant else ""
 
-    schema["$schema"] = EDITOR_DIALECT
+    dialect = editor_config.get("dialect", "draft-07")
+    if dialect not in EDITOR_DIALECTS:
+        raise GenerationError(f"{profile_id}: unknown editor.dialect {dialect!r}")
+
+    schema["$schema"] = EDITOR_DIALECTS[dialect]
     schema["$id"] = f"https://vulniverse.invalid/schemas/{profile_id}/authoring.schema.json"
     schema["title"] = f"Vulniverse {label}{variant_suffix} authoring schema"
     return schema

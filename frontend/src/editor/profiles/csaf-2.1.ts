@@ -14,6 +14,7 @@ import fieldPaths from
 
 import {
   COMMON_RENDERERS,
+  CSAF_RENDERERS,
 } from "../renderers";
 
 import type {
@@ -83,5 +84,6 @@ export const csaf21Profile:
 
   renderers: [
     ...COMMON_RENDERERS,
+    ...CSAF_RENDERERS,
   ],
 };

@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vulniverse.invalid/schemas/csaf-2.1/authoring.schema.json",
   "title": "Vulniverse CSAF 2.1 authoring schema",
   "description": "Representation of security advisory information as a JSON document.",

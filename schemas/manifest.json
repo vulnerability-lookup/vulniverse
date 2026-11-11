@@ -9,6 +9,7 @@
     "csaf-2.1": {
       "baseSchema": "upstream/csaf/2.1/json_schema/csaf.json",
       "editor": {
+        "dialect": "2020-12",
         "layout": "editor/csaf.layout.json"
       },
       "identifier": {
