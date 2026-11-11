@@ -208,11 +208,13 @@ def get_patch2vuln_job(token: str):
         return {"message": "Job not found"}, 404
 
     try:
-        status = get_job_status(job_id)["status"]
+        state = get_job_status(job_id)
     except LookupError:
         return {"message": "Job not found"}, 404
     except RuntimeError as exc:
         return {"message": str(exc)}, 502
+
+    status = state["status"]
 
     if status == "completed":
         try:
@@ -245,6 +247,8 @@ def get_patch2vuln_job(token: str):
     return {
         "jobId": token,
         "status": status,
+        # Only present for queued/running jobs; false = no worker running.
+        **({"workerAvailable": state["workerAvailable"]} if "workerAvailable" in state else {}),
     }, 200
 
 

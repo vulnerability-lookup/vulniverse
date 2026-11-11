@@ -288,6 +288,23 @@ def test_get_job_status_raises_on_connection_error(
         patch2vuln.get_job_status("job-123")
 
 
+def test_get_job_status_passes_on_worker_availability(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        patch2vuln, "get_patch2vuln_config", enabled_config,
+    )
+    monkeypatch.setattr(
+        patch2vuln.httpx,
+        "get",
+        lambda url, *, headers, timeout: FakeResponse(
+            200, {"status": "queued", "workerAvailable": False},
+        ),
+    )
+
+    assert patch2vuln.get_job_status("job-123") == {"status": "queued", "workerAvailable": False}
+
+
 # --- cancel_job ------------------------------------------------------------
 
 
@@ -533,6 +550,131 @@ def test_stream_job_status_treats_job_not_found_as_failed(
     events = list(patch2vuln.stream_job_status("token-abc", "job-123"))
 
     assert events[-1] == 'event: status\ndata: {"jobId": "token-abc", "status": "failed"}\n\n'
+
+
+def test_stream_job_status_waits_out_an_outage_on_the_first_check(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    outcomes: list[dict[str, Any] | Exception] = [
+        RuntimeError("unreachable"), {"status": "running"}, {"status": "completed"},
+    ]
+    states = iter(outcomes)
+
+    def fake_status(job_id: str) -> dict[str, Any]:
+        state = next(states)
+        if isinstance(state, Exception):
+            raise state
+        return state
+
+    monkeypatch.setattr(patch2vuln, "get_job_status", fake_status)
+    monkeypatch.setattr(patch2vuln.time, "sleep", lambda _seconds: None)
+
+    events = list(patch2vuln.stream_job_status("token-abc", "job-123"))
+
+    # No "failed": the status is reported as unknown (null + unreachable),
+    # then the job's real status once patch2vuln answers.
+    assert events[1:] == [
+        (
+            'event: status\ndata: {"jobId": "token-abc", "status": null, '
+            '"unreachable": true, "error": "unreachable"}\n\n'
+        ),
+        'event: status\ndata: {"jobId": "token-abc", "status": "running"}\n\n',
+        'event: status\ndata: {"jobId": "token-abc", "status": "completed"}\n\n',
+    ]
+
+
+def test_stream_job_status_expires_without_status_if_never_reached(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unreachable(job_id: str) -> dict[str, Any]:
+        raise RuntimeError("unreachable")
+
+    monkeypatch.setattr(patch2vuln, "get_job_status", unreachable)
+    monkeypatch.setattr(patch2vuln.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(patch2vuln, "STREAM_MAX_SECONDS", 0)
+
+    events = list(patch2vuln.stream_job_status("token-abc", "job-123"))
+
+    assert events[-1] == (
+        'event: status\ndata: {"jobId": "token-abc", "status": null, '
+        '"unreachable": true, "error": "unreachable", "expired": true}\n\n'
+    )
+
+
+def test_stream_job_status_reports_an_outage_once_and_its_end(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    outcomes: list[dict[str, Any] | Exception] = [
+        {"status": "running"},
+        RuntimeError("Could not reach the Patch2Vuln service"),
+        RuntimeError("Could not reach the Patch2Vuln service"),
+        {"status": "running"},
+        {"status": "completed"},
+    ]
+    states = iter(outcomes)
+
+    def fake_status(job_id: str) -> dict[str, Any]:
+        state = next(states)
+        if isinstance(state, Exception):
+            raise state
+        return state
+
+    monkeypatch.setattr(patch2vuln, "get_job_status", fake_status)
+    monkeypatch.setattr(patch2vuln.time, "sleep", lambda _seconds: None)
+
+    events = list(patch2vuln.stream_job_status("token-abc", "job-123"))
+
+    assert events[1:] == [
+        'event: status\ndata: {"jobId": "token-abc", "status": "running"}\n\n',
+        # Reported once, with the last known status, not per failed check.
+        (
+            'event: status\ndata: {"jobId": "token-abc", "status": "running", '
+            '"unreachable": true, "error": "Could not reach the Patch2Vuln service"}\n\n'
+        ),
+        # Same status as before, but sent to clear "unreachable".
+        'event: status\ndata: {"jobId": "token-abc", "status": "running"}\n\n',
+        'event: status\ndata: {"jobId": "token-abc", "status": "completed"}\n\n',
+    ]
+
+
+def test_stream_job_status_reports_a_missing_worker(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    states = iter([
+        {"status": "running", "workerAvailable": True},
+        {"status": "running", "workerAvailable": False},
+        {"status": "failed"},
+    ])
+
+    monkeypatch.setattr(patch2vuln, "get_job_status", lambda job_id: next(states))
+    monkeypatch.setattr(patch2vuln.time, "sleep", lambda _seconds: None)
+
+    events = list(patch2vuln.stream_job_status("token-abc", "job-123"))
+
+    assert events[1:] == [
+        'event: status\ndata: {"jobId": "token-abc", "status": "running", "workerAvailable": true}\n\n',
+        'event: status\ndata: {"jobId": "token-abc", "status": "running", "workerAvailable": false}\n\n',
+        'event: status\ndata: {"jobId": "token-abc", "status": "failed"}\n\n',
+    ]
+
+
+def test_stream_job_status_ends_after_its_maximum_lifetime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A job that never finishes, e.g. queued with no worker running.
+    monkeypatch.setattr(
+        patch2vuln, "get_job_status",
+        lambda job_id: {"status": "queued", "workerAvailable": False},
+    )
+    monkeypatch.setattr(patch2vuln.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(patch2vuln, "STREAM_MAX_SECONDS", 0)
+
+    events = list(patch2vuln.stream_job_status("token-abc", "job-123"))
+
+    assert events[-1] == (
+        'event: status\ndata: {"jobId": "token-abc", "status": "queued", '
+        '"workerAvailable": false, "expired": true}\n\n'
+    )
 
 
 # --- get_patch2vuln_config (unaffected by the job-queue rewrite) -----------

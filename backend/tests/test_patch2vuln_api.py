@@ -217,6 +217,25 @@ def test_get_job_reports_running_status(
     assert response.get_json() == {"jobId": token, "status": "running"}
 
 
+def test_get_job_reports_a_missing_worker(
+    app: Flask,
+    client: FlaskClient,
+    test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    token = _token_for(app, "job-123", test_user)
+
+    monkeypatch.setattr(
+        patch2vuln_api,
+        "get_job_status",
+        lambda job_id: {"status": "queued", "workerAvailable": False},
+    )
+
+    response = client.get(f"/api/v1/patch2vuln/jobs/{token}")
+
+    assert response.get_json() == {"jobId": token, "status": "queued", "workerAvailable": False}
+
+
 def test_get_job_includes_result_once_completed(
     app: Flask,
     client: FlaskClient,

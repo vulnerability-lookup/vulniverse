@@ -267,6 +267,8 @@ export interface Patch2VulnResult {
 export interface Patch2VulnJob {
   jobId: string;
   status: BackgroundJobStatus;
+  // false while queued/running: patch2vuln has no worker processing jobs.
+  workerAvailable?: boolean;
   result?: Patch2VulnResult;
   error?: string;
 }
@@ -281,7 +283,16 @@ export type BackgroundJobStatus =
 
 export interface BackgroundJobEvent {
   jobId: string;
-  status: BackgroundJobStatus;
+  // null only with expired, when the server never reached the job's host.
+  status: BackgroundJobStatus | null;
+  workerAvailable?: boolean;
+  // The server ended the stream before the job finished; poll instead
+  // of reconnecting.
+  expired?: boolean;
+  // The job's host can't be reached: status is the last one known (or
+  // null) and stays unknown until an event without this flag.
+  unreachable?: boolean;
+  error?: string;
 }
 
 export interface EditorRepository {

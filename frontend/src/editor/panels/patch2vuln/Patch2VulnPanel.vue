@@ -77,6 +77,47 @@ const error = ref<string | null>(null);
 const editor = useEditorContext();
 
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
+
+// After the live stream's maximum lifetime, check now and then without
+// holding a server connection open in between.
+const SLOW_POLL_MS = 30_000;
+
+// When the job's status can't be retrieved (patch2vuln or the network is
+// down), the panel can't tell whether the job still runs: it shows the
+// status as unknown and keeps checking. After this long it also says the
+// job may have been lost.
+const LONG_OUTAGE_MS = 10 * 60_000;
+
+// Set while status checks fail; null once one succeeds again.
+const statusError = ref<{ message: string; since: number } | null>(null);
+const longOutage = ref(false);
+
+// The live stream reports an outage once, not per failed check, so the
+// 10-minute note needs its own timer.
+let longOutageTimer: ReturnType<typeof setTimeout> | undefined;
+
+function statusReceived(): void {
+  clearTimeout(longOutageTimer);
+  longOutageTimer = undefined;
+  statusError.value = null;
+  longOutage.value = false;
+}
+
+// The status can't be retrieved; keeps the time the outage began.
+function statusUnavailable(
+  message: string,
+): void {
+  const since = statusError.value?.since ?? Date.now();
+
+  statusError.value = { message, since };
+  longOutage.value = Date.now() - since >= LONG_OUTAGE_MS;
+
+  if (!longOutage.value && longOutageTimer === undefined) {
+    longOutageTimer = setTimeout(() => {
+      longOutage.value = true;
+    }, since + LONG_OUTAGE_MS - Date.now());
+  }
+}
 let mounted = false;
 let unsubscribeJobEvents: (() => void) | null = null;
 
@@ -204,6 +245,7 @@ async function refreshJob(jobId: string): Promise<void> {
 
     job.value = result;
     error.value = null;
+    statusReceived();
 
     // Normally this won't happen because the worker
     // publishes only after persisting the result.
@@ -255,6 +297,12 @@ function startWatchingJob(jobId: string): void {
 
       error.value = null;
 
+      if (event.unreachable) {
+        statusUnavailable(event.error ?? "Could not reach the Patch2Vuln service");
+      } else {
+        statusReceived();
+      }
+
       if (
         event.status === "completed" ||
         event.status === "failed" ||
@@ -275,11 +323,21 @@ function startWatchingJob(jobId: string): void {
         return;
       }
 
-      // job uses shallowRef(), so replace the object.
-      job.value = {
-        ...job.value,
-        status: event.status,
-      };
+      // job uses shallowRef(), so replace the object. A null status
+      // (expired before patch2vuln answered) keeps the last known one.
+      if (event.status) {
+        job.value = {
+          ...job.value,
+          status: event.status,
+          workerAvailable: event.workerAvailable,
+        };
+      }
+
+      if (event.expired) {
+        // Closing it stops the browser from reconnecting.
+        stopWatchingJob();
+        pollTimer = setTimeout(() => void pollJob(SLOW_POLL_MS), SLOW_POLL_MS);
+      }
     },
 
     () => {
@@ -295,7 +353,9 @@ function startWatchingJob(jobId: string): void {
 
 
 // Retrieve the current job status.
-async function pollJob(): Promise<void> {
+async function pollJob(
+  intervalMs = 2000,
+): Promise<void> {
   if (
     !job.value?.jobId ||
     !repository.value?.getPatch2VulnJob
@@ -314,22 +374,43 @@ async function pollJob(): Promise<void> {
     }
 
     job.value = result;
+    error.value = null;
+    statusReceived();
 
     if (
       result.status === "queued" ||
       result.status === "running"
     ) {
       pollTimer = setTimeout(
-        () => void pollJob(),
-        2000,
+        () => void pollJob(intervalMs),
+        intervalMs,
       );
     }
   } catch (err) {
-    if (mounted) {
-      error.value = err instanceof Error
-        ? err.message
-        : "Could not retrieve analysis status.";
+    if (!mounted || job.value?.jobId !== jobId) {
+      return;
     }
+
+    if ((err as { status?: number }).status === 404) {
+      // The job is gone (expired after 24 h, or deleted): nothing to wait for.
+      error.value = "This analysis is no longer available. Start a new one.";
+      job.value = { jobId, status: "failed" };
+      statusReceived();
+      return;
+    }
+
+    // Shown in the status line rather than as a separate error.
+    statusUnavailable(
+      err instanceof Error
+        ? err.message
+        : "Could not retrieve analysis status",
+    );
+
+    // Likely a passing outage: keep checking instead of going silent.
+    pollTimer = setTimeout(
+      () => void pollJob(intervalMs),
+      intervalMs,
+    );
   }
 }
 
@@ -347,6 +428,7 @@ async function submit(): Promise<void> {
   error.value = null;
   job.value = null;
   cancelRequested.value = false;
+  statusReceived();
 
   const urls = commitUrls.value
     .split("\n")
@@ -554,6 +636,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   mounted = false;
+  clearTimeout(longOutageTimer);
   //stopPolling();
   stopWatchingJob();
 });
@@ -746,7 +829,8 @@ onBeforeUnmount(() => {
         v-if="canCancel"
         type="button"
         class="btn btn-outline-danger ms-2"
-        :disabled="cancelRequested"
+        :disabled="cancelRequested || statusError !== null"
+        :title="statusError ? 'patch2vuln can\'t be reached right now' : undefined"
         @click="cancel"
       >
         {{ cancelRequested ? "Cancelling..." : "Cancel analysis" }}
@@ -767,16 +851,44 @@ onBeforeUnmount(() => {
 
         <h5>Analysis</h5>
 
-        <p>
+        <p v-if="statusError && isRunning">
+          Status:
+          <strong>unknown</strong>
+          <span class="text-secondary">
+            — {{ statusError.message }} (last known: {{ job.status }}). Retrying…
+          </span>
+        </p>
+
+        <p v-else>
           Status:
           <strong>{{ job.status }}</strong>
         </p>
 
         <div
-          v-if="isRunning"
+          v-if="isRunning && statusError && longOutage"
+          class="alert alert-warning"
+          role="status"
+        >
+          The analysis status couldn't be retrieved for 10 minutes. The
+          analysis may have been lost, for example if the patch2vuln server
+          restarted. You can keep waiting or start a new one.
+        </div>
+
+        <div
+          v-if="isRunning && !statusError"
           class="spinner-border spinner-border-sm"
           role="status"
         />
+
+        <div
+          v-if="isRunning && job.workerAvailable === false"
+          class="alert alert-warning mt-3"
+          role="status"
+        >
+          No analysis worker is running on the patch2vuln server, so this
+          job is waiting. It starts once a worker is back; you can also
+          cancel it.
+        </div>
 
         <div
           v-if="job.status === 'canceled'"

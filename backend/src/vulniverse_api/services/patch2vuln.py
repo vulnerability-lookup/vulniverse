@@ -25,6 +25,10 @@ REQUEST_TIMEOUT_SECONDS = 10
 TERMINAL_STATUSES = {"completed", "failed", "canceled"}
 POLL_INTERVAL_SECONDS = 2
 HEARTBEAT_INTERVAL_SECONDS = 15
+# An open stream holds one request thread. Past this it ends even if the
+# job hasn't (e.g. patch2vuln has no worker running), and the panel falls
+# back to occasional polling, so a stuck job can't pile up busy threads.
+STREAM_MAX_SECONDS = 600
 
 # patch2vuln's own job-status vocabulary, mapped to the one Vulniverse's
 # frontend already speaks (see contracts.ts's BackgroundJobStatus).
@@ -209,7 +213,16 @@ def get_job_status(job_id: str) -> dict[str, Any]:
 
     payload = response.json()
 
-    return {"status": STATUS_MAP.get(payload.get("status"), "failed")}
+    result: dict[str, Any] = {"status": STATUS_MAP.get(payload.get("status"), "failed")}
+
+    # patch2vuln reports this for queued/running jobs: false means no
+    # worker is processing its queue, so the job won't progress.
+    worker_available = payload.get("workerAvailable")
+
+    if isinstance(worker_available, bool):
+        result["workerAvailable"] = worker_available
+
+    return result
 
 
 def _drop_nulls(value: Any) -> Any:
@@ -321,9 +334,32 @@ def get_job_result(job_id: str) -> dict[str, Any]:
     }
 
 
-def _format_status_event(job_id: str, status: str) -> str:
-    payload = json.dumps({"jobId": job_id, "status": status})
-    return f"event: status\ndata: {payload}\n\n"
+def _format_status_event(
+    job_id: str,
+    status: str | None,
+    worker_available: bool | None = None,
+    *,
+    expired: bool = False,
+    unreachable: str | None = None,
+) -> str:
+    data: dict[str, Any] = {"jobId": job_id, "status": status}
+
+    if worker_available is not None:
+        data["workerAvailable"] = worker_available
+
+    if unreachable is not None:
+        # patch2vuln can't be asked right now; the status is the last one
+        # known and the client should show it as unknown until the next
+        # event without this flag.
+        data["unreachable"] = True
+        data["error"] = unreachable
+
+    if expired:
+        # The stream is ending although the job isn't finished; the
+        # client should poll from now on instead of reconnecting.
+        data["expired"] = True
+
+    return f"event: status\ndata: {json.dumps(data)}\n\n"
 
 
 def stream_job_status(token: str, job_id: str) -> Iterator[str]:
@@ -335,46 +371,77 @@ def stream_job_status(token: str, job_id: str) -> Iterator[str]:
     """
     yield "retry: 3000\n\n"
 
+    started = time.monotonic()
+
+    # (status, workerAvailable) last sent; None until patch2vuln answered.
+    last: tuple[str, bool | None] | None = None
+    # The error last reported as "unreachable"; None while patch2vuln answers.
+    unreachable: str | None = None
+
     try:
-        status = get_job_status(job_id)["status"]
-    except (RuntimeError, LookupError):
-        status = "failed"
+        state = get_job_status(job_id)
+    except LookupError:
+        state = {"status": "failed"}
+    except RuntimeError as exc:
+        # patch2vuln is unreachable right now. Not a reason to call the
+        # job failed: report the status as unknown and let the loop below
+        # retry, so the client keeps its last known status until the real one.
+        state = None
+        unreachable = str(exc)
+        yield _format_status_event(token, None, unreachable=unreachable)
 
-    yield _format_status_event(token, status)
+    if state is not None:
+        last = (state["status"], state.get("workerAvailable"))
 
-    if status in TERMINAL_STATUSES:
-        return
+        yield _format_status_event(token, *last)
 
-    last_status = status
+        if last[0] in TERMINAL_STATUSES:
+            return
+
     last_heartbeat = time.monotonic()
 
     while True:
         time.sleep(POLL_INTERVAL_SECONDS)
 
-        try:
-            status = get_job_status(job_id)["status"]
-        except LookupError:
-            status = "failed"
-        except RuntimeError:
-            # Transient — keep the connection open and retry on the next
-            # tick rather than tearing down the stream over a blip.
-            now = time.monotonic()
+        now = time.monotonic()
 
-            if now - last_heartbeat >= HEARTBEAT_INTERVAL_SECONDS:
+        if now - started >= STREAM_MAX_SECONDS:
+            # Status null: patch2vuln was never reached during this stream.
+            yield _format_status_event(
+                token, *(last or (None, None)), expired=True, unreachable=unreachable,
+            )
+            return
+
+        try:
+            state = get_job_status(job_id)
+        except LookupError:
+            state = {"status": "failed"}
+        except RuntimeError as exc:
+            # Transient — keep the connection open and retry on the next
+            # tick rather than tearing down the stream over a blip. Say so
+            # once, so the client stops presenting the status as current.
+            if unreachable is None:
+                unreachable = str(exc)
+                yield _format_status_event(token, *(last or (None, None)), unreachable=unreachable)
+                last_heartbeat = now
+            elif now - last_heartbeat >= HEARTBEAT_INTERVAL_SECONDS:
                 yield ": heartbeat\n\n"
                 last_heartbeat = now
 
             continue
 
-        now = time.monotonic()
+        current = (state["status"], state.get("workerAvailable"))
 
-        if status != last_status:
-            yield _format_status_event(token, status)
-            last_status = status
+        # Back in touch: an unchanged status still needs an event, to
+        # clear the client's "unreachable" state.
+        if current != last or unreachable is not None:
+            yield _format_status_event(token, *current)
+            last = current
+            unreachable = None
             last_heartbeat = now
         elif now - last_heartbeat >= HEARTBEAT_INTERVAL_SECONDS:
             yield ": heartbeat\n\n"
             last_heartbeat = now
 
-        if status in TERMINAL_STATUSES:
+        if current[0] in TERMINAL_STATUSES:
             return
