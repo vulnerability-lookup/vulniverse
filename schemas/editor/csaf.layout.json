@@ -1,0 +1,66 @@
+{
+  "sections": [
+    {
+      "id": "document",
+      "label": "Document",
+      "paths": [
+        "document.category",
+        "document.csaf_version",
+        "document.title",
+        "document.lang",
+        "document.source_lang",
+        "document.license_expression",
+        "document.aggregate_severity",
+        "document.notes",
+        "document.references",
+        "document.acknowledgments"
+      ]
+    },
+    {
+      "id": "publisher",
+      "label": "Publisher and tracking",
+      "paths": [
+        "document.publisher",
+        "document.tracking",
+        "document.distribution",
+        "document.involvement"
+      ]
+    },
+    {
+      "id": "product-tree",
+      "label": "Product tree",
+      "paths": [
+        "product_tree"
+      ]
+    },
+    {
+      "id": "vulnerabilities",
+      "label": "Vulnerabilities",
+      "paths": [
+        "vulnerabilities"
+      ]
+    },
+    {
+      "id": "extensions",
+      "label": "Extensions",
+      "paths": [
+        "x_extensions",
+        "document.x_extensions"
+      ]
+    }
+  ],
+  "hiddenPaths": [
+    "$schema"
+  ],
+  "controlOptions": {
+    "document.csaf_version": {
+      "readonly": true
+    },
+    "document.title": {
+      "wrap": true
+    },
+    "product_tree": {
+      "json": true
+    }
+  }
+}

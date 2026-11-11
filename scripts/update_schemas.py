@@ -15,7 +15,9 @@ Example:
         --gcve-ref main \
         --gcve-version 1.7 \
         --osv-ref v1.9.2 \
-        --osv-version 1.9.2
+        --osv-version 1.9.2 \
+        --csaf-ref csaf-2.1-cs-01-20261109-rc1 \
+        --csaf-version 2.1
 
 Older CVE versions may publish their bundled schema at another path:
 
@@ -64,6 +66,51 @@ OSV_REPOSITORY = "https://github.com/ossf/osv-schema.git"
 OSV_SCHEMA_SOURCE = Path("validation/schema.json")
 
 OSV_OUTPUT_FILENAME = "schema.json"
+
+
+CSAF_REPOSITORY = "https://github.com/oasis-tcs/csaf.git"
+
+CSAF_SCHEMA_SOURCE = Path("json_schema/csaf.json")
+
+# Everything a CSAF document's schema needs, relative to the repository's
+# csaf_<version>/ folder. Each file is vendored at the same relative path.
+CSAF_SCHEMA_FILES = (
+    "json_schema/csaf.json",
+    "json_schema/meta.json",
+    "json_schema/extension-content.json",
+    "json_schema/extension-metadata.json",
+    "json_schema/extension-metaschema.json",
+    "referenced_schema/first/cvss-v2.0.json",
+    "referenced_schema/first/cvss-v3.0.json",
+    "referenced_schema/first/cvss-v3.1.json",
+    "referenced_schema/first/cvss-v4.0.json",
+    "referenced_schema/first/meta.json",
+    "referenced_schema/certcc/DecisionPoint_2_0_0.schema.json",
+    "referenced_schema/certcc/SelectionList_2_0_0.schema.json",
+)
+
+
+def csaf_schema_resources(version: str) -> dict[str, str]:
+    """The URLs the CSAF schema refers to, mapped to the vendored file that
+    answers each. Explicit because FIRST's CVSS files don't state these URLs
+    as their $id (2.0 and 3.0 have none, 3.1 and 4.0 add a date query)."""
+    oasis = f"https://docs.oasis-open.org/csaf/csaf/v{version}/schema"
+
+    return {
+        f"{oasis}/meta.json": "json_schema/meta.json",
+        f"{oasis}/extension-content.json": "json_schema/extension-content.json",
+        f"{oasis}/extension-metadata.json": "json_schema/extension-metadata.json",
+        f"{oasis}/extension-metaschema.json": "json_schema/extension-metaschema.json",
+        "https://www.first.org/cvss/cvss-v2.0.json": "referenced_schema/first/cvss-v2.0.json",
+        "https://www.first.org/cvss/cvss-v3.0.json": "referenced_schema/first/cvss-v3.0.json",
+        "https://www.first.org/cvss/cvss-v3.1.json": "referenced_schema/first/cvss-v3.1.json",
+        "https://www.first.org/cvss/cvss-v4.0.json": "referenced_schema/first/cvss-v4.0.json",
+        "https://www.first.org/cvss/meta.json": "referenced_schema/first/meta.json",
+        "https://certcc.github.io/SSVC/data/schema/v2/DecisionPoint_2_0_0.schema.json":
+            "referenced_schema/certcc/DecisionPoint_2_0_0.schema.json",
+        "https://certcc.github.io/SSVC/data/schema/v2/SelectionList_2_0_0.schema.json":
+            "referenced_schema/certcc/SelectionList_2_0_0.schema.json",
+    }
 
 
 class UpdateError(ScriptError):
@@ -291,6 +338,23 @@ def validate_osv_schema(
         or not {"id", "modified", "affected"} <= properties.keys()
     ):
         raise UpdateError("The selected file does not look like the OSV schema.")
+
+
+def validate_csaf_schema(
+    schema: dict[str, Any],
+    version: str,
+) -> None:
+    schema_id = schema.get("$id")
+    document = schema.get("properties", {}).get("document", {})
+    declared = document.get("properties", {}).get("csaf_version", {}).get("const")
+
+    if not isinstance(schema_id, str) or not schema_id.endswith(f"/v{version}/schema/csaf.json"):
+        raise UpdateError(f"Unexpected CSAF schema identifier: {schema_id!r}")
+
+    if declared != version:
+        raise UpdateError(
+            f"The selected CSAF schema is for version {declared!r}, not {version!r}."
+        )
 
 
 def ensure_safe_version_label(
@@ -586,12 +650,42 @@ def update_osv_profile(
     }
 
 
+def update_csaf_profile(
+    profiles: dict[str, Any],
+    *,
+    profile_id: str,
+    version: str,
+) -> None:
+    existing = profiles.get(profile_id)
+
+    if not isinstance(existing, dict):
+        existing = {}
+
+    base = Path("upstream") / "csaf" / version
+
+    # No editor.variant: the CSAF schema has no root oneOf to pick from.
+    profiles[profile_id] = {
+        "editor": {"layout": "editor/csaf.layout.json"},
+        "identifier": {"strategy": "csaf"},
+        **existing,
+        "kind": "csaf",
+        "label": existing.get("label", f"CSAF {version}"),
+        "version": version,
+        "baseSchema": (base / CSAF_SCHEMA_SOURCE).as_posix(),
+        "schemaResources": {
+            url: (base / path).as_posix()
+            for url, path in csaf_schema_resources(version).items()
+        },
+    }
+
+
 def update_manifest(
     *,
     schema_root: Path,
     cve_version: str,
     gcve_version: str,
     osv_version: str,
+    csaf_version: str,
     dry_run: bool,
 ) -> None:
     manifest_path = schema_root / "manifest.json"
@@ -671,6 +765,16 @@ def update_manifest(
 
     current_profiles["osv"] = osv_profile_id
 
+    csaf_profile_id = f"csaf-{csaf_version}"
+
+    update_csaf_profile(
+        profiles,
+        profile_id=csaf_profile_id,
+        version=csaf_version,
+    )
+
+    current_profiles["csaf"] = csaf_profile_id
+
     if dry_run:
         console.info(f"Dry run: would update {manifest_path}")
         return
@@ -687,7 +791,7 @@ def parse_arguments() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(
         description=(
-            "Fetch the upstream CVE, GCVE and OSV schemas used by Vulniverse.")
+            "Fetch the upstream CVE, GCVE, OSV and CSAF schemas used by Vulniverse.")
     )
 
     parser.add_argument(
@@ -758,6 +862,26 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "--csaf-ref",
+        # CSAF 2.1 Committee Specification 01, release candidate 1: not an
+        # OASIS Standard yet, so pinned to the exact tag.
+        default="csaf-2.1-cs-01-20261109-rc1",
+        help=("oasis-tcs/csaf Git tag, branch, or commit."),
+    )
+
+    parser.add_argument(
+        "--csaf-version",
+        default="2.1",
+        help=("CSAF version (selects the repository's csaf_<version>/ folder)."),
+    )
+
+    parser.add_argument(
+        "--csaf-repository",
+        default=CSAF_REPOSITORY,
+        help=("Override the CSAF repository."),
+    )
+
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help=("Fetch and validate schemas without modifying the repository."),
@@ -782,6 +906,11 @@ def main() -> int:
     ensure_safe_version_label(
         args.osv_version,
         "--osv-version",
+    )
+
+    ensure_safe_version_label(
+        args.csaf_version,
+        "--csaf-version",
     )
 
     ensure_relative_source_path(
@@ -861,6 +990,21 @@ def main() -> int:
             schema_root / "upstream" / "osv" / args.osv_version / OSV_OUTPUT_FILENAME
         )
 
+        csaf_commit = fetch_repository(
+            args.csaf_repository,
+            args.csaf_ref,
+            temporary_root / "csaf",
+        )
+
+        csaf_source = temporary_root / "csaf" / f"csaf_{args.csaf_version}"
+
+        validate_csaf_schema(
+            load_json_object(csaf_source / CSAF_SCHEMA_SOURCE),
+            args.csaf_version,
+        )
+
+        csaf_destination = schema_root / "upstream" / "csaf" / args.csaf_version
+
         cve_destination = (
             schema_root / "upstream" / "cve" / args.cve_version / CVE_OUTPUT_FILENAME
         )
@@ -881,6 +1025,8 @@ def main() -> int:
 
             console.info(f"Dry run: would install {osv_destination}")
 
+            console.info(f"Dry run: would install {csaf_destination}/")
+
         else:
             copy_file_atomic(
                 cve_source,
@@ -897,11 +1043,18 @@ def main() -> int:
                 osv_destination,
             )
 
+            for relative in CSAF_SCHEMA_FILES:
+                copy_file_atomic(
+                    csaf_source / relative,
+                    csaf_destination / relative,
+                )
+
     update_manifest(
         schema_root=schema_root,
         cve_version=args.cve_version,
         gcve_version=args.gcve_version,
         osv_version=args.osv_version,
+        csaf_version=args.csaf_version,
         dry_run=args.dry_run,
     )
 
@@ -912,6 +1065,8 @@ def main() -> int:
     console.info(f"GCVE ref {args.gcve_ref!r} resolved to {gcve_commit}")
 
     console.info(f"OSV ref {args.osv_ref!r} resolved to {osv_commit}")
+
+    console.info(f"CSAF ref {args.csaf_ref!r} resolved to {csaf_commit}")
 
     return 0
 

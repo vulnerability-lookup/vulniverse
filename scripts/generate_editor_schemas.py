@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -290,28 +291,31 @@ def dereference(
     node: Any,
     root: JsonObject,
     active_refs: tuple[
-        str,
+        tuple[int, str],
         ...,
     ] = (),
+    resources: dict[str, JsonObject] | None = None,
+    in_resource: bool = False,
 ) -> Any:
     """
-    Resolve local $ref values for the generated authoring schema.
+    Resolve $ref values for the generated authoring schema.
 
-    External references and recursive local references remain unchanged.
+    Local references resolve against `root`. A reference to a URL listed in
+    `resources` (the manifest's "schemaResources", e.g. CSAF's CVSS schemas)
+    is inlined from that file, whose own local references then resolve
+    against it. Recursive references stay unchanged; other external
+    references are left as they are.
     """
+
+    def descend(value: Any, value_root: JsonObject = root, refs: tuple[tuple[int, str], ...] = active_refs,
+                inside: bool = in_resource) -> Any:
+        return dereference(value, value_root, refs, resources, inside)
 
     if isinstance(
         node,
         list,
     ):
-        return [
-            dereference(
-                item,
-                root,
-                active_refs,
-            )
-            for item in node
-        ]
+        return [descend(item) for item in node]
 
     if not isinstance(
         node,
@@ -321,62 +325,64 @@ def dereference(
 
     reference = node.get("$ref")
 
-    if isinstance(
+    if not isinstance(
         reference,
         str,
     ):
-        if not reference.startswith("#/"):
-            return {
-                key: dereference(
-                    value,
-                    root,
-                    active_refs,
-                )
-                for key, value in node.items()
-            }
+        return {key: descend(value) for key, value in node.items()}
 
-        if reference in active_refs:
-            return copy.deepcopy(node)
+    if reference.startswith("#/"):
+        target_root, pointer, inside = root, reference, in_resource
+    else:
+        url, _, fragment = reference.partition("#")
+        target = (resources or {}).get(url)
 
-        referenced_node = resolve_json_pointer(
-            root,
-            reference,
-        )
+        if target is None:
+            return {key: descend(value) for key, value in node.items()}
 
-        expanded = dereference(
-            referenced_node,
-            root,
-            active_refs + (reference,),
-        )
+        target_root, pointer, inside = target, f"#{fragment}" if fragment else "#", True
 
-        if not isinstance(
-            expanded,
-            dict,
-        ):
-            return expanded
+    # Keyed by file as well: two files may share a local pointer.
+    key = (id(target_root), pointer)
 
-        result = copy.deepcopy(expanded)
+    if key in active_refs:
+        if inside:
+            # Kept as-is it would resolve against the main schema instead.
+            raise GenerationError(f"Recursive reference inside a schema resource: {reference}")
 
-        for key, value in node.items():
-            if key == "$ref":
-                continue
+        return copy.deepcopy(node)
 
-            result[key] = dereference(
-                value,
-                root,
-                active_refs,
-            )
+    expanded = dereference(
+        resolve_json_pointer(target_root, pointer),
+        target_root,
+        active_refs + (key,),
+        resources,
+        inside,
+    )
 
-        return result
+    if not isinstance(
+        expanded,
+        dict,
+    ):
+        return expanded
 
-    return {
-        key: dereference(
-            value,
-            root,
-            active_refs,
-        )
-        for key, value in node.items()
-    }
+    result = copy.deepcopy(expanded)
+
+    if target_root is not root and pointer == "#":
+        # A whole schema file inlined: its own dialect and identity
+        # declarations would confuse the editor's validator, e.g. the
+        # draft-04 "id" of FIRST's CVSS 2.0/3.0 schemas.
+        for declaration in ("$schema", "$id", "id"):
+            if isinstance(result.get(declaration), str):
+                del result[declaration]
+
+    for name, value in node.items():
+        if name == "$ref":
+            continue
+
+        result[name] = descend(value)
+
+    return result
 
 
 def strip_nested_ids(
@@ -908,9 +914,15 @@ def create_authoring_schema(
     variant = editor_config.get("variant")
 
     if variant is None:
+        resources = {
+            url: load_json_object(schemas_root / path)
+            for url, path in (profile.get("schemaResources") or {}).items()
+        }
+
         expanded = dereference(
             official_schema,
             official_schema,
+            resources=resources,
         )
 
         if not isinstance(
@@ -919,9 +931,13 @@ def create_authoring_schema(
         ):
             raise GenerationError("Expanded root schema is not an object.")
 
-        # Every local $ref is inlined now.
-        expanded.pop("$defs", None)
-        expanded.pop("definitions", None)
+        # Every $ref is inlined now, except recursive ones (CSAF's product
+        # tree), which still need the definitions they point into.
+        serialized = json.dumps(expanded)
+
+        for container in ("$defs", "definitions"):
+            if f'"#/{container}/' not in serialized:
+                expanded.pop(container, None)
 
         authoring_schema = expanded
 

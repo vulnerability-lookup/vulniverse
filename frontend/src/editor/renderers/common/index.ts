@@ -44,6 +44,30 @@ import WrappingTextRenderer from
 const LONG_TEXT_MIN_LENGTH = 4096;
 
 
+// An object (or a choice of objects) built with allOf/oneOf/anyOf, reached
+// through the generated form: CSAF's cvss_v3 (CVSS 3.0 or 3.1) and cvss_v4.
+// JSON Forms generates a control for such an object that points back at the
+// object itself and renders it without end, so it is edited as JSON. Array
+// items and the custom renderers lay out their own fields and never get here.
+const isCompositeObjectControl = and(
+  uiTypeIs("Control"),
+
+  schemaMatches((schema) => {
+    const branches = schema.oneOf ?? schema.anyOf ?? [];
+
+    return Boolean(schema.oneOf || schema.anyOf || schema.allOf)
+      && (
+        schema.type === "object"
+        || (
+          schema.type === undefined
+          && branches.length > 0
+          && branches.every((branch) => branch.type === "object")
+        )
+      );
+  }),
+);
+
+
 // An object the schema says nothing about: no fields, no
 // composition, so a generated form would have nothing to show. The
 // layout option freeForm opts in an object that declares a few keys
@@ -53,6 +77,7 @@ const isFreeFormObjectControl = and(
 
   or(
     optionIs("freeForm", true),
+    optionIs("json", true),
 
     schemaMatches(
       (schema) => (
@@ -163,7 +188,10 @@ export const COMMON_RENDERERS:
       tester:
         rankWith(
           5,
-          isFreeFormObjectControl,
+          or(
+            isFreeFormObjectControl,
+            isCompositeObjectControl,
+          ),
         ),
     },
 

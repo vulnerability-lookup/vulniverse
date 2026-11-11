@@ -7,10 +7,12 @@ from collections.abc import Callable
 from functools import lru_cache
 from typing import Any
 
-from jsonschema import FormatChecker
+from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import ValidationError
 from jsonschema.protocols import Validator
 from jsonschema.validators import validator_for
+from referencing import Registry
+from referencing.jsonschema import DRAFT202012, specification_with
 
 from .profiles import SCHEMAS_ROOT, UnknownProfileError, resolve_profile
 
@@ -150,6 +152,33 @@ def apply_schema_overlay(
     raise ValueError(f"Unsupported schemaOverlay.applyTo value: {apply_to!r}")
 
 
+def schema_resources(profile: dict[str, Any]) -> Registry:
+    """The schemas a profile's base schema refers to by URL (manifest
+    "schemaResources": URL -> vendored file), so validation never fetches
+    anything. Each file keeps its own JSON Schema dialect; one declaring a
+    custom meta-schema (CSAF's, FIRST's CVSS 4.0) counts as 2020-12, which
+    those meta-schemas build on."""
+    resources = profile.get("schemaResources") or {}
+
+    if not isinstance(resources, dict):
+        raise TypeError("schemaResources must map URLs to schema files.")
+
+    loaded = []
+
+    for url, path in resources.items():
+        with (SCHEMAS_ROOT / path).open(encoding="utf-8") as schema_file:
+            contents = json.load(schema_file)
+
+        specification = specification_with(
+            contents.get("$schema", ""),
+            default=DRAFT202012,
+        ) if isinstance(contents, dict) else DRAFT202012
+
+        loaded.append((url, specification.create_resource(contents)))
+
+    return Registry().with_resources(loaded)
+
+
 @lru_cache(maxsize=8)
 def get_profile_validator(
     profile_id: str,
@@ -180,13 +209,15 @@ def get_profile_validator(
         profile,
     )
 
-    validator_class = validator_for(schema)
+    # A custom meta-schema (CSAF 2.1 declares its own) is 2020-12 based.
+    validator_class = validator_for(schema, default=Draft202012Validator)
 
     validator_class.check_schema(schema)
 
     return validator_class(
         schema,
         format_checker=FormatChecker(),
+        registry=schema_resources(profile),
     )
 
 

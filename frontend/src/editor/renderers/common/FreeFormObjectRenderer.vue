@@ -35,7 +35,8 @@ const props = defineProps({
  * valid JSON object (or an empty box, which unsets the field) is
  * written back, so a half-typed value never reaches the record.
  *
- * With the layout option freeForm, an object that does declare some
+ * The layout option json edits a structured object as a whole the same
+ * way. With the layout option freeForm, an object that does declare some
  * keys (database_specific.x_gcve, edited by the GCVE editor) uses this
  * too: the box then shows and edits only the other keys and keeps the
  * declared ones as they are.
@@ -51,9 +52,17 @@ const {
   controlWrapper,
 } = useVanillaControl(jsonForms);
 
-const declared = computed(
-  () => Object.keys(control.value.schema.properties ?? {}),
-);
+// With the layout option json, the whole object is edited as JSON (CSAF's
+// recursive product tree, which a generated form can't render).
+// So does a composite object (allOf/oneOf/anyOf), which has no form of its
+// own (see isCompositeObjectControl).
+const declared = computed(() => {
+  const schema = control.value.schema;
+
+  return appliedOptions.value.json || schema.allOf || schema.oneOf || schema.anyOf
+    ? []
+    : Object.keys(schema.properties ?? {});
+});
 
 function format(
   value: unknown,

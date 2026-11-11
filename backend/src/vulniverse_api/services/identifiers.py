@@ -52,6 +52,13 @@ def extract_osv_identifier(
     return value if isinstance(value, str) and value else None
 
 
+def extract_csaf_identifier(
+    document: dict[str, Any],
+) -> str | None:
+    value = ((document.get("document") or {}).get("tracking") or {}).get("id")
+    return value if isinstance(value, str) and value else None
+
+
 IDENTIFIER_STRATEGIES: dict[
     str,
     Callable[[dict[str, Any]], str | None],
@@ -59,6 +66,7 @@ IDENTIFIER_STRATEGIES: dict[
     "cve": extract_cve_identifier,
     "gcve": extract_gcve_identifier,
     "osv": extract_osv_identifier,
+    "csaf": extract_csaf_identifier,
 }
 
 

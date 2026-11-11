@@ -1,10 +1,36 @@
 {
   "currentProfiles": {
+    "csaf": "csaf-2.1",
     "cve": "cve-5.2.0",
     "gcve": "gcve-bcp-05-1.7",
     "osv": "osv-1.9.2"
   },
   "profiles": {
+    "csaf-2.1": {
+      "baseSchema": "upstream/csaf/2.1/json_schema/csaf.json",
+      "editor": {
+        "layout": "editor/csaf.layout.json"
+      },
+      "identifier": {
+        "strategy": "csaf"
+      },
+      "kind": "csaf",
+      "label": "CSAF 2.1",
+      "schemaResources": {
+        "https://certcc.github.io/SSVC/data/schema/v2/DecisionPoint_2_0_0.schema.json": "upstream/csaf/2.1/referenced_schema/certcc/DecisionPoint_2_0_0.schema.json",
+        "https://certcc.github.io/SSVC/data/schema/v2/SelectionList_2_0_0.schema.json": "upstream/csaf/2.1/referenced_schema/certcc/SelectionList_2_0_0.schema.json",
+        "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-content.json": "upstream/csaf/2.1/json_schema/extension-content.json",
+        "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-metadata.json": "upstream/csaf/2.1/json_schema/extension-metadata.json",
+        "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/extension-metaschema.json": "upstream/csaf/2.1/json_schema/extension-metaschema.json",
+        "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/meta.json": "upstream/csaf/2.1/json_schema/meta.json",
+        "https://www.first.org/cvss/cvss-v2.0.json": "upstream/csaf/2.1/referenced_schema/first/cvss-v2.0.json",
+        "https://www.first.org/cvss/cvss-v3.0.json": "upstream/csaf/2.1/referenced_schema/first/cvss-v3.0.json",
+        "https://www.first.org/cvss/cvss-v3.1.json": "upstream/csaf/2.1/referenced_schema/first/cvss-v3.1.json",
+        "https://www.first.org/cvss/cvss-v4.0.json": "upstream/csaf/2.1/referenced_schema/first/cvss-v4.0.json",
+        "https://www.first.org/cvss/meta.json": "upstream/csaf/2.1/referenced_schema/first/meta.json"
+      },
+      "version": "2.1"
+    },
     "cve-5.0": {
       "baseSchema": "upstream/cve/5.0/CVE_Record_Format_bundled.json",
       "kind": "cve",

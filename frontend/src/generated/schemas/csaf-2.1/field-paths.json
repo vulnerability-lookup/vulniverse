@@ -1,0 +1,1072 @@
+[
+  {
+    "path": "$schema",
+    "title": "JSON schema",
+    "type": "string"
+  },
+  {
+    "path": "document.acknowledgments[].organization",
+    "title": "Contributing organization",
+    "type": "string"
+  },
+  {
+    "path": "document.acknowledgments[].summary",
+    "title": "Summary of the acknowledgment",
+    "type": "string"
+  },
+  {
+    "path": "document.aggregate_severity.namespace",
+    "title": "Namespace of aggregate severity",
+    "type": "string"
+  },
+  {
+    "path": "document.aggregate_severity.text",
+    "title": "Text of aggregate severity",
+    "type": "string"
+  },
+  {
+    "path": "document.category",
+    "title": "Document category",
+    "type": "string"
+  },
+  {
+    "path": "document.csaf_version",
+    "title": "CSAF version",
+    "type": "string"
+  },
+  {
+    "path": "document.distribution.sharing_group.id",
+    "title": "Sharing Group ID",
+    "type": "string"
+  },
+  {
+    "path": "document.distribution.sharing_group.name",
+    "title": "Sharing Group Name",
+    "type": "string"
+  },
+  {
+    "path": "document.distribution.text",
+    "title": "Textual description",
+    "type": "string"
+  },
+  {
+    "path": "document.distribution.tlp.label",
+    "title": "Label of TLP",
+    "type": "string"
+  },
+  {
+    "path": "document.distribution.tlp.url",
+    "title": "URL of TLP version",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.actions[].action_id",
+    "title": "Action ID",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.actions[].category",
+    "title": "Action category",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.actions[].date",
+    "title": "Date of the action",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.actions[].summary",
+    "title": "Summary of the action",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.actions[].status",
+    "title": "Action status",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.entities[].category",
+    "title": "Entity category",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.entities[].contact.details",
+    "title": "Contact Details",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.entities[].contact.email",
+    "title": "Email",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.entities[].contact.public_openpgp_key_url",
+    "title": "Public OpenPGP Key URL",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.entities[].contact.url",
+    "title": "Contact URL",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.entities[].entity_id",
+    "title": "Entity ID",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.entities[].name",
+    "title": "Name of the entity",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.entity_groups[].entity_group_id",
+    "title": "Entity Group ID",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.entity_groups[].name",
+    "title": "Name of the entity group",
+    "type": "string"
+  },
+  {
+    "path": "document.involvement.entity_groups[].summary",
+    "title": "Summary of the entity group",
+    "type": "string"
+  },
+  {
+    "path": "document.lang",
+    "title": "Document language",
+    "type": "string"
+  },
+  {
+    "path": "document.license_expression",
+    "title": "License expression",
+    "type": "string"
+  },
+  {
+    "path": "document.notes[].audience",
+    "title": "Audience of note",
+    "type": "string"
+  },
+  {
+    "path": "document.notes[].category",
+    "title": "Note category",
+    "type": "string"
+  },
+  {
+    "path": "document.notes[].text",
+    "title": "Note content",
+    "type": "string"
+  },
+  {
+    "path": "document.notes[].title",
+    "title": "Title of note",
+    "type": "string"
+  },
+  {
+    "path": "document.publisher.category",
+    "title": "Category of publisher",
+    "type": "string"
+  },
+  {
+    "path": "document.publisher.contact.details",
+    "title": "Contact Details",
+    "type": "string"
+  },
+  {
+    "path": "document.publisher.contact.email",
+    "title": "Email",
+    "type": "string"
+  },
+  {
+    "path": "document.publisher.contact.public_openpgp_key_url",
+    "title": "Public OpenPGP Key URL",
+    "type": "string"
+  },
+  {
+    "path": "document.publisher.contact.url",
+    "title": "Contact URL",
+    "type": "string"
+  },
+  {
+    "path": "document.publisher.issuing_authority",
+    "title": "Issuing authority",
+    "type": "string"
+  },
+  {
+    "path": "document.publisher.name",
+    "title": "Name of publisher",
+    "type": "string"
+  },
+  {
+    "path": "document.publisher.namespace",
+    "title": "Namespace of publisher",
+    "type": "string"
+  },
+  {
+    "path": "document.references[].category",
+    "title": "Category of reference",
+    "type": "string"
+  },
+  {
+    "path": "document.references[].summary",
+    "title": "Summary of the reference",
+    "type": "string"
+  },
+  {
+    "path": "document.references[].url",
+    "title": "URL of reference",
+    "type": "string"
+  },
+  {
+    "path": "document.source_lang",
+    "title": "Source language",
+    "type": "string"
+  },
+  {
+    "path": "document.title",
+    "title": "Title of this document",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.current_release_date",
+    "title": "Current release date",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.generator.date",
+    "title": "Date of document generation",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.generator.engine.name",
+    "title": "Engine name",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.generator.engine.version",
+    "title": "Engine version",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.id",
+    "title": "Unique identifier for the document",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.initial_release_date",
+    "title": "Initial release date",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.revision_history[].date",
+    "title": "Date of the revision",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.revision_history[].legacy_version",
+    "title": "Legacy version of the revision",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.revision_history[].number",
+    "title": "Version",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.revision_history[].summary",
+    "title": "Summary of the revision",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.status",
+    "title": "Document status",
+    "type": "string"
+  },
+  {
+    "path": "document.tracking.version",
+    "title": "Version",
+    "type": "string"
+  },
+  {
+    "path": "document.x_extensions[].$schema",
+    "title": "CSAF Extension Schema",
+    "type": "string"
+  },
+  {
+    "path": "document.x_extensions[].category",
+    "title": "Extension Category",
+    "type": "string"
+  },
+  {
+    "path": "document.x_extensions[].critical",
+    "title": "Critical",
+    "type": "boolean"
+  },
+  {
+    "path": "product_tree.branches[].category",
+    "title": "Category of the branch",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].name",
+    "title": "Name of the branch",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.name",
+    "title": "Textual description of the product",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.product_id",
+    "title": "Reference token for product instance",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.product_identification_helper.cpe",
+    "title": "Common Platform Enumeration representation",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.product_identification_helper.hashes[].file_hashes[].algorithm",
+    "title": "Algorithm of the cryptographic hash",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.product_identification_helper.hashes[].file_hashes[].value",
+    "title": "Value of the cryptographic hash",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.product_identification_helper.hashes[].filename",
+    "title": "Filename",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.product_identification_helper.x_generic_uris[].namespace",
+    "title": "Namespace of the generic URI",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.product_identification_helper.x_generic_uris[].uri",
+    "title": "URI",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.x_extensions[].$schema",
+    "title": "CSAF Extension Schema",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.x_extensions[].category",
+    "title": "Extension Category",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.branches[].product.x_extensions[].critical",
+    "title": "Critical",
+    "type": "boolean"
+  },
+  {
+    "path": "product_tree.full_product_names[].name",
+    "title": "Textual description of the product",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.full_product_names[].product_id",
+    "title": "Reference token for product instance",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.full_product_names[].product_identification_helper.cpe",
+    "title": "Common Platform Enumeration representation",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.full_product_names[].product_identification_helper.hashes[].file_hashes[].algorithm",
+    "title": "Algorithm of the cryptographic hash",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.full_product_names[].product_identification_helper.hashes[].file_hashes[].value",
+    "title": "Value of the cryptographic hash",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.full_product_names[].product_identification_helper.hashes[].filename",
+    "title": "Filename",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.full_product_names[].product_identification_helper.x_generic_uris[].namespace",
+    "title": "Namespace of the generic URI",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.full_product_names[].product_identification_helper.x_generic_uris[].uri",
+    "title": "URI",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.full_product_names[].x_extensions[].$schema",
+    "title": "CSAF Extension Schema",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.full_product_names[].x_extensions[].category",
+    "title": "Extension Category",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.full_product_names[].x_extensions[].critical",
+    "title": "Critical",
+    "type": "boolean"
+  },
+  {
+    "path": "product_tree.product_groups[].group_id",
+    "title": "Reference token for product group instance",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_groups[].summary",
+    "title": "Summary of the product group",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].beginning_product_reference",
+    "title": "Beginning product reference",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.name",
+    "title": "Textual description of the product",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.product_id",
+    "title": "Reference token for product instance",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.product_identification_helper.cpe",
+    "title": "Common Platform Enumeration representation",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.product_identification_helper.hashes[].file_hashes[].algorithm",
+    "title": "Algorithm of the cryptographic hash",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.product_identification_helper.hashes[].file_hashes[].value",
+    "title": "Value of the cryptographic hash",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.product_identification_helper.hashes[].filename",
+    "title": "Filename",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.product_identification_helper.x_generic_uris[].namespace",
+    "title": "Namespace of the generic URI",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.product_identification_helper.x_generic_uris[].uri",
+    "title": "URI",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.x_extensions[].$schema",
+    "title": "CSAF Extension Schema",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.x_extensions[].category",
+    "title": "Extension Category",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].full_product_name.x_extensions[].critical",
+    "title": "Critical",
+    "type": "boolean"
+  },
+  {
+    "path": "product_tree.product_paths[].subpaths[].category",
+    "title": "Relationship category",
+    "type": "string"
+  },
+  {
+    "path": "product_tree.product_paths[].subpaths[].next_product_reference",
+    "title": "Next product reference",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].acknowledgments[].organization",
+    "title": "Contributing organization",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].acknowledgments[].summary",
+    "title": "Summary of the acknowledgment",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].cve",
+    "title": "CVE",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].cwes[].id",
+    "title": "Weakness ID",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].cwes[].name",
+    "title": "Weakness name",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].cwes[].version",
+    "title": "CWE version",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].disclosure_date",
+    "title": "Disclosure date",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].discovery_date",
+    "title": "Discovery date",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].dl_vuln_id",
+    "title": "Document-local Vuln ID",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].first_known_exploitation_dates[].date",
+    "title": "Date of the information",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].first_known_exploitation_dates[].exploitation_date",
+    "title": "Date of the exploitation",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].flags[].date",
+    "title": "Date of the flag",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].flags[].label",
+    "title": "Label of the flag",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].ids[].system_name",
+    "title": "System name",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].ids[].text",
+    "title": "Text",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.version",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.vectorString",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.accessVector",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.accessComplexity",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.authentication",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.confidentialityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.integrityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.availabilityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.baseScore",
+    "title": null,
+    "type": "number"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.exploitability",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.remediationLevel",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.reportConfidence",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.temporalScore",
+    "title": null,
+    "type": "number"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.collateralDamagePotential",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.targetDistribution",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.confidentialityRequirement",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.integrityRequirement",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.availabilityRequirement",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v2.environmentalScore",
+    "title": null,
+    "type": "number"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.Automatable",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.Recovery",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.Safety",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.attackComplexity",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.attackRequirements",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.attackVector",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.availabilityRequirement",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.confidentialityRequirement",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.exploitMaturity",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.integrityRequirement",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedAttackComplexity",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedAttackRequirements",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedAttackVector",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedPrivilegesRequired",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedSubAvailabilityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedSubConfidentialityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedSubIntegrityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedUserInteraction",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedVulnAvailabilityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedVulnConfidentialityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.modifiedVulnIntegrityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.privilegesRequired",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.providerUrgency",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.subAvailabilityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.subConfidentialityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.subIntegrityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.userInteraction",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.valueDensity",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.vectorString",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.version",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.vulnAvailabilityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.vulnConfidentialityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.vulnIntegrityImpact",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.cvss_v4.vulnerabilityResponseEffort",
+    "title": null,
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.epss.percentile",
+    "title": "Percentile",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.epss.probability",
+    "title": "Probability",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.epss.timestamp",
+    "title": "EPSS timestamp",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.qualitative_severity_rating",
+    "title": "Qualitative Severity Rating",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.timestamp",
+    "title": "Timestamp",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.schemaVersion",
+    "title": "Schemaversion",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.selections[].namespace",
+    "title": "Namespace",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.selections[].key",
+    "title": "Key",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.selections[].version",
+    "title": "Version",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.selections[].name",
+    "title": "Name",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.selections[].definition",
+    "title": "Definition",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.selections[].values[].name",
+    "title": "Name",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.selections[].values[].definition",
+    "title": "Definition",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.selections[].values[].key",
+    "title": "Key",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.decision_point_resources[].uri",
+    "title": "Uri",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.decision_point_resources[].summary",
+    "title": "Summary",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.references[].uri",
+    "title": "Uri",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.ssvc_v2.references[].summary",
+    "title": "Summary",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.x_extensions[].$schema",
+    "title": "CSAF Extension Schema",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.x_extensions[].category",
+    "title": "Extension Category",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].content.x_extensions[].critical",
+    "title": "Critical",
+    "type": "boolean"
+  },
+  {
+    "path": "vulnerabilities[].metrics[].source",
+    "title": "Source",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].notes[].audience",
+    "title": "Audience of note",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].notes[].category",
+    "title": "Note category",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].notes[].text",
+    "title": "Note content",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].notes[].title",
+    "title": "Title of note",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].references[].category",
+    "title": "Category of reference",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].references[].summary",
+    "title": "Summary of the reference",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].references[].url",
+    "title": "URL of reference",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].remediations[].category",
+    "title": "Category of the remediation",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].remediations[].date",
+    "title": "Date of the remediation",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].remediations[].details",
+    "title": "Details of the remediation",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].remediations[].restart_required.category",
+    "title": "Category of restart",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].remediations[].restart_required.details",
+    "title": "Additional restart information",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].remediations[].url",
+    "title": "URL to the remediation",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].threats[].category",
+    "title": "Category of the threat",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].threats[].date",
+    "title": "Date of the threat",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].threats[].details",
+    "title": "Details of the threat",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].title",
+    "title": "Title",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].x_extensions[].$schema",
+    "title": "CSAF Extension Schema",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].x_extensions[].category",
+    "title": "Extension Category",
+    "type": "string"
+  },
+  {
+    "path": "vulnerabilities[].x_extensions[].critical",
+    "title": "Critical",
+    "type": "boolean"
+  },
+  {
+    "path": "x_extensions[].$schema",
+    "title": "CSAF Extension Schema",
+    "type": "string"
+  },
+  {
+    "path": "x_extensions[].category",
+    "title": "Extension Category",
+    "type": "string"
+  },
+  {
+    "path": "x_extensions[].critical",
+    "title": "Critical",
+    "type": "boolean"
+  }
+]

@@ -1,0 +1,163 @@
+{
+  "type": "Categorization",
+  "elements": [
+    {
+      "type": "Category",
+      "id": "document",
+      "label": "Document",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/category",
+          "label": "Document category"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/csaf_version",
+          "label": "CSAF version",
+          "options": {
+            "readonly": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/title",
+          "label": "Title of this document",
+          "options": {
+            "wrap": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/lang",
+          "label": "Document language"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/source_lang",
+          "label": "Source language"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/license_expression",
+          "label": "License expression"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/aggregate_severity",
+          "label": "Aggregate severity"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/notes",
+          "label": "Document notes",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/references",
+          "label": "Document references",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/acknowledgments",
+          "label": "Document acknowledgments",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "publisher",
+      "label": "Publisher and tracking",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/publisher",
+          "label": "Publisher"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/tracking",
+          "label": "Tracking"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/distribution",
+          "label": "Rules for document sharing"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/involvement",
+          "label": "Involvement"
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "product-tree",
+      "label": "Product tree",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/product_tree",
+          "label": "Product tree",
+          "options": {
+            "json": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "vulnerabilities",
+      "label": "Vulnerabilities",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/vulnerabilities",
+          "label": "Vulnerabilities",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "extensions",
+      "label": "Extensions",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/x_extensions",
+          "label": "Root-level Extensions",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/document/properties/x_extensions",
+          "label": "Document-level Extensions",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        }
+      ]
+    }
+  ]
+}
