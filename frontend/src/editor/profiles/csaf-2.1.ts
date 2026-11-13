@@ -28,6 +28,9 @@ import type {
 import CsafReleaseDialog from
   "./CsafReleaseDialog.vue";
 
+import { CsafPreviewSection } from
+  "../sections/preview/csaf";
+
 import {
   isReleased,
   releaseCsaf,
@@ -161,6 +164,9 @@ export const csaf21Profile:
     ...COMMON_RENDERERS,
     ...CSAF_RENDERERS,
   ],
+
+  previewComponent:
+    markRaw(CsafPreviewSection),
 
   lifecycleTransitions: CSAF_TRANSITIONS,
 
