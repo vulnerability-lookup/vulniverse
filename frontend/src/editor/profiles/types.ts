@@ -10,6 +10,7 @@ import type {
 
 import type {
   EditorDocument,
+  LifecycleTransition,
 } from "../contracts";
 
 
@@ -20,16 +21,14 @@ export interface EditorFieldPath {
 }
 
 
+/**
+ * How the editor recognises and shows a rejected record. Rejecting is
+ * a LifecycleTransition of the profile (see lifecycleTransitions).
+ */
 export interface ProfileRejection {
   isRejected(
     document: EditorDocument,
   ): boolean;
-
-  reject(
-    document: EditorDocument,
-    reason: string,
-    rejectedAt?: string,
-  ): EditorDocument;
 
   editorComponent?: Component;
 }
@@ -59,6 +58,9 @@ export interface EditorProfileDefinition {
   previewComponent?: Component;
 
   rejection?: ProfileRejection;
+
+  /** Profile-specific lifecycle steps, e.g. Reject or a release. */
+  lifecycleTransitions?: LifecycleTransition[];
 
   features?: EditorProfileFeatures;
 }

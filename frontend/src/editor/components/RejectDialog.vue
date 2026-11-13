@@ -3,18 +3,29 @@ import {
   ref,
 } from "vue";
 
-const emit = defineEmits<{
-  submit: [
-    reason: string,
-  ];
-}>();
-
+/*
+ * The Reject transition's dialog (see TransitionDialog in contracts):
+ * open() resolves with the trimmed reason, or null when cancelled.
+ */
 const dialog = ref<HTMLDialogElement | null>(null);
 const reason = ref("");
 
-function open(): void {
+let resolve: ((value: string | null) => void) | null = null;
+
+function open(): Promise<string | null> {
   reason.value = "";
   dialog.value?.showModal();
+
+  return new Promise((done) => {
+    resolve = done;
+  });
+}
+
+// Every way of closing (Cancel, ×, Escape) ends here; a submit has
+// already resolved with the reason.
+function finish(value: string | null): void {
+  resolve?.(value);
+  resolve = null;
 }
 
 function close(): void {
@@ -28,7 +39,7 @@ function handleSubmit(): void {
     return;
   }
 
-  emit("submit", trimmed);
+  finish(trimmed);
   close();
 }
 
@@ -41,6 +52,7 @@ defineExpose({
   <dialog
     ref="dialog"
     class="editor-dialog"
+    @close="finish(null)"
   >
     <form @submit.prevent="handleSubmit">
       <div class="editor-dialog-header">

@@ -7,7 +7,6 @@ import type { LifecycleTransition } from "../contracts";
 
 defineProps<{
   canDelete: boolean;
-  canReject: boolean;
   identifier: string | null;
   vulnerabilityId: string | null;
   profile: string | null;
@@ -30,30 +29,24 @@ defineEmits<{
   transition: [
     transition: LifecycleTransition,
   ];
-  reject: [];
   delete: [];
   runAction: [
     id: string,
   ];
 }>();
 
-/*
- * Only the two built-in transitions (publish/revert) get a distinct
- * color — a host-supplied third transition falls back to a neutral
- * style rather than this guessing at what it means.
- */
+const TONE_CLASSES = {
+  success: "btn btn-sm btn-success",
+  warning: "btn btn-sm btn-outline-warning",
+  danger: "btn btn-sm btn-outline-danger",
+};
+
 function transitionButtonClass(
   transition: LifecycleTransition,
 ): string {
-  if (transition.id === "publish") {
-    return "btn btn-sm btn-success";
-  }
-
-  if (transition.id === "unpublish") {
-    return "btn btn-sm btn-outline-warning";
-  }
-
-  return "btn btn-sm btn-outline-primary";
+  return transition.tone
+    ? TONE_CLASSES[transition.tone]
+    : "btn btn-sm btn-outline-primary";
 }
 </script>
 
@@ -205,36 +198,6 @@ function transitionButtonClass(
             @click="$emit('runAction', action.id)"
           >
             {{ action.label }}
-          </button>
-        </template>
-
-        <template v-if="identifier && canReject && !isRejected">
-          <div
-            class="vr d-none d-md-block"
-            aria-hidden="true"
-          />
-
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-danger"
-            :disabled="loading"
-            @click="$emit('reject')"
-          >
-            <svg
-              class="editor-header-icon"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            ><circle cx="8" cy="8" r="6" /><line
-              x1="4"
-              y1="4"
-              x2="12"
-              y2="12"
-            /></svg>
-            Reject
           </button>
         </template>
 

@@ -1,5 +1,6 @@
 import {
   computed,
+  toRaw,
   watch,
 } from "vue";
 
@@ -12,7 +13,9 @@ import {
 } from "../contracts";
 
 import type {
+  EditorDocument,
   EditorRepository,
+  LifecycleTransition,
 } from "../contracts";
 
 import type {
@@ -93,14 +96,6 @@ export function useEditorController(
       activeProfile.value.rejection?.isRejected(
         state.record.value,
       ) ?? false
-    );
-  });
-
-  const canReject = computed(() => {
-    return Boolean(
-      state.record.value
-        && activeProfile.value.rejection
-        && !isRejected.value,
     );
   });
 
@@ -214,11 +209,16 @@ export function useEditorController(
     saveOptions: {
       silent?: boolean;
       notice?: string;
+      // Saved instead of the editor's document; it only replaces the
+      // editor's one if the save succeeds (see runTransition).
+      document?: EditorDocument;
     } = {},
   ): Promise<string | null> {
+    const document = saveOptions.document ?? state.record.value;
+
     if (
       !repository.value ||
-      !state.record.value
+      !document
     ) {
       return null;
     }
@@ -243,12 +243,12 @@ export function useEditorController(
      * vulnId yet.
      */
     const gcveVulnId = getGcveVulnId(
-      state.record.value as CveRecord,
+      document as CveRecord,
     );
 
     if (gcveVulnId) {
       const record =
-        state.record.value as CveRecord;
+        document as CveRecord;
 
       record.cveMetadata ??= {};
       record.cveMetadata.vulnId = gcveVulnId;
@@ -259,12 +259,12 @@ export function useEditorController(
         state.identifier.value
           ? await repository.value.updateRecord(
               state.identifier.value,
-              state.record.value,
+              document,
               currentProfile,
               isDraft,
             )
           : await repository.value.createRecord(
-              state.record.value,
+              document,
               currentProfile,
               isDraft,
             );
@@ -344,27 +344,29 @@ export function useEditorController(
     }
   }
 
-  async function reject(
-    reason: string,
+  /**
+   * A lifecycle step: save a copy of the document changed by the
+   * transition's apply() (if any), with its target draft state. The
+   * editor's document stays untouched until the save succeeds.
+   */
+  async function runTransition(
+    transition: LifecycleTransition,
+    input?: unknown,
   ): Promise<void> {
     if (!state.record.value) {
       return;
     }
 
-    const rejection = activeProfile.value.rejection;
-
-    if (!rejection) {
-      throw new Error(
-        `Profile ${activeProfile.value.id} does not support rejection.`,
-      );
-    }
-
-    state.record.value = rejection.reject(
-      state.record.value,
-      reason,
+    const document = transition.apply?.(
+      structuredClone(toRaw(state.record.value)),
+      input,
+      new Date().toISOString(),
     );
 
-    await save(false, { notice: "Record rejected." });
+    await save(transition.targetIsDraft, {
+      document,
+      notice: transition.notice,
+    });
   }
 
   watch(
@@ -392,13 +394,12 @@ export function useEditorController(
 
   return {
     isRejected,
-    canReject,
     canDelete,
 
     load,
     validate,
     save,
     remove,
-    reject,
+    runTransition,
   };
 }

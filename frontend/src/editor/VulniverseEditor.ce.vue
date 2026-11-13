@@ -1,15 +1,23 @@
 <script setup lang="ts">
 import {
+  nextTick,
   onMounted,
   provide,
   ref,
+  shallowRef,
   toRef,
+} from "vue";
+
+import type {
+  Component,
 } from "vue";
 
 import type {
   EditorAction,
   EditorPanel,
   EditorRepository,
+  LifecycleTransition,
+  TransitionDialog,
 } from "./contracts";
 
 import {
@@ -36,9 +44,6 @@ import EditorHeader from
 
 import EditorNavigation from
   "./components/EditorNavigation.vue";
-
-import RejectDialog from
-  "./components/RejectDialog.vue";
 
 import EditorNotifications from
   "./components/EditorNotifications.vue";
@@ -217,13 +222,32 @@ async function handleDelete(): Promise<void> {
   await controller.remove();
 }
 
-const rejectDialogRef =
-  ref<
-    InstanceType<typeof RejectDialog> | null
-  >(null);
+// The open transition's dialog, mounted only while it asks for input.
+const transitionDialog = shallowRef<Component | null>(null);
+const transitionDialogRef = ref<TransitionDialog | null>(null);
 
-function handleRejectClick(): void {
-  rejectDialogRef.value?.open();
+async function handleTransition(
+  transition: LifecycleTransition,
+): Promise<void> {
+  let input: unknown;
+
+  if (transition.dialog) {
+    transitionDialog.value = transition.dialog;
+    await nextTick();
+
+    try {
+      input = await transitionDialogRef.value?.open(extensions.context.value);
+    } finally {
+      transitionDialog.value = null;
+    }
+
+    // Cancelled: nothing changes.
+    if (input === null || input === undefined) {
+      return;
+    }
+  }
+
+  await controller.runTransition(transition, input);
 }
 
 onMounted(controller.load);
@@ -242,19 +266,18 @@ onMounted(controller.load);
       :actions="visibleActions"
       :lifecycle-transitions="visibleLifecycleTransitions"
       :can-delete="controller.canDelete.value"
-      :can-reject="controller.canReject.value"
       @reload="controller.load"
       @validate="controller.validate"
       @save="controller.save()"
-      @transition="(transition) => controller.save(transition.targetIsDraft)"
-      @reject="handleRejectClick"
+      @transition="handleTransition"
       @delete="handleDelete"
       @run-action="runAction"
     />
 
-    <RejectDialog
-      ref="rejectDialogRef"
-      @submit="controller.reject"
+    <component
+      :is="transitionDialog"
+      v-if="transitionDialog"
+      ref="transitionDialogRef"
     />
 
     <div

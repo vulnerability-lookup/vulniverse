@@ -23,7 +23,7 @@ import {
 } from "./errors";
 
 import {
-  DEFAULT_LIFECYCLE_TRANSITIONS,
+  resolveLifecycleTransitions,
 } from "./lifecycle";
 
 import {
@@ -211,9 +211,9 @@ export function useEditorExtensions(
 
   const visibleLifecycleTransitions =
     computed(() =>
-      (
-        repository.value?.lifecycleTransitions ??
-        DEFAULT_LIFECYCLE_TRANSITIONS
+      resolveLifecycleTransitions(
+        repository.value?.lifecycleTransitions,
+        activeProfile.value.lifecycleTransitions,
       ).filter(
         (transition) =>
           transition.isVisible?.(

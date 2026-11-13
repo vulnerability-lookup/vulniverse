@@ -443,18 +443,22 @@ export interface EditorRepository {
   ): () => void;
 
   /**
-   * Optional: which draft/publish-style buttons the editor header
-   * shows, and what each sets isDraft to when clicked. Absent means
-   * "use the standalone app's own default pair" (see
-   * editor/core/lifecycle.ts's DEFAULT_LIFECYCLE_TRANSITIONS); an
-   * explicit [] means this host has no such concept at all (e.g.
-   * vulnerability-lookup's CNA API persists immediately, with nowhere
-   * to store an incomplete draft) and the editor shows none of these
-   * buttons. Each entry's run cost is always the same —
-   * controller.save(targetIsDraft) — so unlike EditorAction there is
-   * no run() here, only what to call it with and when to show it.
+   * Optional: which lifecycle buttons (Publish, Revert to draft, a
+   * profile's Reject or Release, …) the editor header shows.
+   *
+   * - Absent: the default Publish/Revert pair plus the active
+   *   profile's own transitions (editor/core/lifecycle.ts).
+   * - An array: these instead of the default pair; the profile's own
+   *   transitions are still added. An explicit [] means this host has
+   *   no draft concept (e.g. vulnerability-lookup's CNA API persists
+   *   immediately, with nowhere to store an incomplete draft): no
+   *   Publish/Revert, but e.g. a CVE profile's Reject remains.
+   * - A function: receives the defaults plus the profile's transitions
+   *   and returns the list to use, to filter or extend them.
    */
-  lifecycleTransitions?: LifecycleTransition[];
+  lifecycleTransitions?:
+    | LifecycleTransition[]
+    | ((transitions: LifecycleTransition[]) => LifecycleTransition[]);
 
 }
 
@@ -465,6 +469,13 @@ export interface EditorContext {
   isDraft: boolean;
 }
 
+/**
+ * One lifecycle step: a header button that saves the record with
+ * isDraft set to targetIsDraft. A step may first ask for input (dialog)
+ * and change the document (apply); the changed document only replaces
+ * the editor's one once the save succeeded, so a step rejected by
+ * validation leaves the editor as it was.
+ */
 export interface LifecycleTransition {
   id: string;
   label: string;
@@ -477,6 +488,37 @@ export interface LifecycleTransition {
    * otherwise.
    */
   isVisible?(context: EditorContext): boolean;
+
+  /**
+   * Asks for the input apply() needs, e.g. a rejection reason. A
+   * component exposing TransitionDialog.open().
+   */
+  dialog?: Component;
+
+  /**
+   * The document to save: gets a copy of the current one, the dialog's
+   * input (undefined without a dialog) and one timestamp for every
+   * date the step sets. Must not have side effects.
+   */
+  apply?(
+    record: EditorDocument,
+    input: unknown,
+    now: string,
+  ): EditorDocument;
+
+  /** Shown after a successful save instead of the default notice. */
+  notice?: string;
+
+  /** Button style; defaults to a neutral outline button. */
+  tone?: "success" | "warning" | "danger";
+}
+
+/**
+ * What a LifecycleTransition's dialog component exposes: open() shows
+ * it and resolves with the input, or with null when cancelled.
+ */
+export interface TransitionDialog {
+  open(context: EditorContext): Promise<unknown>;
 }
 
 /**
