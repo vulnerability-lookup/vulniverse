@@ -19,6 +19,7 @@ import {
 
 import {
   BUILTIN_ACTIONS,
+  createConvertAction,
 } from "@/editor/actions";
 
 import {
@@ -35,14 +36,35 @@ const router = useRouter();
 const repository =
   new HttpRepository("/api/v1");
 
-const enabledActions = shallowRef(BUILTIN_ACTIONS);
+// Whether the open record has unsaved changes (from the editor).
+const unsaved = { changes: false };
+
+function handleDirtyChange(value: boolean): void {
+  unsaved.changes = value;
+}
+
+// Opens the converted record in this tab, so unsaved changes to the
+// source record would be lost: ask first.
+const PAGE_ACTIONS = [
+  ...BUILTIN_ACTIONS,
+  createConvertAction(
+    repository,
+    (identifier) => router.push(`/editor/${encodeURIComponent(identifier)}`),
+    () => !unsaved.changes || window.confirm(
+      "This record has unsaved changes. They are used for the conversion, "
+      + "but not saved here, and are lost when the new record opens. Continue?",
+    ),
+  ),
+];
+
+const enabledActions = shallowRef(PAGE_ACTIONS);
 const enabledPanels = shallowRef(BUILTIN_PANELS);
 
 onMounted(async () => {
   try {
     const capabilities = await repository.getCapabilities();
 
-    enabledActions.value = filterEnabled(BUILTIN_ACTIONS, capabilities.actions);
+    enabledActions.value = filterEnabled(PAGE_ACTIONS, capabilities.actions);
     enabledPanels.value = filterEnabled(BUILTIN_PANELS, capabilities.panels);
     repository.setFeatures(capabilities.features);
   } catch (error) {
@@ -104,6 +126,7 @@ function handleDeleted(
         :actions="enabledActions"
         :panels="enabledPanels"
         @loaded="handleLoaded"
+        @dirty-change="handleDirtyChange"
         @error="handleError"
         @deleted="handleDeleted"
       />

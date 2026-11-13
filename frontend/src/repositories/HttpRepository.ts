@@ -13,6 +13,7 @@ import type {
   CpeVendorSuggestion,
   CpeProductSuggestion,
   CpeSearchParams,
+  ConversionTarget,
   Patch2VulnJob,
   Patch2VulnInput,
   BackgroundJobEvent,
@@ -334,6 +335,25 @@ export class HttpRepository
         body: JSON.stringify({
           record,
           profile,
+        }),
+      },
+    );
+  }
+
+  async convertRecord(
+    record: EditorDocument,
+    profile: string,
+    target: ConversionTarget,
+    options: { ecosystem?: string } = {},
+  ): Promise<{ record: EditorDocument; profile: string }> {
+    return this.request<{ record: EditorDocument; profile: string }>(
+      `/convert/${target}`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          record,
+          profile,
+          ecosystem: options.ecosystem,
         }),
       },
     );

@@ -54,3 +54,5 @@ timeout_seconds = 300
 # Which header-button actions the standalone app shows, keyed by
 # EditorAction.id.
 "download-json" = true
+# On CVE/GCVE records: draft a CSAF 2.1 advisory or an OSV record from it.
+"convert" = true

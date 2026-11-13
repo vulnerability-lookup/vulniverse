@@ -18,3 +18,5 @@ export const BUILTIN_ACTIONS: EditorAction[] = [
 ];
 
 export { downloadJsonAction };
+
+export { createConvertAction } from "./convert";

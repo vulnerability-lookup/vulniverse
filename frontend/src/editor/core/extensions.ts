@@ -225,6 +225,7 @@ export function useEditorExtensions(
 
   async function runAction(
     actionId: string,
+    input?: unknown,
   ): Promise<void> {
     const action =
       actions.value.find(
@@ -245,6 +246,7 @@ export function useEditorExtensions(
     try {
       await action.run(
         context.value,
+        input,
       );
     } catch (error) {
       const normalized =

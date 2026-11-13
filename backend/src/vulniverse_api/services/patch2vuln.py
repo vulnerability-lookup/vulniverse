@@ -12,7 +12,7 @@ from typing import Any
 import httpx
 
 from ..app_config import CONFIG_PATH, SAMPLE_CONFIG_PATH
-from .csaf_mandatory.scores import cwe_release
+from .csaf_convert import CSAF_SCHEMA_URL, csaf_cwes
 
 JOBS_PATH = "/api/v1/jobs"
 
@@ -251,22 +251,6 @@ def _without_nulls(container: dict[str, Any], keep: str) -> dict[str, Any]:
     }
 
 
-CSAF_SCHEMA_URL = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json"
-
-
-def _csaf_cwes(cwe: dict[str, Any]) -> list[dict[str, Any]]:
-    """CSAF 2.0's single ``cwe`` as 2.1's ``cwes`` list, with the CWE
-    release whose name matches (2.1 requires it)."""
-    number = str(cwe.get("id", "")).removeprefix("CWE-")
-    name = cwe.get("name")
-
-    if not number.isdigit() or not isinstance(name, str):
-        return []
-
-    version = cwe_release(number, name)
-    return [{"id": f"CWE-{number}", "name": name, **({"version": version} if version else {})}]
-
-
 def csaf_from_patch2vuln(record: dict[str, Any]) -> dict[str, Any]:
     """patch2vuln's CSAF output as valid CSAF 2.1.
 
@@ -295,7 +279,7 @@ def csaf_from_patch2vuln(record: dict[str, Any]) -> dict[str, Any]:
             ]
 
         cwe = vulnerability.pop("cwe", None)
-        cwes = _csaf_cwes(cwe) if isinstance(cwe, dict) else []
+        cwes = csaf_cwes(cwe.get("id"), cwe.get("name")) if isinstance(cwe, dict) else []
         if cwes and "cwes" not in vulnerability:
             vulnerability["cwes"] = cwes
 

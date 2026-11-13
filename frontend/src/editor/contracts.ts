@@ -105,6 +105,8 @@ export interface LoadedRecord {
   isDraft: boolean;
 }
 
+export type ConversionTarget = "csaf" | "osv";
+
 export interface ValidationError {
   path: Array<string | number>;
   schemaPath: Array<string | number>;
@@ -319,6 +321,18 @@ export interface EditorRepository {
     record: EditorDocument,
     profile: string,
   ): Promise<ValidationResult>;
+
+  /**
+   * Optional: a CSAF 2.1 or OSV 1.9.2 draft built from a CVE/GCVE record
+   * (the "Convert to…" action). Converts only; nothing is saved. OSV
+   * uses `ecosystem` for products without a package URL.
+   */
+  convertRecord?(
+    record: EditorDocument,
+    profile: string,
+    target: ConversionTarget,
+    options?: { ecosystem?: string },
+  ): Promise<{ record: EditorDocument; profile: string }>;
 
   deleteRecord?(
     identifier: string,
@@ -546,7 +560,14 @@ export interface EditorAction {
    */
   isEnabled?(context: EditorContext): boolean;
 
-  run(context: EditorContext): Promise<void>;
+  /**
+   * Asks for the input run() needs before it runs, like a lifecycle
+   * transition's dialog (TransitionDialog: open() resolves with the
+   * input, or null when cancelled).
+   */
+  dialog?: Component;
+
+  run(context: EditorContext, input?: unknown): Promise<void>;
 }
 
 /**

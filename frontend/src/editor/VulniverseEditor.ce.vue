@@ -238,32 +238,48 @@ async function handleSave(): Promise<void> {
   await controller.save();
 }
 
-// The open transition's dialog, mounted only while it asks for input.
-const transitionDialog = shallowRef<Component | null>(null);
-const transitionDialogRef = ref<TransitionDialog | null>(null);
+// The open step's dialog (a lifecycle transition's or an action's),
+// mounted only while it asks for input.
+const stepDialog = shallowRef<Component | null>(null);
+const stepDialogRef = ref<TransitionDialog | null>(null);
+
+// The dialog's input, or null when it was cancelled.
+async function askInput(
+  dialog: Component,
+): Promise<unknown> {
+  stepDialog.value = dialog;
+  await nextTick();
+
+  try {
+    return (await stepDialogRef.value?.open(extensions.context.value)) ?? null;
+  } finally {
+    stepDialog.value = null;
+  }
+}
 
 async function handleTransition(
   transition: LifecycleTransition,
 ): Promise<void> {
-  let input: unknown;
+  const input = transition.dialog ? await askInput(transition.dialog) : undefined;
 
-  if (transition.dialog) {
-    transitionDialog.value = transition.dialog;
-    await nextTick();
-
-    try {
-      input = await transitionDialogRef.value?.open(extensions.context.value);
-    } finally {
-      transitionDialog.value = null;
-    }
-
-    // Cancelled: nothing changes.
-    if (input === null || input === undefined) {
-      return;
-    }
+  if (input === null) {
+    return;
   }
 
   await controller.runTransition(transition, input);
+}
+
+async function handleRunAction(
+  actionId: string,
+): Promise<void> {
+  const action = props.actions.find((candidate) => candidate.id === actionId);
+  const input = action?.dialog ? await askInput(action.dialog) : undefined;
+
+  if (input === null) {
+    return;
+  }
+
+  await runAction(actionId, input);
 }
 
 onMounted(controller.load);
@@ -287,13 +303,13 @@ onMounted(controller.load);
       @save="handleSave"
       @transition="handleTransition"
       @delete="handleDelete"
-      @run-action="runAction"
+      @run-action="handleRunAction"
     />
 
     <component
-      :is="transitionDialog"
-      v-if="transitionDialog"
-      ref="transitionDialogRef"
+      :is="stepDialog"
+      v-if="stepDialog"
+      ref="stepDialogRef"
     />
 
     <div
