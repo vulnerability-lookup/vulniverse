@@ -2482,7 +2482,8 @@
               "title": "Current release date",
               "description": "The date when the current revision of this document was released",
               "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "readOnly": true
             },
             "generator": {
               "title": "Document generator",
@@ -2550,7 +2551,8 @@
               "title": "Initial release date",
               "description": "The date when this document was first released to the specified target group.",
               "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "readOnly": true
             },
             "revision_history": {
               "title": "Revision history",
@@ -2571,7 +2573,8 @@
                     "title": "Date of the revision",
                     "description": "The date of the revision entry",
                     "type": "string",
-                    "format": "date-time"
+                    "format": "date-time",
+                    "readOnly": true
                   },
                   "legacy_version": {
                     "title": "Legacy version of the revision",
@@ -2590,7 +2593,8 @@
                       "0.9.0",
                       "1.4.3",
                       "2.40.0+21AF26D3"
-                    ]
+                    ],
+                    "readOnly": true
                   },
                   "summary": {
                     "title": "Summary of the revision",
@@ -2613,7 +2617,8 @@
                 "draft",
                 "final",
                 "interim"
-              ]
+              ],
+              "readOnly": true
             },
             "version": {
               "title": "Version",
@@ -2626,7 +2631,8 @@
                 "0.9.0",
                 "1.4.3",
                 "2.40.0+21AF26D3"
-              ]
+              ],
+              "readOnly": true
             }
           },
           "additionalProperties": false
@@ -7182,5 +7188,6 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$comment": "Editor-only: readOnly is an annotation, validation is unchanged. The version, status, release dates and revision numbers/dates change together through the CSAF Release/Update steps (frontend/src/editor/profiles/csaf-release.ts); revision summaries stay editable."
 }

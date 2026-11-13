@@ -55,6 +55,7 @@ import {
 
 import {
   DEFAULT_PROFILE_ID,
+  getEditorProfile,
 } from "./profiles";
 
 const props = withDefaults(
@@ -222,6 +223,21 @@ async function handleDelete(): Promise<void> {
   await controller.remove();
 }
 
+// A profile may warn before changed content is saved (CSAF: a released
+// version must not change). Lifecycle steps don't pass through here.
+async function handleSave(): Promise<void> {
+  const warning = state.dirty.value
+    ? getEditorProfile(state.profile.value ?? DEFAULT_PROFILE_ID)
+      .saveWarning?.(extensions.context.value)
+    : null;
+
+  if (warning && !window.confirm(`${warning}\n\nSave anyway?`)) {
+    return;
+  }
+
+  await controller.save();
+}
+
 // The open transition's dialog, mounted only while it asks for input.
 const transitionDialog = shallowRef<Component | null>(null);
 const transitionDialogRef = ref<TransitionDialog | null>(null);
@@ -268,7 +284,7 @@ onMounted(controller.load);
       :can-delete="controller.canDelete.value"
       @reload="controller.load"
       @validate="controller.validate"
-      @save="controller.save()"
+      @save="handleSave"
       @transition="handleTransition"
       @delete="handleDelete"
       @run-action="runAction"

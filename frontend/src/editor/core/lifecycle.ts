@@ -27,18 +27,23 @@ export const DEFAULT_LIFECYCLE_TRANSITIONS: LifecycleTransition[] = [
 
 /**
  * The transitions for a host and profile (see
- * EditorRepository.lifecycleTransitions). A host array replaces only
- * the default Publish/Revert pair: a host without drafts (`[]`) keeps
- * the profile's own steps such as Reject. The function form sees the
- * whole list and may change anything.
+ * EditorRepository.lifecycleTransitions). The profile's own steps come
+ * after the default Publish/Revert pair, or instead of it when the
+ * profile says so (replacesDefaults: e.g. CSAF's Release and Update).
+ * A host array replaces only that default pair: a host without drafts
+ * (`[]`) keeps the profile's own steps such as Reject. The function
+ * form sees the whole list and may change anything.
  */
 export function resolveLifecycleTransitions(
   host: EditorRepository["lifecycleTransitions"],
   profileTransitions: LifecycleTransition[] = [],
+  replacesDefaults = false,
 ): LifecycleTransition[] {
+  const defaults = replacesDefaults ? [] : DEFAULT_LIFECYCLE_TRANSITIONS;
+
   if (typeof host === "function") {
-    return host([...DEFAULT_LIFECYCLE_TRANSITIONS, ...profileTransitions]);
+    return host([...defaults, ...profileTransitions]);
   }
 
-  return [...(host ?? DEFAULT_LIFECYCLE_TRANSITIONS), ...profileTransitions];
+  return [...(host ?? defaults), ...profileTransitions];
 }

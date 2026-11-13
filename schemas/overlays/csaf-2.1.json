@@ -1,0 +1,25 @@
+{
+  "$comment": "Editor-only: readOnly is an annotation, validation is unchanged. The version, status, release dates and revision numbers/dates change together through the CSAF Release/Update steps (frontend/src/editor/profiles/csaf-release.ts); revision summaries stay editable.",
+  "properties": {
+    "document": {
+      "properties": {
+        "tracking": {
+          "properties": {
+            "status": { "readOnly": true },
+            "version": { "readOnly": true },
+            "initial_release_date": { "readOnly": true },
+            "current_release_date": { "readOnly": true },
+            "revision_history": {
+              "items": {
+                "properties": {
+                  "date": { "readOnly": true },
+                  "number": { "readOnly": true }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

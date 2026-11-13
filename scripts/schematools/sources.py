@@ -372,6 +372,11 @@ def csaf_profile(existing: JsonObject, versions: Mapping[str, str]) -> JsonObjec
         "identifier": {"strategy": "csaf"},
         # CSAF's mandatory tests (spec 6.1), backend/.../csaf_mandatory/.
         "semanticValidator": "csaf-2.1",
+        # Locks the fields the editor's Release/Update steps set.
+        "schemaOverlay": {
+            "path": f"overlays/{csaf_profile_id(version)}.json",
+            "applyTo": "root",
+        },
         **existing,
         "kind": "csaf",
         "label": existing.get("label", f"CSAF {version}"),

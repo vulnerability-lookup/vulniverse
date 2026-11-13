@@ -214,6 +214,7 @@ export function useEditorExtensions(
       resolveLifecycleTransitions(
         repository.value?.lifecycleTransitions,
         activeProfile.value.lifecycleTransitions,
+        activeProfile.value.replacesDefaultTransitions,
       ).filter(
         (transition) =>
           transition.isVisible?.(

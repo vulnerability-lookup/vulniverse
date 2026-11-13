@@ -24,6 +24,10 @@
       },
       "kind": "csaf",
       "label": "CSAF 2.1",
+      "schemaOverlay": {
+        "applyTo": "root",
+        "path": "overlays/csaf-2.1.json"
+      },
       "schemaResources": {
         "https://certcc.github.io/SSVC/data/schema/v2/DecisionPoint_2_0_0.schema.json": "upstream/csaf/2.1/referenced_schema/certcc/DecisionPoint_2_0_0.schema.json",
         "https://certcc.github.io/SSVC/data/schema/v2/SelectionList_2_0_0.schema.json": "upstream/csaf/2.1/referenced_schema/certcc/SelectionList_2_0_0.schema.json",

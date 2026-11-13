@@ -9,6 +9,7 @@ import type {
 } from "@jsonforms/core";
 
 import type {
+  EditorContext,
   EditorDocument,
   LifecycleTransition,
 } from "../contracts";
@@ -61,6 +62,19 @@ export interface EditorProfileDefinition {
 
   /** Profile-specific lifecycle steps, e.g. Reject or a release. */
   lifecycleTransitions?: LifecycleTransition[];
+
+  /**
+   * The profile's steps replace the default Publish/Revert pair, for a
+   * format whose own steps decide when a record is shared (CSAF).
+   */
+  replacesDefaultTransitions?: boolean;
+
+  /**
+   * A warning shown before a plain Save of changed content, or null.
+   * CSAF: a released version must not change; changes go through a
+   * new version.
+   */
+  saveWarning?(context: EditorContext): string | null;
 
   features?: EditorProfileFeatures;
 }

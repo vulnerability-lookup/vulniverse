@@ -1,3 +1,7 @@
+import {
+  markRaw,
+} from "vue";
+
 import type {
   JsonSchema,
   UISchemaElement,
@@ -18,6 +22,22 @@ import {
 } from "../renderers";
 
 import type {
+  LifecycleTransition,
+} from "../contracts";
+
+import CsafReleaseDialog from
+  "./CsafReleaseDialog.vue";
+
+import {
+  isReleased,
+  releaseCsaf,
+} from "./csaf-release";
+
+import type {
+  ReleaseInput,
+} from "./csaf-release";
+
+import type {
   EditorProfileDefinition,
 } from "./types";
 
@@ -25,6 +45,61 @@ import type {
 // CSAF 2.1 fixes the value: a document must name exactly this schema.
 const CSAF_SCHEMA_URL =
   "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json";
+
+
+/*
+ * CSAF's own steps replace Publish/Revert: a document is shared in
+ * Vulniverse as a draft or by releasing a version (csaf-release.ts).
+ * "Make private" only changes who can see it in Vulniverse. It comes
+ * right after the Share steps, so the visibility toggle keeps its place
+ * in the header and the release step always follows it.
+ */
+const CSAF_TRANSITIONS: LifecycleTransition[] = [
+  {
+    id: "csaf-share-draft",
+    label: "Share draft",
+    targetIsDraft: false,
+    tone: "success",
+    notice: "Draft shared.",
+    isVisible: (context) => context.isDraft && !isReleased(context.record),
+  },
+  {
+    id: "csaf-share",
+    label: "Share",
+    targetIsDraft: false,
+    tone: "success",
+    notice: "Advisory shared.",
+    isVisible: (context) => context.isDraft && isReleased(context.record),
+  },
+  {
+    id: "csaf-make-private",
+    label: "Make private",
+    targetIsDraft: true,
+    tone: "warning",
+    notice: "Advisory made private.",
+    isVisible: (context) => !context.isDraft,
+  },
+  {
+    id: "csaf-release",
+    label: "Release…",
+    targetIsDraft: false,
+    tone: "success",
+    notice: "Advisory released.",
+    isVisible: (context) => !isReleased(context.record),
+    dialog: markRaw(CsafReleaseDialog),
+    apply: (record, input, now) => releaseCsaf(record, input as ReleaseInput, now),
+  },
+  {
+    id: "csaf-update",
+    label: "Update…",
+    targetIsDraft: false,
+    tone: "success",
+    notice: "New version released.",
+    isVisible: (context) => isReleased(context.record),
+    dialog: markRaw(CsafReleaseDialog),
+    apply: (record, input, now) => releaseCsaf(record, input as ReleaseInput, now),
+  },
+];
 
 
 export const csaf21Profile:
@@ -86,4 +161,17 @@ export const csaf21Profile:
     ...COMMON_RENDERERS,
     ...CSAF_RENDERERS,
   ],
+
+  lifecycleTransitions: CSAF_TRANSITIONS,
+
+  replacesDefaultTransitions: true,
+
+  // A released version must not change (spec 3.1.19, rule 2); Save is
+  // still allowed, e.g. for a typo, after this warning.
+  saveWarning: (context) => (
+    !context.isDraft && isReleased(context.record)
+      ? "This advisory is released. The CSAF rules say a released version "
+        + "must not change: changes go into a new version with Update…."
+      : null
+  ),
 };
