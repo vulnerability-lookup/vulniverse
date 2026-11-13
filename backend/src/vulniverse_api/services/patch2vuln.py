@@ -12,6 +12,7 @@ from typing import Any
 import httpx
 
 from ..app_config import CONFIG_PATH, SAMPLE_CONFIG_PATH
+from .csaf_mandatory.scores import cwe_release
 
 JOBS_PATH = "/api/v1/jobs"
 
@@ -250,6 +251,57 @@ def _without_nulls(container: dict[str, Any], keep: str) -> dict[str, Any]:
     }
 
 
+CSAF_SCHEMA_URL = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json"
+
+
+def _csaf_cwes(cwe: dict[str, Any]) -> list[dict[str, Any]]:
+    """CSAF 2.0's single ``cwe`` as 2.1's ``cwes`` list, with the CWE
+    release whose name matches (2.1 requires it)."""
+    number = str(cwe.get("id", "")).removeprefix("CWE-")
+    name = cwe.get("name")
+
+    if not number.isdigit() or not isinstance(name, str):
+        return []
+
+    version = cwe_release(number, name)
+    return [{"id": f"CWE-{number}", "name": name, **({"version": version} if version else {})}]
+
+
+def csaf_from_patch2vuln(record: dict[str, Any]) -> dict[str, Any]:
+    """patch2vuln's CSAF output as valid CSAF 2.1.
+
+    It is labelled 2.1 but still uses CSAF 2.0's ``$schema`` URL, the
+    single ``cwe`` and ``scores`` (2.1: ``cwes`` and ``metrics`` with the
+    scores in ``content``). Nulls are dropped like for CVE and OSV.
+    """
+    csaf = _drop_nulls(record)
+    csaf["$schema"] = CSAF_SCHEMA_URL
+
+    for vulnerability in csaf.get("vulnerabilities") or []:
+        if not isinstance(vulnerability, dict):
+            continue
+
+        scores = vulnerability.pop("scores", None)
+        if isinstance(scores, list) and "metrics" not in vulnerability:
+            vulnerability["metrics"] = [
+                {
+                    "content": {
+                        key: value for key, value in score.items() if key != "products"
+                    },
+                    "products": score.get("products", []),
+                }
+                for score in scores
+                if isinstance(score, dict)
+            ]
+
+        cwe = vulnerability.pop("cwe", None)
+        cwes = _csaf_cwes(cwe) if isinstance(cwe, dict) else []
+        if cwes and "cwes" not in vulnerability:
+            vulnerability["cwes"] = cwes
+
+    return csaf
+
+
 def cancel_job(job_id: str) -> dict[str, Any]:
     """Ask patch2vuln to cancel a job. Returns {"status": ...}: a queued
     job is "canceled" at once, a running one stays "running" until its
@@ -322,14 +374,16 @@ def get_job_result(job_id: str) -> dict[str, Any]:
 
     record["containers"]["cna"] = _without_nulls(record["containers"]["cna"], "x_gcve")
 
-    # Every response carries an OSV rendering of the same analysis, used
-    # by the panel for OSV records. Missing or malformed is not fatal,
-    # since CVE records don't need it.
+    # Every response also carries OSV and CSAF renderings of the same
+    # analysis, used by the panel for OSV and CSAF records. Missing or
+    # malformed is not fatal, since CVE records don't need them.
     osv = records.get("osv")
+    csaf = records.get("csaf")
 
     return {
         "record": record,
         "osv": _without_nulls(osv, "database_specific") if isinstance(osv, dict) else None,
+        "csaf": csaf_from_patch2vuln(csaf) if isinstance(csaf, dict) else None,
         "analysis": records.get("analysis"),
     }
 

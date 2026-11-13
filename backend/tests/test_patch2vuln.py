@@ -385,6 +385,7 @@ def test_get_job_result_reshapes_response(
     assert patch2vuln.get_job_result("job-123") == {
         "record": VALID_CVE_RECORD,
         "osv": None,
+        "csaf": None,
         "analysis": {"summary": "ok"},
     }
 

@@ -1,0 +1,158 @@
+{
+  "$schema": "https://docs.oasis-open.org/csaf/csaf/v2.1/csaf_json_schema.json",
+  "document": {
+    "category": "csaf_security_advisory",
+    "csaf_version": "2.1",
+    "distribution": {
+      "tlp": {
+        "label": "CLEAR"
+      }
+    },
+    "lang": "en",
+    "notes": [
+      {
+        "category": "summary",
+        "title": "Executive summary",
+        "text": "The comment form in Example Widget does not escape user input, allowing stored cross-site scripting."
+      }
+    ],
+    "publisher": {
+      "category": "other",
+      "name": "GCVE GNA 1",
+      "namespace": "urn:uuid:5e1d6a49-0a5b-4b77-9a5e-2f1b5c3c7a10"
+    },
+    "title": "Stored XSS in Example Widget comment form",
+    "tracking": {
+      "current_release_date": "2026-11-13T10:00:00.123456Z",
+      "id": "GCVE-1-2026-UNASSIGNED",
+      "initial_release_date": "2026-11-13T10:00:00.123456Z",
+      "revision_history": [
+        {
+          "date": "2026-11-13T10:00:00.123456Z",
+          "number": "1",
+          "summary": "Initial draft"
+        }
+      ],
+      "status": "draft",
+      "version": "1"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "Example",
+        "branches": [
+          {
+            "category": "product_name",
+            "name": "Widget",
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "1.2.0",
+                "product": {
+                  "name": "Example Widget 1.2.0",
+                  "product_id": "CSAFPID-0001"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "1.3.0",
+                "product": {
+                  "name": "Example Widget 1.3.0",
+                  "product_id": "CSAFPID-0002"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "ids": [
+        {
+          "system_name": "GCVE",
+          "text": "GCVE-1-2026-UNASSIGNED"
+        }
+      ],
+      "notes": [
+        {
+          "category": "description",
+          "title": "Vulnerability description",
+          "text": "The comment form in Example Widget does not escape user input, allowing stored cross-site scripting."
+        },
+        {
+          "category": "other",
+          "title": "SSVC v2.1 Supplier assessment",
+          "text": "{\"options\": [{\"Exploitation\": \"none\"}, {\"Automatable\": \"no\"}, {\"Technical Impact\": \"partial\"}], \"role\": \"Supplier\", \"timestamp\": \"2026-11-13T10:00:00Z\", \"version\": \"2.0.3\"}"
+        },
+        {
+          "category": "other",
+          "title": "GCVE BCP-05-X-03 vulnerability timeline",
+          "text": "{\"x_timeline\": {\"events\": [{\"id\": \"evt-fix\", \"type\": \"fix-available\", \"timestamp\": \"2026-11-10T08:00:00Z\"}]}}"
+        }
+      ],
+      "product_status": {
+        "known_affected": [
+          "CSAFPID-0001",
+          "CSAFPID-0002"
+        ]
+      },
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Escape comment text before rendering it.",
+          "product_ids": [
+            "CSAFPID-0001",
+            "CSAFPID-0002"
+          ]
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v4": {
+            "version": "4.0",
+            "vectorString": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:N/VI:N/VA:N/SC:L/SI:L/SA:N",
+            "baseScore": 5.3,
+            "baseSeverity": "MEDIUM",
+            "attackVector": "NETWORK",
+            "attackComplexity": "LOW",
+            "attackRequirements": "NONE",
+            "privilegesRequired": "NONE",
+            "userInteraction": "PASSIVE",
+            "vulnConfidentialityImpact": "NONE",
+            "vulnIntegrityImpact": "NONE",
+            "vulnAvailabilityImpact": "NONE",
+            "subConfidentialityImpact": "LOW",
+            "subIntegrityImpact": "LOW",
+            "subAvailabilityImpact": "NONE",
+            "Safety": "NOT_DEFINED",
+            "Automatable": "NOT_DEFINED",
+            "Recovery": "NOT_DEFINED",
+            "valueDensity": "NOT_DEFINED",
+            "vulnerabilityResponseEffort": "NOT_DEFINED",
+            "providerUrgency": "NOT_DEFINED"
+          },
+          "products": [
+            "CSAFPID-0001",
+            "CSAFPID-0002"
+          ]
+        }
+      ],
+      "title": "Stored XSS in Example Widget comment form",
+      "references": [
+        {
+          "category": "external",
+          "summary": "Fix commit",
+          "url": "https://github.com/example/widget/commit/0123456789abcdef0123456789abcdef01234567"
+        }
+      ],
+      "cwe": {
+        "id": 79,
+        "name": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"
+      }
+    }
+  ]
+}

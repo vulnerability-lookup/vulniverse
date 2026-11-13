@@ -56,3 +56,16 @@ describe("ajvForSchema", () => {
     }));
   });
 });
+
+describe("multipleOf", () => {
+  it("accepts every CVSS score despite floating-point division", () => {
+    // FIRST's CVSS 4.0 schema: baseScore multipleOf 0.1; 5.3 / 0.1 is 52.999… in JS.
+    for (const ajv of [editorAjv, editorAjv2020]) {
+      const validate = ajv.compile({ type: "number", multipleOf: 0.1 });
+      const rejected = Array.from({ length: 101 }, (_, i) => i / 10).filter((score) => !validate(score));
+
+      expect(rejected).toEqual([]);
+      expect(validate(5.35)).toBe(false);
+    }
+  });
+});

@@ -3,11 +3,12 @@ from __future__ import annotations
 import copy
 import json
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from decimal import Decimal
 from functools import lru_cache
-from typing import Any
+from typing import Any, cast
 
-from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema import Draft202012Validator, FormatChecker, validators
 from jsonschema.exceptions import ValidationError
 from jsonschema.protocols import Validator
 from jsonschema.validators import validator_for
@@ -180,6 +181,36 @@ def schema_resources(profile: dict[str, Any]) -> Registry:
     return Registry().with_resources(loaded)
 
 
+def _decimal_multiple_of(
+    validator: Validator,
+    multiple: Any,
+    instance: Any,
+    schema: dict[str, Any],
+) -> Iterator[ValidationError]:
+    """multipleOf without floating-point error. jsonschema divides floats,
+    so 5.3 / 0.1 = 52.99999… and a third of all valid CVSS 4.0 scores
+    (FIRST's schema: multipleOf 0.1) would be rejected."""
+    if isinstance(instance, bool) or not validator.is_type(instance, "number"):
+        return
+
+    if Decimal(str(instance)) % Decimal(str(multiple)) != 0:
+        yield ValidationError(f"{instance!r} is not a multiple of {multiple}")
+
+
+@lru_cache(maxsize=8)
+def _exact_validator_class(base: type[Validator]) -> type[Validator]:
+    return cast(
+        "type[Validator]",
+        validators.extend(base, {"multipleOf": _decimal_multiple_of}),
+    )
+
+
+def validator_class_for(schema: dict[str, Any]) -> type[Validator]:
+    """The validator for a schema's dialect (2020-12 for a custom
+    meta-schema, as CSAF 2.1 declares), with exact multipleOf."""
+    return _exact_validator_class(validator_for(schema, default=Draft202012Validator))
+
+
 @lru_cache(maxsize=8)
 def get_profile_validator(
     profile_id: str,
@@ -210,8 +241,7 @@ def get_profile_validator(
         profile,
     )
 
-    # A custom meta-schema (CSAF 2.1 declares its own) is 2020-12 based.
-    validator_class = validator_for(schema, default=Draft202012Validator)
+    validator_class = validator_class_for(schema)
 
     validator_class.check_schema(schema)
 

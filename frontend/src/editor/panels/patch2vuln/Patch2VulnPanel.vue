@@ -54,8 +54,10 @@ const fixedVersion = ref("");
 const versionType = ref("");
 const packageUrl = ref("");
 
-// OSV records apply patch2vuln's OSV output instead of its CVE record.
+// OSV and CSAF records apply patch2vuln's OSV or CSAF output instead of
+// its CVE record.
 const isOsv = computed(() => props.context.profile.startsWith("osv-"));
+const isCsaf = computed(() => props.context.profile.startsWith("csaf-"));
 
 function firstEcosystem(record: EditorDocument): string {
   const affected = (record as { affected?: { package?: { ecosystem?: unknown } }[] }).affected;
@@ -137,7 +139,9 @@ const generatedRecord = computed(
     ? undefined
     : isOsv.value
       ? job.value.result?.osv ?? undefined
-      : job.value.result?.record,
+      : isCsaf.value
+        ? job.value.result?.csaf ?? undefined
+        : job.value.result?.record,
 );
 
 
@@ -178,8 +182,18 @@ const OSV_FIELDS = [
   { id: "database_specific", label: "Database specific (CWE, CAPEC, SSVC, GCVE)" },
 ] as const;
 
+// CSAF parts. tracking, publisher, distribution, category and lang are
+// never offered: they belong to this advisory (and patch2vuln only has
+// placeholders for them). The product tree and the vulnerabilities go
+// together, since the vulnerabilities refer to the tree's product IDs.
+const CSAF_FIELDS = [
+  { id: "title", label: "Title" },
+  { id: "notes", label: "Document notes (summary)" },
+  { id: "products", label: "Product tree and vulnerabilities (replaces both)" },
+] as const;
+
 const fields = computed<readonly { id: string; label: string }[]>(
-  () => isOsv.value ? OSV_FIELDS : CVE_FIELDS,
+  () => isOsv.value ? OSV_FIELDS : isCsaf.value ? CSAF_FIELDS : CVE_FIELDS,
 );
 
 const PROTECTED_FIELDS = new Set([
@@ -598,9 +612,54 @@ function applyOsvFields(): number | null {
 }
 
 
+// Copies the selected parts of patch2vuln's CSAF advisory.
+function applyCsafFields(): number | null {
+  const generated = generatedRecord.value as Record<string, any> | undefined; // eslint-disable-line @typescript-eslint/no-explicit-any -- JSON document
+
+  if (!generated) {
+    error.value = "No generated CSAF advisory available.";
+    return null;
+  }
+
+  const target = props.context.record as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- JSON document
+  const copy = (value: unknown) => JSON.parse(JSON.stringify(value));
+
+  let count = 0;
+
+  for (const field of selectedFields.value) {
+    if (field === "products") {
+      if (generated.product_tree === undefined && generated.vulnerabilities === undefined) {
+        continue;
+      }
+
+      target.product_tree = copy(generated.product_tree ?? {});
+      target.vulnerabilities = copy(generated.vulnerabilities ?? []);
+      count++;
+      continue;
+    }
+
+    const value = generated.document?.[field];
+
+    if (value === undefined) {
+      continue;
+    }
+
+    target.document ??= {};
+    target.document[field] = copy(value);
+    count++;
+  }
+
+  return count;
+}
+
+
 // Apply selected generated fields to the live editor record.
 function applyResult(): void {
-  const count = isOsv.value ? applyOsvFields() : applyCveFields();
+  const count = isOsv.value
+    ? applyOsvFields()
+    : isCsaf.value
+      ? applyCsafFields()
+      : applyCveFields();
 
   if (count === null) {
     return;

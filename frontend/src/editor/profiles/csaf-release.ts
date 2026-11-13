@@ -115,6 +115,23 @@ export function nextVersion(
 }
 
 
+/**
+ * The version a release gets. A draft may already carry the number it
+ * will be released as (integer versioning: "draft of 1", as patch2vuln
+ * writes); its first release keeps that number.
+ */
+export function releaseVersion(
+  document: EditorDocument,
+  kind: ReleaseKind,
+): string {
+  const version = currentVersion(document);
+
+  return kind === "initial" && version && !isDraftVersion(version)
+    ? version
+    : nextVersion(version, kind);
+}
+
+
 /** The released document; `now` is an RFC 3339 instant. */
 export function releaseCsaf(
   document: EditorDocument,
@@ -126,14 +143,19 @@ export function releaseCsaf(
   const root = asObject(document);
   const meta = asObject(root.document);
   const current = tracking(document);
-  const version = nextVersion(currentVersion(document), input.kind);
+  const version = releaseVersion(document, input.kind);
 
   const history = Array.isArray(current.revision_history)
     ? current.revision_history
     : [];
 
+  // A first release replaces the draft entries, including one that
+  // already carries the released number.
   const kept = input.kind === "initial"
-    ? history.filter((entry) => !isDraftVersion(asObject(entry).number))
+    ? history.filter((entry) => {
+      const number = asObject(entry).number;
+      return !isDraftVersion(number) && number !== version;
+    })
     : history;
 
   return {

@@ -17,9 +17,8 @@ from cvss import (
     constants2,
     constants3,
 )
-from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema import FormatChecker
 from jsonschema.protocols import Validator
-from jsonschema.validators import validator_for
 
 from .core import Issue, get, mandatory, select, strings
 from .metadata import language_problem
@@ -54,12 +53,13 @@ def _validator(url: str) -> Validator:
     """A validator for one referenced schema, from the profile's vendored files."""
     # Imported here: record_validation imports this package.
     from ..profiles import resolve_profile
-    from ..record_validation import schema_resources
+    from ..record_validation import schema_resources, validator_class_for
 
     registry = schema_resources(resolve_profile("csaf-2.1"))
     schema = registry.contents(url)
-    validator_class = validator_for(schema, default=Draft202012Validator)
-    return validator_class(schema, registry=registry, format_checker=FormatChecker())
+    return validator_class_for(schema)(
+        schema, registry=registry, format_checker=FormatChecker()
+    )
 
 
 def _schema_issues(
@@ -273,6 +273,20 @@ def _cwe_entry(cwe_number: str, version: str) -> str | int | None:
             break
         entry = value
     return entry
+
+
+def cwe_release(cwe_number: str, name: str) -> str | None:
+    """The newest CWE release in which ``CWE-<cwe_number>`` is a weakness
+    named ``name``, or else the newest in which it is a weakness at all
+    (6.1.11 then reports the name); None if it never was one."""
+    weakness_in = None
+    for version in reversed(_cwe_data()["versions"]):
+        entry = _cwe_entry(cwe_number, version)
+        if entry == name:
+            return str(version)
+        if isinstance(entry, str) and weakness_in is None:
+            weakness_in = str(version)
+    return weakness_in
 
 
 @mandatory("6.1.11", "CWE")

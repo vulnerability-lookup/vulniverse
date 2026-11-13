@@ -261,6 +261,8 @@ export interface Patch2VulnResult {
   record: CveRecord;
   // The same analysis as an OSV record, for OSV profiles.
   osv?: EditorDocument | null;
+  // And as a CSAF 2.1 advisory (converted by the backend), for CSAF.
+  csaf?: EditorDocument | null;
   analysis: unknown;
 }
 

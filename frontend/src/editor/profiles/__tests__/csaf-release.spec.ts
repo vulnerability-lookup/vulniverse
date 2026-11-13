@@ -84,6 +84,13 @@ describe("releaseCsaf", () => {
     expect(tracking(next).revision_history.map((entry) => entry.number)).toEqual(["1", "2"]);
   });
 
+  it("a draft already carrying its number keeps it (patch2vuln's \"draft of 1\")", () => {
+    const released = releaseCsaf(draft("1", ["1"]), { kind: "initial", status: "final", summary: "Initial release." }, NOW);
+
+    expect(tracking(released).version).toBe("1");
+    expect(tracking(released).revision_history.map((entry) => entry.number)).toEqual(["1"]);
+  });
+
   it("leaves the input untouched", () => {
     const original = draft();
     releaseCsaf(original, { kind: "initial", status: "final", summary: "x" }, NOW);

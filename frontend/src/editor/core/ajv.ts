@@ -33,9 +33,14 @@ function addEditorFormats(
 }
 
 
+// multipleOf divides floats (5.3 / 0.1 = 52.999…), which would reject a
+// third of all valid CVSS 4.0 scores (FIRST's schema: multipleOf 0.1).
+const MULTIPLE_OF_PRECISION = 9;
+
+
 // Draft-07: CVE, GCVE and OSV authoring schemas.
 export const editorAjv =
-  addEditorFormats(createAjv());
+  addEditorFormats(createAjv({ multipleOfPrecision: MULTIPLE_OF_PRECISION }));
 
 
 // JSON Schema 2020-12 (CSAF), so unevaluatedItems and dependentRequired
@@ -46,6 +51,7 @@ export const editorAjv2020 = (() => {
     verbose: true,
     strict: false,
     addUsedSchema: false,
+    multipleOfPrecision: MULTIPLE_OF_PRECISION,
   });
 
   addFormats(ajv);

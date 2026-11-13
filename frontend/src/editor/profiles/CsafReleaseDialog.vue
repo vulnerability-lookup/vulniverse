@@ -13,6 +13,7 @@ import {
   isDraftVersion,
   isReleased,
   nextVersion,
+  releaseVersion,
   versioning,
 } from "./csaf-release";
 
@@ -38,7 +39,8 @@ const kind = ref<ReleaseKind>("initial");
 const status = ref<ReleaseStatus>("final");
 const summary = ref("");
 
-const target = computed(() => nextVersion(version.value, kind.value));
+const record = ref<EditorContext["record"]>({});
+const target = computed(() => releaseVersion(record.value, kind.value));
 
 const KINDS: { kind: ReleaseKind; hint: string }[] = [
   { kind: "patch", hint: "corrections only" },
@@ -51,12 +53,12 @@ let resolve: ((value: ReleaseInput | null) => void) | null = null;
 function open(
   context: EditorContext,
 ): Promise<ReleaseInput | null> {
-  const record = context.record;
-  const tracking = ((record.document ?? {}) as Record<string, any>).tracking ?? {}; // eslint-disable-line @typescript-eslint/no-explicit-any -- JSON document
+  record.value = context.record;
+  const tracking = ((context.record.document ?? {}) as Record<string, any>).tracking ?? {}; // eslint-disable-line @typescript-eslint/no-explicit-any -- JSON document
 
-  update.value = isReleased(record);
-  integer.value = versioning(record) === "integer";
-  version.value = currentVersion(record);
+  update.value = isReleased(context.record);
+  integer.value = versioning(context.record) === "integer";
+  version.value = currentVersion(context.record);
   kind.value = update.value ? (integer.value ? "major" : "minor") : "initial";
   status.value = tracking.status === "interim" ? "interim" : "final";
   summary.value = update.value ? "" : "Initial release.";
