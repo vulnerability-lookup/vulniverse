@@ -25,6 +25,10 @@ import {
 
 import CvssCalculatorDialog from "../../common/cvss/CvssCalculatorDialog.vue";
 
+import {
+  cveMetricFieldValues,
+} from "../../common/cvss/cvss-calculator";
+
 const props = defineProps({
   ...rendererProps<ControlElement>(),
 });
@@ -245,6 +249,17 @@ function applyCalculatorResult(
       composePaths(path, `${format.key}.baseSeverity`),
       result.baseSeverity,
     );
+  }
+
+  // Fields like attackVector the record already has follow the new vector.
+  const fields = cveMetricFieldValues(
+    format.key,
+    result.vectorString,
+    items.value[index]?.[format.key] ?? {},
+  );
+
+  for (const [field, value] of Object.entries(fields)) {
+    handleChange(composePaths(path, `${format.key}.${field}`), value);
   }
 }
 </script>
