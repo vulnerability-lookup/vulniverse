@@ -12,6 +12,7 @@ from jsonschema.exceptions import ValidationError
 from jsonschema.protocols import Validator
 from jsonschema.validators import validator_for
 
+from .cvss_consistency import cvss_warnings
 from .profiles import SCHEMAS_ROOT, UnknownProfileError, resolve_profile
 
 GCVE_EXTENSION_REGISTRY_PATH = SCHEMAS_ROOT / "extensions" / "gcve" / "registry.json"
@@ -639,6 +640,8 @@ def validate_record(
                 profile_id,
             )
         )
+
+    errors.extend(cvss_warnings(record))
 
     errors.sort(key=lambda error: error["path"])
 
