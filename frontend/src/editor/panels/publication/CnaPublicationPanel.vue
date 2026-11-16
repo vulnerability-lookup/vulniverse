@@ -168,9 +168,8 @@ function applyReservedId(): boolean {
   const record = editor.record.value as CveRecord;
 
   // "vl" reserves a real GCVE identifier — it belongs in
-  // x_gcve[].vulnId, the real GCVE-BCP-05 schema field, not only the
-  // non-standard cveMetadata.vulnId convenience field (setGcveVulnId
-  // mirrors both). "cve-program" reserves an official CVE ID, which
+  // x_gcve[].vulnId, the GCVE-BCP-05 schema field (cveMetadata has no
+  // vulnId in the CVE schema). "cve-program" reserves an official CVE ID, which
   // isn't a valid x_gcve[].vulnId shape at all (its pattern requires
   // "GCVE-..."), so it still goes straight into cveMetadata.cveId.
   if (props.target === "vl") {
