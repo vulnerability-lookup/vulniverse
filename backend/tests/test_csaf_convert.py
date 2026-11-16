@@ -207,3 +207,73 @@ def test_version_changes_become_ranges_with_their_own_status(
         for e in validate_record(advisory, "csaf-2.1")
         if e["severity"] == "error"
     ] == []
+
+
+@pytest.mark.parametrize(
+    ("descriptions", "cwes"),
+    [
+        # Older records: the CWE only in the text.
+        (
+            [
+                {
+                    "lang": "en",
+                    "type": "text",
+                    "description": "CWE-79 Improper Neutralization of Input During Web Page Generation",
+                }
+            ],
+            [
+                {
+                    "id": "CWE-79",
+                    "name": "Improper Neutralization of Input During Web Page Generation",
+                    "version": "5.0",
+                }
+            ],
+        ),
+        # An ID without a name: the CWE's current name.
+        (
+            [{"lang": "en", "type": "CWE", "cweId": "CWE-79", "description": "CWE-79"}],
+            [
+                {
+                    "id": "CWE-79",
+                    "name": "Improper Neutralization of Input During Web Page Generation",
+                    "version": "5.0",
+                }
+            ],
+        ),
+        ([{"lang": "en", "type": "text", "description": "n/a"}], None),
+    ],
+)
+def test_cwes_of_older_records(
+    record: dict[str, Any],
+    descriptions: list[dict[str, str]],
+    cwes: list[dict[str, str]] | None,
+) -> None:
+    record["containers"]["cna"]["problemTypes"] = [{"descriptions": descriptions}]
+
+    assert csaf_from_cve(record, NOW)["vulnerabilities"][0].get("cwes") == cwes
+
+
+def test_a_product_name_in_the_version_field_is_no_lower_bound(
+    record: dict[str, Any],
+) -> None:
+    # CVE-2021-45046's record has "version": "Apache Log4j2".
+    record["containers"]["cna"]["affected"] = [
+        {
+            "vendor": "Apache Software Foundation",
+            "product": "Apache Log4j",
+            "versions": [
+                {
+                    "version": "Apache Log4j2",
+                    "lessThan": "2.16.0",
+                    "status": "affected",
+                    "versionType": "custom",
+                }
+            ],
+        }
+    ]
+
+    names = products(csaf_from_cve(record, NOW))
+
+    assert list(names.values()) == [
+        "Apache Software Foundation Apache Log4j vers:generic/<2.16.0"
+    ]

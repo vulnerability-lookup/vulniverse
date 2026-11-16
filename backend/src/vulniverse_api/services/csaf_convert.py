@@ -12,8 +12,9 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
-from .csaf_mandatory.scores import cwe_release
+from .csaf_mandatory.scores import cwe_latest_name, cwe_release
 from .cve_fields import cna as cna_of
+from .cve_fields import cwes as cwes_of
 from .cve_fields import (
     dicts,
     english,
@@ -27,7 +28,6 @@ from .cve_fields import (
 CSAF_SCHEMA_URL = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json"
 
 CVE_ID = re.compile(r"^CVE-\d{4}-\d{4,}$")
-CWE_PREFIX = re.compile(r"^CWE-(\d+)\s*[:\-–]?\s*")
 
 # CVE version status -> CSAF product status.
 PRODUCT_STATUS = {
@@ -50,11 +50,17 @@ VERS_SCHEMES = {"semver": "semver", "maven": "maven", "pypi": "pypi", "npm": "np
 
 def csaf_cwes(cwe_id: Any, name: Any) -> list[dict[str, Any]]:
     """``[{"id": "CWE-79", "name": ..., "version": ...}]``, or [] when the ID
-    or name is unusable or the CWE was never a weakness."""
+    is unusable or the CWE was never a weakness. Without a name (older CVE
+    records only give the ID), the CWE's current name is used."""
     number = str(cwe_id).removeprefix("CWE-")
 
-    if not number.isdigit() or not isinstance(name, str) or not name:
+    if not number.isdigit():
         return []
+
+    if not isinstance(name, str) or not name:
+        name = cwe_latest_name(number) or ""
+        if not name:
+            return []
 
     version = cwe_release(number, name)
     return (
@@ -223,13 +229,7 @@ def csaf_from_cve(
         vulnerability["product_status"] = products.status
 
     cwes: list[dict[str, Any]] = []
-    for problem in dicts(cna.get("problemTypes")):
-        for entry in dicts(problem.get("descriptions")):
-            cwe_id = text(entry.get("cweId"))
-            name = CWE_PREFIX.sub("", text(entry.get("description")))
-            for cwe in csaf_cwes(cwe_id, name):
-                if cwe["id"] not in {existing["id"] for existing in cwes}:
-                    cwes.append(cwe)
+    cwes = [cwe for number, name in cwes_of(cna) for cwe in csaf_cwes(number, name)]
     if cwes:
         vulnerability["cwes"] = cwes
 

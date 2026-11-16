@@ -185,3 +185,21 @@ def test_version_changes_become_affected_ranges_only(record: dict[str, Any]) -> 
         [{"introduced": "2.4"}, {"fixed": "2.12.2"}],
         [{"introduced": "2.13.0"}, {"fixed": "2.15.0"}],
     ]
+
+
+def test_cwes_of_older_records(record: dict[str, Any]) -> None:
+    record["containers"]["cna"]["problemTypes"] = [
+        {
+            "descriptions": [
+                {
+                    "lang": "en",
+                    "type": "text",
+                    "description": "CWE-611: Improper Restriction of XML External Entity Reference",
+                }
+            ]
+        }
+    ]
+
+    assert osv_from_cve(record, "PyPI", NOW)["database_specific"]["cwe_ids"] == [
+        "CWE-611"
+    ]

@@ -15,6 +15,7 @@ from typing import Any
 from urllib.parse import unquote
 
 from .cve_fields import cna as cna_of
+from .cve_fields import cwes as cwes_of
 from .cve_fields import (
     dicts,
     english,
@@ -265,14 +266,7 @@ def osv_from_cve(
         osv["credits"] = credits
 
     database_specific: dict[str, Any] = {}
-    cwe_ids = list(
-        dict.fromkeys(
-            text(entry.get("cweId"))
-            for problem in dicts(cna.get("problemTypes"))
-            for entry in dicts(problem.get("descriptions"))
-            if text(entry.get("cweId"))
-        )
-    )
+    cwe_ids = [f"CWE-{number}" for number, _ in cwes_of(cna)]
     if cwe_ids:
         database_specific["cwe_ids"] = cwe_ids
     if dicts(cna.get("x_gcve")):

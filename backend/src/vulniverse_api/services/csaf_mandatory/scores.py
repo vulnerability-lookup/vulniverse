@@ -275,6 +275,15 @@ def _cwe_entry(cwe_number: str, version: str) -> str | int | None:
     return entry
 
 
+def cwe_latest_name(cwe_number: str) -> str | None:
+    """The weakness name of a CWE in the newest release that has it as one."""
+    for version in reversed(_cwe_data()["versions"]):
+        entry = _cwe_entry(cwe_number, version)
+        if isinstance(entry, str):
+            return entry
+    return None
+
+
 def cwe_release(cwe_number: str, name: str) -> str | None:
     """The newest CWE release in which ``CWE-<cwe_number>`` is a weakness
     named ``name``, or else the newest in which it is a weakness at all
