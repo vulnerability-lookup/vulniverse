@@ -152,3 +152,58 @@ def test_the_endpoint_converts_without_saving(client, record: dict[str, Any]) ->
     )
 
     assert response.status_code == 400
+
+
+# Log4Shell's CVE record: one range whose status changes along the way, and
+# an upper bound that is a wildcard pattern.
+LOG4SHELL_AFFECTED = [
+    {
+        "vendor": "Apache Software Foundation",
+        "product": "Apache Log4j2",
+        "versions": [
+            {
+                "version": "2.0-beta9",
+                "status": "affected",
+                "lessThan": "log4j-core*",
+                "versionType": "custom",
+                "changes": [
+                    {"at": "2.3.1", "status": "unaffected"},
+                    {"at": "2.4", "status": "affected"},
+                    {"at": "2.12.2", "status": "unaffected"},
+                    {"at": "2.13.0", "status": "affected"},
+                    {"at": "2.15.0", "status": "unaffected"},
+                ],
+            }
+        ],
+    }
+]
+
+
+def test_version_changes_become_ranges_with_their_own_status(
+    record: dict[str, Any],
+) -> None:
+    record["containers"]["cna"]["affected"] = LOG4SHELL_AFFECTED
+    advisory = csaf_from_cve(record, NOW)
+    names = products(advisory)
+    status = advisory["vulnerabilities"][0]["product_status"]
+    prefix = "Apache Software Foundation Apache Log4j2 "
+
+    assert [names[i].removeprefix(prefix) for i in status["known_affected"]] == [
+        "vers:generic/>=2.0-beta9|<2.3.1",
+        "vers:generic/>=2.4|<2.12.2",
+        "vers:generic/>=2.13.0|<2.15.0",
+    ]
+    # The wildcard bound "log4j-core*" leaves the last stretch open.
+    assert [names[i].removeprefix(prefix) for i in status["known_not_affected"]] == [
+        "vers:generic/>=2.3.1|<2.4",
+        "vers:generic/>=2.12.2|<2.13.0",
+        "vers:generic/>=2.15.0",
+    ]
+
+    advisory["document"]["tracking"]["id"] = "EXAMPLE-2026-0002"
+    advisory["document"]["publisher"]["namespace"] = "https://example.com"
+    assert [
+        e["message"]
+        for e in validate_record(advisory, "csaf-2.1")
+        if e["severity"] == "error"
+    ] == []

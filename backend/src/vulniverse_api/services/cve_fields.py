@@ -15,13 +15,19 @@ def text(value: Any) -> str:
 
 
 def dicts(value: Any) -> list[dict[str, Any]]:
-    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
+    return (
+        [item for item in value if isinstance(item, dict)]
+        if isinstance(value, list)
+        else []
+    )
 
 
 def english(entries: Any) -> str:
     """The English ``value`` of a CVE descriptions/solutions list, else the first."""
     items = [entry for entry in dicts(entries) if text(entry.get("value"))]
-    english_items = [entry for entry in items if text(entry.get("lang")).startswith("en")]
+    english_items = [
+        entry for entry in items if text(entry.get("lang")).startswith("en")
+    ]
     return text((english_items or items or [{}])[0].get("value"))
 
 
@@ -41,3 +47,38 @@ def vulnerability_ids(record: dict[str, Any]) -> tuple[str, list[str]]:
         if vuln_id
     ]
     return text(metadata.get("cveId")), gcve_ids
+
+
+def is_range(version: dict[str, Any]) -> bool:
+    """Whether a CVE version entry is a range (it has an upper bound)."""
+    return bool(text(version.get("lessThan")) or text(version.get("lessThanOrEqual")))
+
+
+def stretches(version: dict[str, Any]) -> list[tuple[str, str, str, str]]:
+    """A CVE version range as (status, start, less_than, less_or_equal)
+    stretches, following its ``changes`` (e.g. Log4Shell: affected from
+    2.0-beta9, unaffected at 2.3.1, affected again at 2.4, …). A wildcard
+    bound ("*", "log4j-core*") is open-ended: ""."""
+
+    def bound(value: str) -> str:
+        return "" if "*" in value else value
+
+    status = text(version.get("status"))
+    start = text(version.get("version"))
+    result = []
+
+    for change in dicts(version.get("changes")):
+        at = text(change.get("at"))
+        if at:
+            result.append((status, start, at, ""))
+            start, status = at, text(change.get("status")) or status
+
+    result.append(
+        (
+            status,
+            start,
+            bound(text(version.get("lessThan"))),
+            bound(text(version.get("lessThanOrEqual"))),
+        )
+    )
+    return result

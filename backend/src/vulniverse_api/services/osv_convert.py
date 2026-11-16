@@ -15,7 +15,15 @@ from typing import Any
 from urllib.parse import unquote
 
 from .cve_fields import cna as cna_of
-from .cve_fields import dicts, english, obj, text, vulnerability_ids
+from .cve_fields import (
+    dicts,
+    english,
+    is_range,
+    obj,
+    stretches,
+    text,
+    vulnerability_ids,
+)
 
 OSV_SCHEMA_VERSION = "1.9.2"
 
@@ -108,25 +116,20 @@ def package_from_purl(purl: str) -> dict[str, str] | None:
     return {"ecosystem": ecosystem, "name": osv_name, "purl": f"pkg:{purl_type}/{path}"}
 
 
-def _range(version: dict[str, Any], repo: str) -> dict[str, Any] | None:
-    """A CVE version range as an OSV range, or None for a single version."""
-    start = text(version.get("version"))
-    less_than = text(version.get("lessThan"))
-    less_or_equal = text(version.get("lessThanOrEqual"))
-
-    if not less_than and not less_or_equal:
-        return None
-
-    range_type = RANGE_TYPES.get(text(version.get("versionType")).lower(), "ECOSYSTEM")
+def _range(
+    start: str, less_than: str, less_or_equal: str, version_type: str, repo: str
+) -> dict[str, Any]:
+    """One affected stretch of a CVE version range as an OSV range."""
+    range_type = RANGE_TYPES.get(version_type.lower(), "ECOSYSTEM")
     if range_type == "GIT" and not repo:
         range_type = "ECOSYSTEM"
 
     events: list[dict[str, str]] = [
         {"introduced": start if start not in ("", "*") else "0"}
     ]
-    if less_than and less_than != "*":
+    if less_than:
         events.append({"fixed": less_than})
-    elif less_or_equal and less_or_equal != "*":
+    elif less_or_equal:
         events.append({"last_affected": less_or_equal})
 
     osv_range: dict[str, Any] = {"type": range_type, "events": events}
@@ -147,14 +150,19 @@ def _affected(cna: dict[str, Any], ecosystem: str) -> list[dict[str, Any]]:
             package = {"ecosystem": ecosystem, "name": name}
 
         repo = text(affected.get("repo"))
-        ranges, versions = [], []
+        ranges: list[dict[str, Any]] = []
+        versions: list[str] = []
         for version in dicts(affected.get("versions")):
-            if text(version.get("status")) != "affected":
-                continue  # OSV only lists affected versions.
-            osv_range = _range(version, repo)
-            if osv_range:
-                ranges.append(osv_range)
-            elif text(version.get("version")) not in ("", "*"):
+            if is_range(version):
+                version_type = text(version.get("versionType"))
+                ranges.extend(
+                    _range(start, less_than, less_or_equal, version_type, repo)
+                    for status, start, less_than, less_or_equal in stretches(version)
+                    if status == "affected"  # OSV only lists affected versions.
+                )
+            elif text(version.get("status")) == "affected" and text(
+                version.get("version")
+            ) not in ("", "*"):
                 versions.append(version["version"])
 
         if (

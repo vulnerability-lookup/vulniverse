@@ -345,7 +345,7 @@ export class HttpRepository
     identifier: string,
   ): Promise<PublicRecord> {
     return this.request<PublicRecord>(
-      `/compare-vulnerabilities/${encodeURIComponent(identifier)}`,
+      `/vulnerability-records/${encodeURIComponent(identifier)}`,
     );
   }
 

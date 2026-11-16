@@ -51,7 +51,7 @@ Runs the real gunicorn/nginx build, published on `127.0.0.1:8080` — put
 your own TLS termination (Caddy, nginx, Traefik) in front of it.
 
 The production build leaves out the optional GCVE client, which the
-"Compare vulnerabilities" panel needs (the development build includes
+"Vulnerability records" panel needs (the development build includes
 it). To include it, build the backend with the extra, then start as above:
 
 ```bash
@@ -59,7 +59,7 @@ docker compose -f compose.yaml -f compose.prod.yaml build --build-arg EXTRAS=gcv
 docker compose -f compose.yaml -f compose.prod.yaml up -d
 ```
 
-See [Configuration](config.md#optional-compare-vulnerabilities-panel).
+See [Configuration](config.md#optional-vulnerability-records-panel).
 
 ## First run
 

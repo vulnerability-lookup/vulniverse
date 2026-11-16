@@ -91,7 +91,7 @@ api_url = "https://patch2vuln.example.org"
 # models = ["qwen3.8:27b"]
 timeout_seconds = 300
 
-[panels.compare-vulnerabilities]
+[panels.vulnerability-records]
 enabled = true
 
 [actions]
@@ -117,12 +117,13 @@ Each registered user sets their own under the standalone app's own
 `/cna-credentials` page; they're stored per-user, encrypted at rest using
 `CNA_CREDENTIAL_ENCRYPTION_KEY` (see below).
 
-### Optional: Compare vulnerabilities panel
+### Optional: Vulnerability records panel
 
-On CSAF advisories, the "Compare vulnerabilities" panel looks up the
-public GCVE and CVE records the advisory cites and shows what differs
-(title, description, CVE ID, CWEs, disclosure date, references, CVSS
-vectors). It uses the [GCVE client](https://github.com/gcve-eu/gcve),
+On CSAF advisories, the "Vulnerability records" panel looks up public
+GCVE and CVE records: it adds one to the advisory as a new vulnerability
+(with its products), and compares the records the advisory cites with
+their public versions (title, description, CVE ID, CWEs, disclosure
+date, references, CVSS vectors). It uses the [GCVE client](https://github.com/gcve-eu/gcve),
 which finds a record where the GNA that allocated it publishes it, or
 else at CIRCL's Vulnerability-Lookup (which also answers CVE IDs).
 
@@ -146,7 +147,7 @@ With the extra installed, the backend needs:
   a volume.
 
 To hide the panel instead, set `enabled = false` under
-`[panels.compare-vulnerabilities]`.
+`[panels.vulnerability-records]`.
 
 ## Backend environment (`.env`)
 

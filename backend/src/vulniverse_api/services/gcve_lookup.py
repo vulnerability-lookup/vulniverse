@@ -52,8 +52,9 @@ def _ensure_registry(base: Path) -> None:
 
 def lookup_public_record(identifier: str) -> dict[str, Any] | None:
     """The public record of a GCVE or CVE ID, where it was found, and the
-    same record as a CSAF vulnerability (for comparing with an advisory).
-    None if no publication channel has it.
+    same record as a CSAF advisory (its product tree and one vulnerability),
+    for comparing with an advisory or adding to one. None if no
+    publication channel has it.
 
     Raises LookupUnavailable without the gcve extra, ValueError for an
     invalid ID, LookupError for a GNA missing from the registry and
@@ -71,16 +72,17 @@ def lookup_public_record(identifier: str) -> dict[str, Any] | None:
     if result is None:
         return None
 
-    vulnerabilities = csaf_from_cve(result.record).get("vulnerabilities") or [{}]
+    advisory = csaf_from_cve(result.record)
 
     # The conversion makes up a title from the description when the record
     # has none; comparing with it would report a difference that isn't one.
     if not cna_of(result.record).get("title"):
-        vulnerabilities[0].pop("title", None)
+        for vulnerability in advisory.get("vulnerabilities", []):
+            vulnerability.pop("title", None)
 
     return {
         "record": result.record,
         "source": result.source,
         "url": result.url,
-        "csaf": vulnerabilities[0],
+        "advisory": advisory,
     }

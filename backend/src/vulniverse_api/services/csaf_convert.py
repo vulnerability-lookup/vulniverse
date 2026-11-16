@@ -14,7 +14,15 @@ from typing import Any
 
 from .csaf_mandatory.scores import cwe_release
 from .cve_fields import cna as cna_of
-from .cve_fields import dicts, english, obj, text, vulnerability_ids
+from .cve_fields import (
+    dicts,
+    english,
+    is_range,
+    obj,
+    stretches,
+    text,
+    vulnerability_ids,
+)
 
 CSAF_SCHEMA_URL = "https://docs.oasis-open.org/csaf/csaf/v2.1/schema/csaf.json"
 
@@ -54,27 +62,20 @@ def csaf_cwes(cwe_id: Any, name: Any) -> list[dict[str, Any]]:
     )
 
 
-def _version_range(version: dict[str, Any]) -> str | None:
-    """A CVE version range as a VERS range, or None for a single version."""
-    start = text(version.get("version"))
-    less_than = text(version.get("lessThan"))
-    less_or_equal = text(version.get("lessThanOrEqual"))
-
-    if not less_than and not less_or_equal:
-        return "vers:all/*" if start in ("*", "") else None
-
+def _vers(start: str, less_than: str, less_or_equal: str, version_type: str) -> str:
+    """One stretch of a CVE version range as a VERS range."""
     constraints = []
     if start not in ("", "0", "*"):
         constraints.append(f">={start}")
-    if less_than and less_than != "*":
+    if less_than:
         constraints.append(f"<{less_than}")
-    if less_or_equal and less_or_equal != "*":
+    elif less_or_equal:
         constraints.append(f"<={less_or_equal}")
 
     if not constraints:
         return "vers:all/*"
 
-    scheme = VERS_SCHEMES.get(text(version.get("versionType")).lower(), "generic")
+    scheme = VERS_SCHEMES.get(version_type.lower(), "generic")
     return f"vers:{scheme}/{'|'.join(constraints)}"
 
 
@@ -148,19 +149,27 @@ def _products(cna: dict[str, Any]) -> _Products:
             continue
 
         for version in versions:
-            version_range = _version_range(version)
-            status = text(version.get("status"))
-            if version_range:
+            single = text(version.get("version"))
+            if is_range(version):
+                version_type = text(version.get("versionType"))
+                for status, start, less_than, less_or_equal in stretches(version):
+                    name = _vers(start, less_than, less_or_equal, version_type)
+                    products.add(vendor, product, name, "product_version_range", status)
+            elif single in ("", "*"):
                 products.add(
-                    vendor, product, version_range, "product_version_range", status
+                    vendor,
+                    product,
+                    "vers:all/*",
+                    "product_version_range",
+                    text(version.get("status")),
                 )
             else:
                 products.add(
                     vendor,
                     product,
-                    text(version.get("version")),
+                    single,
                     "product_version",
-                    status,
+                    text(version.get("status")),
                 )
 
     return products

@@ -112,8 +112,9 @@ export interface PublicRecord {
   // Where it was found, e.g. "dump of GNA-1 (CIRCL)", and its URL.
   source: string;
   url: string;
-  // The same record as a CSAF vulnerability, for comparing.
-  csaf: Record<string, unknown>;
+  // The same record as a CSAF advisory (product tree and one
+  // vulnerability), for comparing and adding.
+  advisory: Record<string, unknown>;
 }
 
 export interface ValidationError {

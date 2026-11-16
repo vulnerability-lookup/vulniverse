@@ -19,7 +19,7 @@ COPY config/vulniverse.toml.sample /app/config/vulniverse.toml.sample
 WORKDIR /app/backend
 ARG INSTALL_DEV=false
 # Optional extras, space-separated, e.g. "gcve" (the GCVE client for the
-# Compare vulnerabilities panel; GPL-3.0, so not installed unless asked for).
+# Vulnerability records panel; GPL-3.0, so not installed unless asked for).
 ARG EXTRAS=""
 RUN set -- ; \
     for extra in $EXTRAS; do set -- "$@" --extra "$extra"; done; \

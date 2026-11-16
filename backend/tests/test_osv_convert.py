@@ -168,3 +168,20 @@ def test_the_endpoint_converts_to_osv_without_saving(
     )
 
     assert client.post("/api/v1/convert/sbom", json={}).status_code == 404
+
+
+def test_version_changes_become_affected_ranges_only(record: dict[str, Any]) -> None:
+    from test_csaf_convert import LOG4SHELL_AFFECTED
+
+    record["containers"]["cna"]["affected"] = LOG4SHELL_AFFECTED
+    record["containers"]["cna"]["affected"][0]["packageURL"] = (
+        "pkg:maven/org.apache.logging.log4j/log4j-core"
+    )
+
+    affected = osv_from_cve(record, "", NOW)["affected"]
+
+    assert [r["events"] for r in affected[0]["ranges"]] == [
+        [{"introduced": "2.0-beta9"}, {"fixed": "2.3.1"}],
+        [{"introduced": "2.4"}, {"fixed": "2.12.2"}],
+        [{"introduced": "2.13.0"}, {"fixed": "2.15.0"}],
+    ]
