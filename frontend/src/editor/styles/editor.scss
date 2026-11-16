@@ -230,6 +230,14 @@
   font-style: italic;
 }
 
+// Header action menus open leftwards: the editor's box clips anything
+// past its right edge, and these buttons sit at that edge. (Bootstrap
+// only aligns .dropdown-menu-end through Popper, which isn't used here.)
+.dropdown-menu-end.show {
+  right: 0;
+  left: auto;
+}
+
 .cvss-tip-toggle {
   width: 1.4rem;
   height: 1.4rem;

@@ -502,7 +502,14 @@ export interface EditorAction {
    */
   isEnabled?(context: EditorContext): boolean;
 
-  run(context: EditorContext): Promise<void>;
+  /**
+   * Variants offered in a menu on the button (e.g. file formats); the
+   * picked one's id is passed to run(). Without them the button runs
+   * the action directly.
+   */
+  options?: { id: string; label: string }[];
+
+  run(context: EditorContext, option?: string): Promise<void>;
 }
 
 /**

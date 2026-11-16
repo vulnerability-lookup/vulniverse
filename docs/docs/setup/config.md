@@ -92,7 +92,7 @@ api_url = "https://patch2vuln.example.org"
 timeout_seconds = 300
 
 [actions]
-"download-json" = true
+"download" = true
 ```
 
 A panel id not listed defaults to enabled. Most panels are a plain

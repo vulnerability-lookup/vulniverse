@@ -53,4 +53,4 @@ timeout_seconds = 300
 [actions]
 # Which header-button actions the standalone app shows, keyed by
 # EditorAction.id.
-"download-json" = true
+"download" = true

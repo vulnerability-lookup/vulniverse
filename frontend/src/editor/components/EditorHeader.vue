@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from "vue";
+
 import vulniverseLogo from "../../assets/vulniverse-logo.webp";
 
 import { displayIdentifier } from "../identifier";
@@ -18,12 +20,13 @@ defineProps<{
   actions: Array<{
     id: string;
     label: string;
+    options?: { id: string; label: string }[];
     enabled: boolean;
   }>;
   lifecycleTransitions: LifecycleTransition[];
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   reload: [];
   validate: [];
   save: [];
@@ -34,8 +37,24 @@ defineEmits<{
   delete: [];
   runAction: [
     id: string,
+    option?: string,
   ];
 }>();
+
+// The action whose options menu is open, if any.
+const openMenu = ref<string | null>(null);
+
+function pick(actionId: string, option: string): void {
+  openMenu.value = null;
+  emit("runAction", actionId, option);
+}
+
+// Focus leaving the menu (Tab away, click elsewhere) closes it.
+function closeOnLeave(event: FocusEvent): void {
+  if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) {
+    openMenu.value = null;
+  }
+}
 
 /*
  * Only the two built-in transitions (publish/revert) get a distinct
@@ -196,16 +215,58 @@ function transitionButtonClass(
             aria-hidden="true"
           />
 
-          <button
+          <template
             v-for="action in actions"
             :key="action.id"
-            type="button"
-            class="btn btn-sm btn-outline-primary"
-            :disabled="loading || !action.enabled"
-            @click="$emit('runAction', action.id)"
           >
-            {{ action.label }}
-          </button>
+            <div
+              v-if="action.options?.length"
+              class="dropdown"
+              @focusout="closeOnLeave"
+              @keydown.esc="openMenu = null"
+            >
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary dropdown-toggle"
+                :disabled="loading || !action.enabled"
+                aria-haspopup="menu"
+                :aria-expanded="openMenu === action.id"
+                @click="openMenu = openMenu === action.id ? null : action.id"
+              >
+                {{ action.label }}
+              </button>
+
+              <ul
+                :class="['dropdown-menu', 'dropdown-menu-end', { show: openMenu === action.id }]"
+                role="menu"
+              >
+                <li
+                  v-for="option in action.options"
+                  :key="option.id"
+                  role="none"
+                >
+                  <button
+                    type="button"
+                    class="dropdown-item"
+                    role="menuitem"
+                    @click="pick(action.id, option.id)"
+                  >
+                    {{ option.label }}
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <button
+              v-else
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              :disabled="loading || !action.enabled"
+              @click="$emit('runAction', action.id)"
+            >
+              {{ action.label }}
+            </button>
+          </template>
         </template>
 
         <template v-if="identifier && canReject && !isRejected">
