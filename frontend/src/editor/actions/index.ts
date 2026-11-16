@@ -1,6 +1,10 @@
 import {
-  downloadJsonAction,
-} from "./download-json";
+  downloadAction,
+} from "./download";
+
+import {
+  tutorialAction,
+} from "./tutorial";
 
 import type {
   EditorAction,
@@ -14,9 +18,10 @@ import type {
  * nothing here is wired up automatically.
  */
 export const BUILTIN_ACTIONS: EditorAction[] = [
-  downloadJsonAction,
+  downloadAction,
+  tutorialAction,
 ];
 
-export { downloadJsonAction };
+export { downloadAction, tutorialAction };
 
 export { createConvertAction } from "./convert";

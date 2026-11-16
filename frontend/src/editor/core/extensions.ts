@@ -29,6 +29,7 @@ import {
 import {
   GenericPreviewSection,
   JsonSection,
+  RecordTreeSection,
   SchemaFormSection,
 } from "../sections";
 
@@ -49,6 +50,9 @@ interface EditorExtensionsOptions {
 
   isRejected: Readonly<Ref<boolean>>;
 
+  // Offered to actions as EditorContext.startTutorial.
+  startTutorial(): void;
+
   onError(error: Error): void;
 }
 
@@ -56,6 +60,10 @@ export const BUILTIN_NAVIGATION_ITEMS = [
   {
     id: "editor",
     label: "Editor",
+  },
+  {
+    id: "tree",
+    label: "Tree",
   },
   {
     id: "preview",
@@ -72,6 +80,7 @@ const BUILTIN_SECTION_COMPONENTS:
   Record<string, Component> = {
     json: JsonSection,
     editor: SchemaFormSection,
+    tree: RecordTreeSection,
   };
 
 
@@ -85,6 +94,7 @@ export function useEditorExtensions(
     actions,
     repository,
     isRejected,
+    startTutorial,
   } = options;
 
   const activeProfile =
@@ -109,6 +119,8 @@ export function useEditorExtensions(
 
       isDraft:
         state.isDraft.value,
+
+      ...(state.record.value ? { startTutorial } : {}),
     }));
 
   const visiblePanels =
@@ -200,6 +212,8 @@ export function useEditorExtensions(
           (action) => ({
             id: action.id,
             label: action.label,
+            icon: action.icon,
+            options: action.options,
 
             enabled:
               action.isEnabled?.(

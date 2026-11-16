@@ -28,14 +28,6 @@ import {
 
 import { createEmptyRecord } from "./record";
 
-import type {
-  CveRecord,
-} from "../contracts";
-
-import {
-  getGcveVulnId,
-} from "../gcve";
-
 import {
   DEFAULT_PROFILE_ID,
   getEditorProfile,
@@ -231,28 +223,6 @@ export function useEditorController(
     const currentProfile =
       state.profile.value ??
       DEFAULT_PROFILE_ID;
-
-    /*
-     * cveMetadata.vulnId is a derived mirror of x_gcve[].vulnId (the
-     * real GCVE-BCP-05 schema field), kept in sync here as a backstop
-     * regardless of how x_gcve got edited — the GCVE ID panel, the
-     * CNA publication reservation flow, or a direct edit via Advanced
-     * JSON/the GCVE extension renderer. It's never the other way
-     * around: nothing should write cveMetadata.vulnId without x_gcve
-     * already agreeing, so there's nothing to do when x_gcve has no
-     * vulnId yet.
-     */
-    const gcveVulnId = getGcveVulnId(
-      document as CveRecord,
-    );
-
-    if (gcveVulnId) {
-      const record =
-        document as CveRecord;
-
-      record.cveMetadata ??= {};
-      record.cveMetadata.vulnId = gcveVulnId;
-    }
 
     try {
       const saved =

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   CVSS3_METRICS,
   buildVectorString,
+  cveMetricFieldValues,
   parseVectorString,
   unknownVectorParts,
 } from "../cvss-calculator";
@@ -26,5 +27,24 @@ describe("unknownVectorParts", () => {
     ].join("/");
 
     expect(rebuilt).toBe(vector);
+  });
+});
+
+describe("cveMetricFieldValues", () => {
+  it("rewrites only the mirroring fields a record already has, in the schema's words", () => {
+    expect(cveMetricFieldValues(
+      "cvssV3_1",
+      "CVSS:3.1/AV:A/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H",
+      { attackVector: "NETWORK", userInteraction: "NONE", baseScore: 10 },
+    )).toEqual({ attackVector: "ADJACENT_NETWORK", userInteraction: "REQUIRED" });
+
+    expect(cveMetricFieldValues(
+      "cvssV4_0",
+      "CVSS:4.0/AV:A/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      { attackVector: "NETWORK", attackRequirements: "NONE" },
+    )).toEqual({ attackVector: "ADJACENT", attackRequirements: "PRESENT" });
+
+    expect(cveMetricFieldValues("cvssV2_0", "AV:A/AC:M/Au:S/C:P/I:N/A:C", { accessVector: "LOCAL", authentication: "NONE" }))
+      .toEqual({ accessVector: "ADJACENT_NETWORK", authentication: "SINGLE" });
   });
 });

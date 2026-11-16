@@ -53,6 +53,7 @@ const items = computed(() => {
 
 const { isExpanded, toggle } = useCollapsibleItems(
   computed(() => items.value.length),
+  computed(() => control.value.path),
 );
 
 /*
@@ -170,6 +171,7 @@ function addAffected(): void {
     <div
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
+      :data-path="`${control.path}.${index}`"
       class="card mb-3"
     >
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -206,7 +208,10 @@ function addAffected(): void {
         class="card-body"
       >
         <div class="row g-3 mb-3">
-          <div class="col-md-6">
+          <div
+            class="col-md-6"
+            :data-path="`${control.path}.${index}.vendor`"
+          >
             <label
               :for="`${control.id}-${index}-vendor`"
               class="form-label"
@@ -225,7 +230,10 @@ function addAffected(): void {
             />
           </div>
 
-          <div class="col-md-6">
+          <div
+            class="col-md-6"
+            :data-path="`${control.path}.${index}.product`"
+          >
             <label
               :for="`${control.id}-${index}-product`"
               class="form-label"

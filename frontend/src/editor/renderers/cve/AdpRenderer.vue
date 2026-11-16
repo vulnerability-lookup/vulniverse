@@ -61,6 +61,7 @@ const atMinItems = computed(() => {
 
 const { isExpanded, toggle } = useCollapsibleItems(
   computed(() => items.value.length),
+  computed(() => control.value.path),
 );
 
 /*
@@ -264,6 +265,7 @@ function deleteEntry(
     <div
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
+      :data-path="`${control.path}.${index}`"
       class="card mb-3"
     >
       <div class="card-header d-flex justify-content-between align-items-center">

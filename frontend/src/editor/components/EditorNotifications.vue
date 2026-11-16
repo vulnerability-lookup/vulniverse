@@ -173,9 +173,16 @@ onUnmounted(() => {
           v-for="(error, index) in blockingErrors"
           :key="index"
         >
-          <code>
-            {{ error.path.join(".") || "record" }}
-          </code>
+          <button
+            v-if="error.path.length"
+            type="button"
+            class="btn btn-link btn-sm p-0 align-baseline font-monospace"
+            title="Show this field in the editor"
+            @click="state.revealPath(error.path.join('.'))"
+          >
+            {{ error.path.join(".") }}
+          </button>
+          <code v-else>record</code>
           — {{ error.message }}
         </li>
       </ul>
@@ -212,9 +219,16 @@ onUnmounted(() => {
           v-for="(warning, index) in validationWarnings"
           :key="index"
         >
-          <code>
-            {{ warning.path.join(".") || "record" }}
-          </code>
+          <button
+            v-if="warning.path.length"
+            type="button"
+            class="btn btn-link btn-sm p-0 align-baseline font-monospace"
+            title="Show this field in the editor"
+            @click="state.revealPath(warning.path.join('.'))"
+          >
+            {{ warning.path.join(".") }}
+          </button>
+          <code v-else>record</code>
           — {{ warning.message }}
         </li>
       </ul>

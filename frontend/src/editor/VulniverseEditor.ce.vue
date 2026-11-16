@@ -6,6 +6,7 @@ import {
   ref,
   shallowRef,
   toRef,
+  watch,
 } from "vue";
 
 import type {
@@ -47,6 +48,13 @@ import EditorNavigation from
 
 import EditorNotifications from
   "./components/EditorNotifications.vue";
+
+import EditorTutorial from
+  "./tutorial/EditorTutorial.vue";
+
+import {
+  TUTORIAL_STEPS,
+} from "./tutorial/steps";
 
 import {
   BUILTIN_NAVIGATION_ITEMS,
@@ -166,6 +174,16 @@ provide(
 
 const activeSection = ref("editor");
 
+// Showing a field (record tree, validation error) happens in the Editor.
+watch(
+  () => state.reveal.value,
+  (request) => {
+    if (request) {
+      activeSection.value = "editor";
+    }
+  },
+);
+
 const extensions =
   useEditorExtensions({
     state,
@@ -183,6 +201,8 @@ const extensions =
 
     isRejected:
       controller.isRejected,
+
+    startTutorial,
 
     onError(error) {
       emit(
@@ -269,17 +289,34 @@ async function handleTransition(
   await controller.runTransition(transition, input);
 }
 
+// An action's input: what its dialog asks for, or the option picked from
+// its menu (e.g. Download's format).
 async function handleRunAction(
   actionId: string,
+  option?: string,
 ): Promise<void> {
   const action = props.actions.find((candidate) => candidate.id === actionId);
-  const input = action?.dialog ? await askInput(action.dialog) : undefined;
+  const input = action?.dialog ? await askInput(action.dialog) : option;
 
   if (input === null) {
     return;
   }
 
   await runAction(actionId, input);
+}
+
+const tutorialRef =
+  ref<
+    InstanceType<typeof EditorTutorial> | null
+  >(null);
+
+// The tutorial switches sections as it goes; afterwards the user is back
+// where they started it.
+let sectionBeforeTutorial = "editor";
+
+function startTutorial(): void {
+  sectionBeforeTutorial = activeSection.value;
+  tutorialRef.value?.start();
 }
 
 onMounted(controller.load);
@@ -343,6 +380,13 @@ onMounted(controller.load);
       </main>
 
       <EditorNotifications />
+
+      <EditorTutorial
+        ref="tutorialRef"
+        :steps="TUTORIAL_STEPS"
+        @section="(id) => activeSection = id"
+        @end="activeSection = sectionBeforeTutorial"
+      />
     </div>
 
     <div

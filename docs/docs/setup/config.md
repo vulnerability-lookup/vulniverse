@@ -95,8 +95,9 @@ timeout_seconds = 300
 enabled = true
 
 [actions]
-"download-json" = true
+"download" = true
 "convert" = true
+"tutorial" = true
 ```
 
 A panel id not listed defaults to enabled. Most panels are a plain

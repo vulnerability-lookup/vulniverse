@@ -22,7 +22,7 @@ def test_falls_back_to_sample_file_when_real_config_absent(
 ) -> None:
     sample_path = tmp_path / "vulniverse.toml.sample"
     sample_path.write_text(
-        '[panels]\n"stats" = true\n\n[actions]\n"download-json" = false\n',
+        '[panels]\n"stats" = true\n\n[actions]\n"download" = false\n',
     )
 
     monkeypatch.setattr(app_config, "CONFIG_PATH", tmp_path / "vulniverse.toml")
@@ -34,7 +34,7 @@ def test_falls_back_to_sample_file_when_real_config_absent(
         "server": {"mode": "local"},
         "features": dict(app_config.DEFAULT_FEATURES),
         "panels": {"stats": True},
-        "actions": {"download-json": False},
+        "actions": {"download": False},
     }
 
 

@@ -14,6 +14,12 @@ import {
   SUPPORTED_PROFILES,
 } from "@/editor/profiles";
 
+// Only actions that run entirely in the browser: there is no backend here.
+import {
+  downloadAction,
+  tutorialAction,
+} from "@/editor/actions";
+
 // One SandboxRepository instance per page load — everything it holds
 // is in memory only, so there's nothing to reset between mounts
 const repository = new SandboxRepository();
@@ -91,7 +97,7 @@ function handleError(
         mode="create"
         :profile="selectedProfile"
         :panels="[]"
-        :actions="[]"
+        :actions="[downloadAction, tutorialAction]"
         @error="handleError"
       />
     </div>

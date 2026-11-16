@@ -25,6 +25,10 @@ import {
 
 import CvssCalculatorDialog from "../../common/cvss/CvssCalculatorDialog.vue";
 
+import {
+  cveMetricFieldValues,
+} from "../../common/cvss/cvss-calculator";
+
 const props = defineProps({
   ...rendererProps<ControlElement>(),
 });
@@ -47,6 +51,7 @@ const items = computed(() => {
 
 const { isExpanded, toggle } = useCollapsibleItems(
   computed(() => items.value.length),
+  computed(() => control.value.path),
 );
 
 /*
@@ -245,6 +250,17 @@ function applyCalculatorResult(
       result.baseSeverity,
     );
   }
+
+  // Fields like attackVector the record already has follow the new vector.
+  const fields = cveMetricFieldValues(
+    format.key,
+    result.vectorString,
+    items.value[index]?.[format.key] ?? {},
+  );
+
+  for (const [field, value] of Object.entries(fields)) {
+    handleChange(composePaths(path, `${format.key}.${field}`), value);
+  }
 }
 </script>
 
@@ -276,6 +292,7 @@ function applyCalculatorResult(
     <div
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
+      :data-path="`${control.path}.${index}`"
       class="card mb-3"
     >
       <div class="card-header d-flex justify-content-between align-items-center">

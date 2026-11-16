@@ -502,6 +502,12 @@ export interface EditorContext {
   profile: string;
   record: EditorDocument;
   isDraft: boolean;
+
+  /**
+   * Starts the editor's guided tour (what tutorialAction runs). Absent
+   * while there's nothing to show, e.g. no record loaded yet.
+   */
+  startTutorial?(): void;
 }
 
 /**
@@ -586,6 +592,21 @@ export interface EditorAction {
    */
   dialog?: Component;
 
+  /**
+   * An icon before the label: the `d` of one SVG path on a 16×16 grid,
+   * drawn as a line (stroke) like the header's other icons. Path data,
+   * not markup, so a host can't inject anything through it.
+   */
+  icon?: string;
+
+  /**
+   * Variants offered in a menu on the button (e.g. file formats); the
+   * picked one's id is passed to run() as its input. Without them the
+   * button runs the action directly.
+   */
+  options?: { id: string; label: string }[];
+
+  // `input`: the dialog's result, or the id of the option picked.
   run(context: EditorContext, input?: unknown): Promise<void>;
 }
 

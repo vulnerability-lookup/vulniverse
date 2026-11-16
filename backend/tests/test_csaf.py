@@ -73,7 +73,7 @@ def test_cvss_v4_is_checked_against_firsts_schema(advisory: dict[str, Any]) -> N
 def test_distribution_is_required(advisory: dict[str, Any]) -> None:
     del advisory["document"]["distribution"]
 
-    assert errors(advisory) == [("document", "'distribution' is a required property")]
+    assert errors(advisory) == [("document/distribution", "'distribution' is a required property")]
 
 
 def test_a_csaf_advisory_is_published_under_its_tracking_id(client, advisory: dict[str, Any]) -> None:

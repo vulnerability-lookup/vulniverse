@@ -16,6 +16,7 @@ from referencing import Registry
 from referencing.jsonschema import DRAFT202012, specification_with
 
 from .csaf_mandatory import validate_csaf_mandatory
+from .cvss_consistency import cvss_warnings
 from .profiles import SCHEMAS_ROOT, UnknownProfileError, resolve_profile
 
 GCVE_EXTENSION_REGISTRY_PATH = SCHEMAS_ROOT / "extensions" / "gcve" / "registry.json"
@@ -442,14 +443,44 @@ def expand_composite_error(
     return expanded
 
 
+def _missing_property(error: ValidationError) -> str | None:
+    """The property a "required" error is about: jsonschema reports one
+    error per missing property, named only in its message."""
+    if (
+        error.validator != "required"
+        or not isinstance(error.instance, dict)
+        or not isinstance(error.validator_value, list)
+    ):
+        return None
+
+    return next(
+        (
+            name
+            for name in error.validator_value
+            if isinstance(name, str)
+            and name not in error.instance
+            and error.message.startswith(repr(name))
+        ),
+        None,
+    )
+
+
 def shape_error(
     error: ValidationError,
     *,
     path_prefix: tuple[Any, ...] = (),
     severity: str = "error",
 ) -> dict[str, Any]:
+    path = [*path_prefix, *error.absolute_path]
+    missing = _missing_property(error)
+
+    # A missing field is reported at its parent object; point at the field
+    # itself, so the editor can show it (error links, record tree).
+    if missing is not None:
+        path.append(missing)
+
     return {
-        "path": [*path_prefix, *error.absolute_path],
+        "path": path,
         "schemaPath": list(error.absolute_schema_path),
         "message": error.message,
         "validator": error.validator,
@@ -702,6 +733,8 @@ def validate_record(
                 profile_id,
             )
         )
+
+    errors.extend(cvss_warnings(record))
 
     errors.sort(key=lambda error: error["path"])
 

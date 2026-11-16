@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import {
   computed,
+  inject,
   ref,
+  watch,
 } from "vue";
 
 import {
@@ -25,6 +27,14 @@ import type {
 import {
   useCollapsibleItems,
 } from "../common/use-collapsible-items";
+
+import {
+  editorStateKey,
+} from "../../core/context/keys";
+
+import {
+  isWithin,
+} from "../../core/reveal";
 
 import {
   extraGcveEntryFields,
@@ -263,6 +273,28 @@ const items = computed(() => {
 
 const { isExpanded, toggle } = useCollapsibleItems(
   computed(() => items.value.length),
+  computed(() => control.value.path),
+);
+
+// A reveal request (record tree, validation error) into an extension,
+// "<path>.<index>.extensions.<extensionId>…", opens that extension; the
+// entry card itself is opened by useCollapsibleItems above.
+const editorState = inject(editorStateKey, null);
+
+watch(
+  () => editorState?.reveal.value,
+  (request) => {
+    if (!request || !isWithin(request.path, control.value.path)) return;
+
+    const [index, field, extensionId] = request.path
+      .slice(control.value.path.length + 1)
+      .split(".");
+
+    if (field === "extensions" && extensionId) {
+      expandedExtensions.value.add(extensionKey(Number(index), extensionId));
+    }
+  },
+  { immediate: true },
 );
 
 
@@ -534,6 +566,7 @@ function addEntry(): void {
     <div
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
+      :data-path="`${control.path}.${index}`"
       class="card mb-3"
     >
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -737,6 +770,7 @@ function addEntry(): void {
             v-for="extensionId in presentRegisteredExtensions(index)"
             :key="extensionId"
             class="card mb-3"
+            :data-path="`${itemPath(index)}.extensions.${extensionId}`"
           >
             <div
               class="card-header d-flex align-items-center justify-content-between"

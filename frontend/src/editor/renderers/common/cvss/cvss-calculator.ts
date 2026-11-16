@@ -918,3 +918,83 @@ export function calculateCvss4BaseScore(
 
   return round1(eqsv - mean);
 }
+
+
+/*
+ * CVE schema fields that mirror a base metric, per CVE metrics key
+ * (cvssV3_1.attackVector <-> AV). The backend's cvss_consistency.py
+ * warns when they disagree with the vector; applying the calculator
+ * rewrites the ones a record already has.
+ */
+const CVE_V3_FIELDS = {
+  attackVector: "AV",
+  attackComplexity: "AC",
+  privilegesRequired: "PR",
+  userInteraction: "UI",
+  scope: "S",
+  confidentialityImpact: "C",
+  integrityImpact: "I",
+  availabilityImpact: "A",
+};
+
+export const CVE_METRIC_FIELDS: Record<string, Record<string, string>> = {
+  cvssV2_0: {
+    accessVector: "AV",
+    accessComplexity: "AC",
+    authentication: "Au",
+    confidentialityImpact: "C",
+    integrityImpact: "I",
+    availabilityImpact: "A",
+  },
+  cvssV3_0: CVE_V3_FIELDS,
+  cvssV3_1: CVE_V3_FIELDS,
+  cvssV4_0: {
+    attackVector: "AV",
+    attackComplexity: "AC",
+    attackRequirements: "AT",
+    privilegesRequired: "PR",
+    userInteraction: "UI",
+    vulnConfidentialityImpact: "VC",
+    vulnIntegrityImpact: "VI",
+    vulnAvailabilityImpact: "VA",
+    subConfidentialityImpact: "SC",
+    subIntegrityImpact: "SI",
+    subAvailabilityImpact: "SA",
+  },
+};
+
+const METRICS_BY_FORMAT: Record<string, MetricDefinition[]> = {
+  cvssV2_0: CVSS2_METRICS,
+  cvssV3_0: CVSS3_METRICS,
+  cvssV3_1: CVSS3_METRICS,
+  cvssV4_0: CVSS4_METRICS,
+};
+
+/**
+ * The values to write into the mirroring fields `present` in a CVE CVSS
+ * object for `vectorString` ("AV:N" -> attackVector: "NETWORK"). Fields
+ * the object doesn't have are left out, so nothing new gets added.
+ */
+export function cveMetricFieldValues(
+  formatKey: string,
+  vectorString: string,
+  present: Record<string, unknown>,
+): Record<string, string> {
+  const fields = CVE_METRIC_FIELDS[formatKey] ?? {};
+  const metrics = METRICS_BY_FORMAT[formatKey] ?? [];
+  const selection = parseVectorString(metrics, vectorString);
+  const values: Record<string, string> = {};
+
+  for (const [field, key] of Object.entries(fields)) {
+    const option = metrics.find((def) => def.key === key)?.options.find((o) => o.key === selection[key]);
+
+    if (typeof present[field] !== "string" || !option) continue;
+
+    // The schema words are the labels in capitals, except 3.x's "Adjacent".
+    values[field] = formatKey.startsWith("cvssV3") && key === "AV" && option.key === "A"
+      ? "ADJACENT_NETWORK"
+      : option.label.toUpperCase().replace(/ /g, "_");
+  }
+
+  return values;
+}

@@ -58,6 +58,7 @@ enabled = true
 [actions]
 # Which header-button actions the standalone app shows, keyed by
 # EditorAction.id.
-"download-json" = true
+"download" = true
 # On CVE/GCVE records: draft a CSAF 2.1 advisory or an OSV record from it.
 "convert" = true
+"tutorial" = true

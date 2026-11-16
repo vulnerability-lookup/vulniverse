@@ -160,6 +160,119 @@
   max-width: 95vw;
 }
 
+// The live score stays in view while scrolling through the metrics.
+.cvss-score-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: -1.25rem -1.25rem 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--bs-body-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+
+  .cvss-score {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .cvss-vector {
+    word-break: break-all;
+  }
+}
+
+// The qualitative ratings, from green (Low) to dark red (Critical).
+.cvss-severity {
+  &.is-none {
+    background: var(--bs-secondary);
+  }
+
+  &.is-low {
+    background: #2e7d32;
+  }
+
+  &.is-medium {
+    background: #f9a825;
+    color: #212529;
+  }
+
+  &.is-high {
+    background: #ef6c00;
+  }
+
+  &.is-critical {
+    background: #b71c1c;
+  }
+}
+
+// One button per metric value, its score under the label.
+.cvss-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+
+  .btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 5.5rem;
+    line-height: 1.25;
+  }
+
+  .cvss-option-score {
+    font-size: 0.75rem;
+    opacity: 0.8;
+  }
+}
+
+// An explanation shown for a value pointed at, not (yet) picked.
+.cvss-previewed {
+  font-style: italic;
+}
+
+// Header action menus open leftwards: the editor's box clips anything
+// past its right edge, and these buttons sit at that edge. (Bootstrap
+// only aligns .dropdown-menu-end through Popper, which isn't used here.)
+.dropdown-menu-end.show {
+  right: 0;
+  left: auto;
+}
+
+.cvss-tip-toggle {
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+// The guided tour (tutorial/EditorTutorial.vue): everything but the current
+// element dimmed by the spotlight's huge shadow, the explanation beside it.
+.editor-tutorial-spotlight,
+.editor-tutorial-backdrop {
+  position: fixed;
+  z-index: 1080;
+  pointer-events: none;
+}
+
+.editor-tutorial-spotlight {
+  border-radius: var(--bs-border-radius);
+  box-shadow: 0 0 0 200vmax rgba(15, 23, 33, 0.5);
+  transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+.editor-tutorial-backdrop {
+  inset: 0;
+  background: rgba(15, 23, 33, 0.5);
+}
+
+.editor-tutorial-popover {
+  position: fixed;
+  z-index: 1081;
+  width: min(20rem, calc(100vw - 2rem));
+  outline: none;
+}
+
 .editor-dialog::backdrop {
   background: rgba(15, 23, 33, 0.35);
 }
@@ -373,6 +486,179 @@
   .categorization-selected {
     color: var(--bs-primary) !important;
     border-bottom-color: var(--bs-primary) !important;
+  }
+
+  // The Tree section: a left-to-right graph. Circle colour is the kind
+  // of field, filled when it has closed children, a red ring for errors.
+  .record-graph {
+    max-height: 75vh;
+    overflow: auto;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--bs-tertiary-bg);
+
+    svg {
+      display: block;
+      // The graph is wider than the page on purpose: it scrolls.
+      max-width: none;
+    }
+
+    // Labels stay readable where links pass under them.
+    text {
+      paint-order: stroke;
+      stroke: var(--bs-tertiary-bg);
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+  }
+
+  .record-graph-link {
+    fill: none;
+    stroke: var(--bs-secondary-color);
+    stroke-opacity: 0.45;
+    stroke-width: 1.25;
+  }
+
+  .record-graph-node,
+  .record-graph-legend li {
+    --node-color: var(--bs-success);
+
+    &.is-object {
+      --node-color: var(--bs-primary);
+    }
+
+    &.is-array {
+      --node-color: var(--bs-warning);
+    }
+
+    circle {
+      fill: var(--bs-body-bg);
+      stroke: var(--node-color);
+      stroke-width: 2;
+    }
+
+    &.is-closed circle:not(.record-graph-hit, .record-graph-halo, .record-graph-found) {
+      fill: var(--node-color);
+    }
+
+    .record-graph-hit {
+      fill: transparent;
+      stroke: none;
+    }
+
+    .record-graph-halo {
+      fill: none;
+      stroke: var(--bs-danger);
+      stroke-width: 2;
+      stroke-dasharray: none;
+    }
+
+    &.is-warning .record-graph-halo {
+      stroke: var(--bs-warning);
+      stroke-dasharray: 3 2;
+    }
+  }
+
+  // A placeholder for a field the record lacks but an error points at.
+  .record-graph-node.is-missing,
+  .record-graph-legend .is-missing {
+    circle:not(.record-graph-hit, .record-graph-halo, .record-graph-found) {
+      stroke: var(--bs-danger);
+      stroke-dasharray: 2 2;
+    }
+
+    .record-graph-label,
+    .record-graph-value {
+      fill: var(--bs-danger);
+      font-style: italic;
+    }
+  }
+
+  // Search: matches in the primary colour, the current one ringed.
+  .record-graph-node.is-match .record-graph-label {
+    fill: var(--bs-primary);
+    font-weight: 700;
+  }
+
+  .record-graph-node .record-graph-found {
+    fill: rgba(var(--bs-primary-rgb), 0.15);
+    stroke: var(--bs-primary);
+    stroke-width: 1.5;
+  }
+
+  .record-graph-search {
+    max-width: 26rem;
+  }
+
+  .record-graph-zoom {
+    min-width: 3.75rem;
+  }
+
+  .record-graph-dot {
+    cursor: pointer;
+    outline: none;
+
+    &:hover circle:last-child,
+    &:focus-visible circle:last-child {
+      stroke-width: 3.5;
+    }
+  }
+
+  .record-graph-label {
+    fill: var(--bs-body-color);
+    font-size: 0.8125rem;
+    outline: none;
+
+    &.is-required {
+      font-weight: 700;
+    }
+
+    &.is-link {
+      cursor: pointer;
+
+      &:hover,
+      &:focus-visible {
+        fill: var(--bs-primary);
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .record-graph-value {
+    fill: var(--bs-secondary-color);
+    font-family: var(--bs-font-monospace);
+    font-size: 0.6875rem;
+  }
+
+  .record-graph-legend {
+    li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-right: 1rem;
+    }
+
+    svg {
+      width: 0.9rem;
+      height: 0.9rem;
+    }
+  }
+
+  // A field shown from the record tree or a validation error
+  // (SchemaFormSection's reveal): a short highlight to find it.
+  .editor-revealed {
+    animation: editor-revealed 1.6s ease-out;
+    border-radius: var(--bs-border-radius);
+  }
+
+  @keyframes editor-revealed {
+    from {
+      box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.45);
+    }
+
+    to {
+      box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0);
+    }
   }
 
   // Long JSON values in the CVE/GCVE previews and the GCVE extension's
