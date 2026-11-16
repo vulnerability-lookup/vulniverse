@@ -375,6 +375,144 @@
     border-bottom-color: var(--bs-primary) !important;
   }
 
+  // The Tree section: a left-to-right graph. Circle colour is the kind
+  // of field, filled when it has closed children, a red ring for errors.
+  .record-graph {
+    max-height: 75vh;
+    overflow: auto;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--bs-tertiary-bg);
+
+    svg {
+      display: block;
+      // The graph is wider than the page on purpose: it scrolls.
+      max-width: none;
+    }
+
+    // Labels stay readable where links pass under them.
+    text {
+      paint-order: stroke;
+      stroke: var(--bs-tertiary-bg);
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+  }
+
+  .record-graph-link {
+    fill: none;
+    stroke: var(--bs-secondary-color);
+    stroke-opacity: 0.45;
+    stroke-width: 1.25;
+  }
+
+  .record-graph-node,
+  .record-graph-legend li {
+    --node-color: var(--bs-success);
+
+    &.is-object {
+      --node-color: var(--bs-primary);
+    }
+
+    &.is-array {
+      --node-color: var(--bs-warning);
+    }
+
+    circle {
+      fill: var(--bs-body-bg);
+      stroke: var(--node-color);
+      stroke-width: 2;
+    }
+
+    &.is-closed circle:not(.record-graph-hit, .record-graph-halo) {
+      fill: var(--node-color);
+    }
+
+    .record-graph-hit {
+      fill: transparent;
+      stroke: none;
+    }
+
+    .record-graph-halo {
+      fill: none;
+      stroke: var(--bs-danger);
+      stroke-width: 2;
+      stroke-dasharray: none;
+    }
+
+    &.is-warning .record-graph-halo {
+      stroke: var(--bs-warning);
+      stroke-dasharray: 3 2;
+    }
+  }
+
+  .record-graph-dot {
+    cursor: pointer;
+    outline: none;
+
+    &:hover circle:last-child,
+    &:focus-visible circle:last-child {
+      stroke-width: 3.5;
+    }
+  }
+
+  .record-graph-label {
+    fill: var(--bs-body-color);
+    font-size: 0.8125rem;
+    outline: none;
+
+    &.is-required {
+      font-weight: 700;
+    }
+
+    &.is-link {
+      cursor: pointer;
+
+      &:hover,
+      &:focus-visible {
+        fill: var(--bs-primary);
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .record-graph-value {
+    fill: var(--bs-secondary-color);
+    font-family: var(--bs-font-monospace);
+    font-size: 0.6875rem;
+  }
+
+  .record-graph-legend {
+    li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-right: 1rem;
+    }
+
+    svg {
+      width: 0.9rem;
+      height: 0.9rem;
+    }
+  }
+
+  // A field shown from the record tree or a validation error
+  // (SchemaFormSection's reveal): a short highlight to find it.
+  .editor-revealed {
+    animation: editor-revealed 1.6s ease-out;
+    border-radius: var(--bs-border-radius);
+  }
+
+  @keyframes editor-revealed {
+    from {
+      box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.45);
+    }
+
+    to {
+      box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0);
+    }
+  }
+
   // Long JSON values in the CVE/GCVE previews and the GCVE extension's
   // extra fields: wrap, and scroll past 20rem instead of growing.
   //

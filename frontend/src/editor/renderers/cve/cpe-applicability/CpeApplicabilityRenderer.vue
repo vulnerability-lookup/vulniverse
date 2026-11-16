@@ -93,6 +93,7 @@ const statements = computed(() => {
 
 const { isExpanded, toggle } = useCollapsibleItems(
   computed(() => statements.value.length),
+  computed(() => control.value.path),
 );
 
 function statementPath(
@@ -450,6 +451,7 @@ function statementLabel(
     <div
       v-for="(statement, sIndex) in statements"
       :key="`${control.path}-${sIndex}`"
+      :data-path="`${control.path}.${sIndex}`"
       class="card mb-2"
     >
       <div class="card-header d-flex justify-content-between align-items-center">

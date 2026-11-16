@@ -1,6 +1,8 @@
 import {
   and,
+  categorizationHasCategory,
   isBooleanControl,
+  isCategorization,
   isDateTimeControl,
   isObjectControl,
   isStringControl,
@@ -36,6 +38,9 @@ import FreeFormObjectRenderer from
 
 import GridLayoutRenderer from
   "./GridLayoutRenderer.vue";
+
+import CategorizationRenderer from
+  "./CategorizationRenderer.vue";
 
 import WrappingTextRenderer from
   "./WrappingTextRenderer.vue";
@@ -91,6 +96,18 @@ const isLongTextControl = and(
 
 export const COMMON_RENDERERS:
   JsonFormsRendererRegistryEntry[] = [
+    {
+      renderer:
+        CategorizationRenderer,
+
+      // Above vanilla's CategorizationRenderer (2).
+      tester:
+        rankWith(
+          3,
+          and(isCategorization, categorizationHasCategory),
+        ),
+    },
+
     {
       renderer:
         GridLayoutRenderer,

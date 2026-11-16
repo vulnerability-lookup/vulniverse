@@ -36,6 +36,16 @@ export function useEditorState() {
   // Short success message for the toast stack, e.g. "Draft saved.".
   const notice = ref<string | null>(null);
 
+  // A request to show a field in the Editor section (from the record
+  // tree or a validation error): switch to its tab, expand the cards on
+  // the way, scroll to it. Dot path, e.g. "containers.cna.affected.2.vendor";
+  // `id` makes a repeated request for the same path a new one.
+  const reveal = ref<{ path: string; id: number } | null>(null);
+
+  function revealPath(path: string): void {
+    reveal.value = { path, id: (reveal.value?.id ?? 0) + 1 };
+  }
+
   const dirty = computed(() => {
     if (
       !record.value ||
@@ -95,6 +105,8 @@ export function useEditorState() {
     validationErrors,
     validationSucceeded,
     notice,
+    reveal,
+    revealPath,
     dirty,
     replaceRecord,
     clear,

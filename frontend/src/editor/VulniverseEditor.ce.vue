@@ -4,6 +4,7 @@ import {
   provide,
   ref,
   toRef,
+  watch,
 } from "vue";
 
 import type {
@@ -159,6 +160,14 @@ provide(
 );
 
 const activeSection = ref("editor");
+
+// Showing a field (record tree, validation error) happens in the Editor.
+watch(
+  () => state.reveal.value,
+  () => {
+    activeSection.value = "editor";
+  },
+);
 
 const extensions =
   useEditorExtensions({

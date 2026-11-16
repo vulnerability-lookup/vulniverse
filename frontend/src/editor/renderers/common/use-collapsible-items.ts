@@ -1,7 +1,16 @@
 import {
+  inject,
   ref,
   watch,
 } from "vue";
+
+import {
+  editorStateKey,
+} from "../../core/context/keys";
+
+import {
+  itemIndex,
+} from "../../core/reveal";
 
 import type {
   Ref,
@@ -11,12 +20,32 @@ import type {
  * Shared by every array-card renderer: the item just added (always
  * the last one, since addItem appends) starts expanded so its
  * fields are visible immediately; everything else starts collapsed
- * and toggles via its own button.
+ * and toggles via its own button. With the array's data path, the item
+ * a reveal request points into (the record tree, a validation error)
+ * opens too.
  */
 export function useCollapsibleItems(
   length: Ref<number>,
+  path?: Ref<string>,
 ) {
   const expandedIndices = ref<Set<number>>(new Set());
+
+  // Absent outside VulniverseEditor (e.g. a renderer mounted on its own).
+  const state = inject(editorStateKey, null);
+
+  if (path && state) {
+    watch(
+      [() => state.reveal.value, path],
+      ([request, arrayPath]) => {
+        const index = request ? itemIndex(request.path, arrayPath) : null;
+
+        if (index !== null) {
+          expandedIndices.value.add(index);
+        }
+      },
+      { immediate: true },
+    );
+  }
 
   watch(
     length,

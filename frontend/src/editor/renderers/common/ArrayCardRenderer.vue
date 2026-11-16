@@ -172,6 +172,7 @@ const childUiSchema = computed((): UISchemaElement => {
 
 const { isExpanded, toggle } = useCollapsibleItems(
   computed(() => items.value.length),
+  computed(() => control.value.path),
 );
 
 function labelFor(
@@ -275,6 +276,7 @@ function deleteEntry(
     <div
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
+      :data-path="`${control.path}.${index}`"
       class="card mb-2"
       :class="cardBackgroundClass"
     >

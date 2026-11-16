@@ -6,7 +6,9 @@ import {
 
 import {
   Resolve,
+  composePaths,
   isControl,
+  toDataPath,
 } from "@jsonforms/core";
 
 import type {
@@ -66,6 +68,12 @@ const widths = computed(() => {
   });
 });
 
+// Each control's data path, so a field can be found and scrolled to
+// (see core/reveal.ts).
+const paths = computed(() => layout.value.uischema.elements.map((element) => (
+  isControl(element) ? composePaths(layout.value.path, toDataPath(element.scope)) : undefined
+)));
+
 const isGroup = computed(() => layout.value.uischema.type === "Group");
 
 const label = computed(() => {
@@ -91,6 +99,7 @@ const label = computed(() => {
         v-for="(element, index) in layout.uischema.elements"
         :key="`${layout.path}-${index}`"
         :class="`editor-field-${widths[index]}`"
+        :data-path="paths[index]"
       >
         <DispatchRenderer
           :schema="layout.schema"

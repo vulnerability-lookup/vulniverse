@@ -13,3 +13,7 @@ export {
 export {
   default as SchemaFormSection,
 } from "./SchemaFormSection.vue";
+
+export {
+  default as RecordTreeSection,
+} from "./RecordTreeSection.vue";

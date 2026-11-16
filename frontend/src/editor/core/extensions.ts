@@ -29,6 +29,7 @@ import {
 import {
   GenericPreviewSection,
   JsonSection,
+  RecordTreeSection,
   SchemaFormSection,
 } from "../sections";
 
@@ -58,6 +59,10 @@ export const BUILTIN_NAVIGATION_ITEMS = [
     label: "Editor",
   },
   {
+    id: "tree",
+    label: "Tree",
+  },
+  {
     id: "preview",
     label: "Preview",
   },
@@ -72,6 +77,7 @@ const BUILTIN_SECTION_COMPONENTS:
   Record<string, Component> = {
     json: JsonSection,
     editor: SchemaFormSection,
+    tree: RecordTreeSection,
   };
 
 

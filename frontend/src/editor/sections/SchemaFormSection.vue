@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import {
   computed,
+  ref,
   toRaw,
+  watch,
 } from "vue";
+
+import {
+  revealTarget,
+} from "../core/reveal";
 
 import {
   JsonForms,
@@ -67,6 +73,53 @@ const formData = computed(() => {
     : {};
 });
 
+// Reveal requests (record tree, validation errors): the tab and cards
+// open themselves (CategorizationRenderer, useCollapsibleItems); once
+// the field is drawn, or after a few frames the closest drawn parent,
+// it is scrolled to, focused and briefly highlighted.
+const root = ref<HTMLElement | null>(null);
+const REVEAL_MAX_FRAMES = 20;
+
+async function reveal(path: string): Promise<void> {
+  let target: HTMLElement | null = null;
+
+  for (let frame = 0; frame < REVEAL_MAX_FRAMES; frame++) {
+    await new Promise((done) => requestAnimationFrame(done));
+    target = root.value ? revealTarget(root.value, path) : null;
+
+    if (target?.dataset.path === path) {
+      break;
+    }
+  }
+
+  if (!target) {
+    return;
+  }
+
+  // The field itself: centred and focused. Only a parent (a renderer that
+  // draws its fields itself): its top shown, nothing focused.
+  const exact = target.dataset.path === path;
+
+  target.scrollIntoView({ block: exact ? "center" : "start", behavior: "smooth" });
+
+  if (exact) {
+    target.querySelector<HTMLElement>("input, select, textarea")?.focus({ preventScroll: true });
+  }
+  target.classList.remove("editor-revealed");
+  void target.offsetWidth; // restart the highlight animation
+  target.classList.add("editor-revealed");
+}
+
+watch(
+  () => editor.reveal.value,
+  (request) => {
+    if (request) {
+      void reveal(request.path);
+    }
+  },
+  { immediate: true },
+);
+
 function handleChange(event: {
   data: EditorDocument;
   errors?: unknown[];
@@ -76,13 +129,15 @@ function handleChange(event: {
 </script>
 
 <template>
-  <JsonForms
-    :data="formData"
-    :schema="schema"
-    :uischema="uiSchema"
-    :renderers="renderers"
-    :ajv="editorAjv"
-    validation-mode="ValidateAndShow"
-    @change="handleChange"
-  />
+  <div ref="root">
+    <JsonForms
+      :data="formData"
+      :schema="schema"
+      :uischema="uiSchema"
+      :renderers="renderers"
+      :ajv="editorAjv"
+      validation-mode="ValidateAndShow"
+      @change="handleChange"
+    />
+  </div>
 </template>
