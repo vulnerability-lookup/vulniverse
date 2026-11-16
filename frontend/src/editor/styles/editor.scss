@@ -532,6 +532,21 @@
     }
   }
 
+  // A placeholder for a field the record lacks but an error points at.
+  .record-graph-node.is-missing,
+  .record-graph-legend .is-missing {
+    circle:not(.record-graph-hit, .record-graph-halo, .record-graph-found) {
+      stroke: var(--bs-danger);
+      stroke-dasharray: 2 2;
+    }
+
+    .record-graph-label,
+    .record-graph-value {
+      fill: var(--bs-danger);
+      font-style: italic;
+    }
+  }
+
   // Search: matches in the primary colour, the current one ringed.
   .record-graph-node.is-match .record-graph-label {
     fill: var(--bs-primary);

@@ -11,6 +11,7 @@ import {
 
 import {
   MAX_TEXT,
+  addMissing,
   ancestorPaths,
   layoutTree,
   recordTree,
@@ -37,14 +38,20 @@ const editor = useEditorContext();
 
 const profile = computed(() => getEditorProfile(editor.profile.value ?? DEFAULT_PROFILE_ID));
 
-const root = computed<TreeNode>(() => ({
-  path: "",
-  label: `${profile.value.label} record`,
-  summary: "",
-  kind: "object",
-  required: false,
-  children: recordTree(editor.record.value, profile.value.schema),
-}));
+// Fields validation errors point at but the record lacks (e.g. a
+// required one never filled in) appear as placeholders to click.
+const root = computed<TreeNode>(() => addMissing(
+  {
+    path: "",
+    label: `${profile.value.label} record`,
+    summary: "",
+    kind: "object",
+    required: false,
+    children: recordTree(editor.record.value, profile.value.schema),
+  },
+  editor.validationErrors.value.map((error) => error.path),
+  profile.value.schema,
+));
 
 // The record and its first two levels start open.
 const START_OPEN_DEPTH = 3;
@@ -235,6 +242,9 @@ async function toggle(node: TreeNode): Promise<void> {
         <li class="list-inline-item">
           <strong>Bold *</strong> required
         </li>
+        <li class="list-inline-item is-object is-missing">
+          <svg viewBox="-7 -7 14 14"><circle r="5" /></svg>Missing
+        </li>
         <li class="list-inline-item is-error">
           <svg viewBox="-7 -7 14 14"><circle
             class="record-graph-halo"
@@ -361,6 +371,7 @@ async function toggle(node: TreeNode): Promise<void> {
               'is-closed': placed.node.children.length && !placed.open,
               [`is-${issue(placed.node.path)}`]: issue(placed.node.path),
               'is-match': matchPaths.has(placed.node.path),
+              'is-missing': placed.node.missing,
               'is-current-match': placed.node.path === currentPath,
             },
           ]"

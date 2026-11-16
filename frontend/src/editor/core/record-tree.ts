@@ -17,6 +17,9 @@ export interface TreeNode {
   kind: "object" | "array" | "value";
   // The schema requires this field in its parent.
   required: boolean;
+  // Not in the record: a placeholder for a field a validation error
+  // points at (e.g. a required one that was never filled in).
+  missing?: boolean;
   children: TreeNode[];
 }
 
@@ -227,4 +230,53 @@ export function ancestorPaths(path: string): string[] {
   const parts = path.split(".");
 
   return parts.map((_, index) => parts.slice(0, index).join("."));
+}
+
+
+function kindOf(schema: JsonSchema | undefined): TreeNode["kind"] {
+  if (schema?.type === "array") return "array";
+
+  return schema?.type === "object" || schema?.properties ? "object" : "value";
+}
+
+
+/**
+ * Adds placeholder nodes (missing: true) to a freshly built tree for the
+ * parts of each error path the record doesn't have, so a field that is
+ * required but absent still shows up and can be clicked to fill it in.
+ * Mutates and returns `root`.
+ */
+export function addMissing(
+  root: TreeNode,
+  errorPaths: (string | number)[][],
+  schema: JsonSchema | undefined,
+): TreeNode {
+  for (const segments of errorPaths) {
+    let node = root;
+    let nodeSchema = schema;
+
+    for (const segment of segments) {
+      const path = node.path ? `${node.path}.${segment}` : String(segment);
+      const childSchemaOf = childSchema(nodeSchema, segment);
+      let child = node.children.find((candidate) => candidate.path === path);
+
+      if (!child) {
+        child = {
+          path,
+          label: typeof segment === "number" ? `#${segment + 1}` : childSchemaOf?.title ?? humanize(segment),
+          summary: "missing",
+          kind: kindOf(childSchemaOf),
+          required: typeof segment === "string" && (nodeSchema?.required ?? []).includes(segment),
+          missing: true,
+          children: [],
+        };
+        node.children.push(child);
+      }
+
+      node = child;
+      nodeSchema = childSchemaOf;
+    }
+  }
+
+  return root;
 }

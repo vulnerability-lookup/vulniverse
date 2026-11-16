@@ -207,3 +207,18 @@ def test_valid_record_is_not_mutated_by_validation() -> None:
 def test_unknown_profile_raises_for_direct_callers() -> None:
     with pytest.raises(ValueError):
         validate_record(minimal_cve_record(), "not-a-real-profile")
+
+
+def test_missing_required_field_is_reported_at_the_field() -> None:
+    record = minimal_cve_record()
+    del record["cveMetadata"]["cveId"]
+    del record["containers"]["cna"]["references"][0]["url"]
+
+    paths = [
+        error["path"]
+        for error in validate_record(record, "cve-5.2.0")
+        if error["validator"] == "required"
+    ]
+
+    assert ["cveMetadata", "cveId"] in paths
+    assert ["containers", "cna", "references", 0, "url"] in paths

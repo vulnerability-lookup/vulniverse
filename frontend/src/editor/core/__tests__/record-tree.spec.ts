@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ancestorPaths, humanize, layoutTree, recordTree, searchTree } from "../record-tree";
+import { addMissing, ancestorPaths, humanize, layoutTree, recordTree, searchTree } from "../record-tree";
 import { isWithin, itemIndex } from "../reveal";
 
 const schema = {
@@ -35,6 +35,32 @@ describe("recordTree", () => {
   it("humanizes keys without a schema title", () => {
     expect(humanize("assignerShortName")).toBe("Assigner short name");
     expect(humanize("x_gcve")).toBe("X gcve");
+  });
+});
+
+describe("addMissing", () => {
+  const withSchema = {
+    properties: {
+      cveMetadata: { title: "CVE metadata", required: ["cveId"], properties: { cveId: { title: "CVE ID" } } },
+      containers: { properties: { cna: { properties: { references: { title: "References", type: "array" } } } } },
+    },
+  };
+
+  it("adds placeholders for the absent part of an error path, named from the schema", () => {
+    const root = { path: "", label: "", summary: "", kind: "object" as const, required: false,
+      children: recordTree({ cveMetadata: { state: "PUBLISHED" } }, withSchema) };
+
+    addMissing(root, [["cveMetadata", "cveId"], ["containers", "cna", "references"], ["cveMetadata", "cveId"]], withSchema);
+
+    const metadata = root.children[0]!;
+    expect(metadata.children.map((n) => [n.path, n.label, n.missing ?? false, n.required])).toEqual([
+      ["cveMetadata.state", "State", false, false],
+      ["cveMetadata.cveId", "CVE ID", true, true],
+    ]);
+    expect(root.children[1]).toMatchObject({ path: "containers", missing: true, kind: "object" });
+    expect(root.children[1]!.children[0]!.children[0]).toMatchObject({
+      path: "containers.cna.references", label: "References", kind: "array", summary: "missing",
+    });
   });
 });
 
