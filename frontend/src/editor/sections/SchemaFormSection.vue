@@ -81,16 +81,7 @@ const root = ref<HTMLElement | null>(null);
 const REVEAL_MAX_FRAMES = 20;
 
 async function reveal(path: string): Promise<void> {
-  let target: HTMLElement | null = null;
-
-  for (let frame = 0; frame < REVEAL_MAX_FRAMES; frame++) {
-    await new Promise((done) => requestAnimationFrame(done));
-    target = root.value ? revealTarget(root.value, path) : null;
-
-    if (target?.dataset.path === path) {
-      break;
-    }
-  }
+  const target = await findTarget(path);
 
   if (!target) {
     return;
@@ -110,11 +101,27 @@ async function reveal(path: string): Promise<void> {
   target.classList.add("editor-revealed");
 }
 
+// The field, or its closest marked parent, once tabs and cards have opened.
+async function findTarget(path: string): Promise<HTMLElement | null> {
+  let target: HTMLElement | null = null;
+
+  for (let frame = 0; frame < REVEAL_MAX_FRAMES; frame++) {
+    await new Promise((done) => requestAnimationFrame(done));
+    target = root.value ? revealTarget(root.value, path) : null;
+
+    if (target?.dataset.path === path) {
+      break;
+    }
+  }
+
+  return target;
+}
+
 watch(
   () => editor.reveal.value,
   (request) => {
     if (request) {
-      void reveal(request.path);
+      void reveal(request.path).finally(() => editor.finishReveal(request.id));
     }
   },
   { immediate: true },

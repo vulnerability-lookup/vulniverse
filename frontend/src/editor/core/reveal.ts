@@ -44,11 +44,36 @@ export function revealTarget(
     const element = root.querySelector<HTMLElement>(selector);
 
     if (element) {
-      return element;
+      return directField(element, path.split(".").slice(parts.length)) ?? element;
     }
 
     parts.pop();
   }
 
   return null;
+}
+
+
+/*
+ * A card renderer that draws its fields itself (references, affected, …)
+ * marks only the card, but a plain field of the card's own object is
+ * still a JSON Forms control, whose id is "#/properties/<name>". Found,
+ * it gets the full data-path, so the caller treats it as the field.
+ */
+function directField(card: HTMLElement, rest: string[]): HTMLElement | null {
+  const [name] = rest;
+
+  if (rest.length !== 1 || !name || /^\d+$/.test(name)) {
+    return null;
+  }
+
+  const control = [...card.querySelectorAll<HTMLElement>(`[id="${CSS.escape(`#/properties/${name}`)}"]`)]
+    // Not one of a nested card's fields.
+    .find((element) => element.closest("[data-path]") === card);
+
+  if (control) {
+    control.dataset.path = [card.dataset.path, name].join(".");
+  }
+
+  return control ?? null;
 }

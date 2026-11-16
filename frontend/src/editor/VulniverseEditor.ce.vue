@@ -164,8 +164,10 @@ const activeSection = ref("editor");
 // Showing a field (record tree, validation error) happens in the Editor.
 watch(
   () => state.reveal.value,
-  () => {
-    activeSection.value = "editor";
+  (request) => {
+    if (request) {
+      activeSection.value = "editor";
+    }
   },
 );
 

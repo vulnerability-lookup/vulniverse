@@ -39,11 +39,21 @@ export function useEditorState() {
   // A request to show a field in the Editor section (from the record
   // tree or a validation error): switch to its tab, expand the cards on
   // the way, scroll to it. Dot path, e.g. "containers.cna.affected.2.vendor";
-  // `id` makes a repeated request for the same path a new one.
+  // `id` makes a repeated request for the same path a new one. The
+  // Editor section clears it once done (finishReveal), so coming back
+  // to the section later doesn't jump to the same field again.
   const reveal = ref<{ path: string; id: number } | null>(null);
+  let lastRevealId = 0;
 
   function revealPath(path: string): void {
-    reveal.value = { path, id: (reveal.value?.id ?? 0) + 1 };
+    reveal.value = { path, id: ++lastRevealId };
+  }
+
+  function finishReveal(id: number): void {
+    // A newer request that came in meanwhile stays.
+    if (reveal.value?.id === id) {
+      reveal.value = null;
+    }
   }
 
   const dirty = computed(() => {
@@ -107,6 +117,7 @@ export function useEditorState() {
     notice,
     reveal,
     revealPath,
+    finishReveal,
     dirty,
     replaceRecord,
     clear,

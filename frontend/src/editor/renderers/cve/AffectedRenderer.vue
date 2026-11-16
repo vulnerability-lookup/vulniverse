@@ -208,7 +208,10 @@ function addAffected(): void {
         class="card-body"
       >
         <div class="row g-3 mb-3">
-          <div class="col-md-6">
+          <div
+            class="col-md-6"
+            :data-path="`${control.path}.${index}.vendor`"
+          >
             <label
               :for="`${control.id}-${index}-vendor`"
               class="form-label"
@@ -227,7 +230,10 @@ function addAffected(): void {
             />
           </div>
 
-          <div class="col-md-6">
+          <div
+            class="col-md-6"
+            :data-path="`${control.path}.${index}.product`"
+          >
             <label
               :for="`${control.id}-${index}-product`"
               class="form-label"
