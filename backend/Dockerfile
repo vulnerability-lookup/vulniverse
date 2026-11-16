@@ -18,10 +18,15 @@ COPY config/vulniverse.toml.sample /app/config/vulniverse.toml.sample
 
 WORKDIR /app/backend
 ARG INSTALL_DEV=false
-RUN if [ "$INSTALL_DEV" = "true" ]; then \
-      uv sync --frozen; \
+# Optional extras, space-separated, e.g. "gcve" (the GCVE client for the
+# Compare vulnerabilities panel; GPL-3.0, so not installed unless asked for).
+ARG EXTRAS=""
+RUN set -- ; \
+    for extra in $EXTRAS; do set -- "$@" --extra "$extra"; done; \
+    if [ "$INSTALL_DEV" = "true" ]; then \
+      uv sync --frozen "$@"; \
     else \
-      uv sync --frozen --no-dev; \
+      uv sync --frozen --no-dev "$@"; \
     fi
 
 CMD ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:8000", "wsgi:app"]

@@ -26,6 +26,10 @@ uv run flask --app vulniverse_api init-local-user
 uv run flask --app vulniverse_api run --debug
 ```
 
+For the optional "Compare vulnerabilities" panel on CSAF advisories, run
+`uv sync --extra gcve` instead of `uv sync`; see
+[Configuration](config.md#optional-compare-vulnerabilities-panel).
+
 `create_app()` requires `SECRET_KEY` to be set (via `.env` or the real
 environment) and fails fast with a clear error if it isn't — see
 [Configuration](config.md) and [Running in production](production.md).

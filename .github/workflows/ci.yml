@@ -30,7 +30,7 @@ jobs:
           cache-dependency-glob: backend/uv.lock
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --extra gcve
 
       - name: ruff
         run: uv run ruff check .

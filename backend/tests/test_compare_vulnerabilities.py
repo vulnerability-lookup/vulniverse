@@ -1,0 +1,163 @@
+"""Looking up public GCVE/CVE records for comparing with an advisory."""
+
+from __future__ import annotations
+
+import json
+import os
+import time
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
+
+import pytest
+
+from vulniverse_api.api import compare_vulnerabilities
+from vulniverse_api.services import gcve_lookup
+from vulniverse_api.services.gcve_lookup import LookupUnavailable
+
+FIXTURE = Path(__file__).parent / "fixtures" / "convert" / "gcve-record.json"
+
+
+def test_without_the_extra_the_endpoint_says_how_to_install_it(
+    client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def unavailable(identifier: str) -> None:
+        raise LookupUnavailable
+
+    monkeypatch.setattr(compare_vulnerabilities, "lookup_public_record", unavailable)
+
+    response = client.get("/api/v1/compare-vulnerabilities/CVE-2021-44228")
+
+    assert response.status_code == 501
+    assert "gcve extra" in response.get_json()["message"]
+
+
+@pytest.mark.parametrize(
+    ("error", "status"),
+    [
+        (ValueError("Invalid GCVE or CVE ID format: x"), 400),
+        (LookupError("GNA 999 not in the registry"), 404),
+        (OSError("connection refused"), 502),
+    ],
+)
+def test_errors(
+    client, monkeypatch: pytest.MonkeyPatch, error: Exception, status: int
+) -> None:
+    def failing(identifier: str) -> None:
+        raise error
+
+    monkeypatch.setattr(compare_vulnerabilities, "lookup_public_record", failing)
+
+    assert client.get("/api/v1/compare-vulnerabilities/x").status_code == status
+
+
+def test_not_found(client, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        compare_vulnerabilities, "lookup_public_record", lambda identifier: None
+    )
+
+    assert (
+        client.get("/api/v1/compare-vulnerabilities/GCVE-1-2026-99999").status_code
+        == 404
+    )
+
+
+@pytest.fixture
+def fake_client(app, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> list[str]:
+    """The gcve client with its downloads and lookup replaced."""
+    pytest.importorskip("gcve")
+    from gcve import lookup, registry
+
+    calls: list[str] = []
+    record = json.loads(FIXTURE.read_text())
+
+    def download(base: Path) -> bool:
+        calls.append("download")
+        (base / registry.GCVE_PATH).parent.mkdir(parents=True, exist_ok=True)
+        (base / registry.GCVE_PATH).write_text("[]")
+        return True
+
+    for name in (
+        "update_registry_public_key",
+        "update_registry_signature",
+        "update_registry",
+    ):
+        monkeypatch.setattr(registry, name, download)
+    monkeypatch.setattr(registry, "verify_registry_integrity", lambda base: True)
+    monkeypatch.setattr(
+        lookup,
+        "lookup_gcve",
+        lambda identifier, base: (
+            SimpleNamespace(
+                record=record,
+                source="dump of GNA-1 (CIRCL)",
+                url="https://example.org/gna-1.ndjson",
+            )
+            if identifier == "GCVE-1-2026-00042"
+            else None
+        ),
+    )
+    monkeypatch.setattr(app, "instance_path", str(tmp_path))
+    return calls
+
+
+def test_lookup_returns_the_record_and_its_csaf_form(
+    app, fake_client: list[str]
+) -> None:
+    with app.app_context():
+        result: Any = gcve_lookup.lookup_public_record("GCVE-1-2026-00042")
+
+    assert result["source"] == "dump of GNA-1 (CIRCL)"
+    assert result["record"]["cveMetadata"]["cveId"] == "CVE-2026-12345"
+    assert result["csaf"]["cve"] == "CVE-2026-12345"
+    assert result["csaf"]["title"] == "Stored XSS in Example Widget comment form"
+
+
+def test_a_record_without_title_gets_none_to_compare(
+    app, fake_client: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from gcve import lookup
+
+    record = json.loads(FIXTURE.read_text())
+    del record["containers"]["cna"]["title"]
+    monkeypatch.setattr(
+        lookup,
+        "lookup_gcve",
+        lambda identifier, base: SimpleNamespace(record=record, source="x", url="y"),
+    )
+
+    with app.app_context():
+        result: Any = gcve_lookup.lookup_public_record("GCVE-1-2026-00042")
+
+    assert "title" not in result["csaf"]
+
+
+def test_the_registry_is_refreshed_once_a_day(
+    app, fake_client: list[str], tmp_path: Path
+) -> None:
+    with app.app_context():
+        gcve_lookup.lookup_public_record("GCVE-1-2026-00042")
+        assert fake_client.count("download") == 3
+
+        gcve_lookup.lookup_public_record("GCVE-1-2026-00042")
+        assert fake_client.count("download") == 3
+
+        registry_file = tmp_path / "gcve" / "registry" / "gcve.json"
+        old = time.time() - gcve_lookup.REGISTRY_MAX_AGE_SECONDS - 1
+        os.utime(registry_file, (old, old))
+        gcve_lookup.lookup_public_record("GCVE-1-2026-00042")
+        assert fake_client.count("download") == 6
+
+
+def test_an_invalid_registry_signature_is_refused(
+    app, fake_client: list[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from gcve import registry
+
+    monkeypatch.setattr(registry, "verify_registry_integrity", lambda base: False)
+
+    with app.app_context(), pytest.raises(RuntimeError, match="signature"):
+        gcve_lookup.lookup_public_record("GCVE-1-2026-00042")
+
+    # Not kept, so the next lookup downloads it again.
+    assert not (tmp_path / "gcve" / "registry" / "gcve.json").exists()

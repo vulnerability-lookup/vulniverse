@@ -91,8 +91,12 @@ api_url = "https://patch2vuln.example.org"
 # models = ["qwen3.8:27b"]
 timeout_seconds = 300
 
+[panels.compare-vulnerabilities]
+enabled = true
+
 [actions]
 "download-json" = true
+"convert" = true
 ```
 
 A panel id not listed defaults to enabled. Most panels are a plain
@@ -112,6 +116,37 @@ CNA-publication credentials — "Vulnerability-Lookup" (target id `vl`) and
 Each registered user sets their own under the standalone app's own
 `/cna-credentials` page; they're stored per-user, encrypted at rest using
 `CNA_CREDENTIAL_ENCRYPTION_KEY` (see below).
+
+### Optional: Compare vulnerabilities panel
+
+On CSAF advisories, the "Compare vulnerabilities" panel looks up the
+public GCVE and CVE records the advisory cites and shows what differs
+(title, description, CVE ID, CWEs, disclosure date, references, CVSS
+vectors). It uses the [GCVE client](https://github.com/gcve-eu/gcve),
+which finds a record where the GNA that allocated it publishes it, or
+else at CIRCL's Vulnerability-Lookup (which also answers CVE IDs).
+
+The client is an **optional extra** of the backend, because it is
+licensed GPL-3.0 while Vulniverse is BSD-2-Clause. Without it everything
+else works, and the panel says that the extra is missing. To install it:
+
+| Setup | Command |
+|---|---|
+| Without Docker | `uv sync --extra gcve` (instead of `uv sync`) |
+| Docker, development | nothing: `compose.dev.yaml` already builds with it |
+| Docker, production | `docker compose -f compose.yaml -f compose.prod.yaml build --build-arg EXTRAS=gcve backend`, or add `EXTRAS: "gcve"` under the backend's `build.args` |
+
+With the extra installed, the backend needs:
+
+- **outbound HTTPS** to `gcve.eu` (the signed GNA registry, refreshed
+  daily) and to the GNAs' publication sites, e.g.
+  `vulnerability.circl.lu`;
+- a **writable instance folder** (`backend/src/instance/gcve/`, a few MB
+  for the registry and downloaded GNA dumps). In Docker it is already
+  a volume.
+
+To hide the panel instead, set `enabled = false` under
+`[panels.compare-vulnerabilities]`.
 
 ## Backend environment (`.env`)
 

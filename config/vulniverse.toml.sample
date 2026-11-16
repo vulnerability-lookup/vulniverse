@@ -50,6 +50,11 @@ api_url = "https://patch2vuln.example.org"
 timeout_seconds = 300
 
 
+[panels.compare-vulnerabilities]
+enabled = true
+# On CSAF advisories: compare the cited GCVE/CVE IDs with their public
+# records. Needs the backend's gcve extra: pip install 'vulniverse-api[gcve]'.
+
 [actions]
 # Which header-button actions the standalone app shows, keyed by
 # EditorAction.id.

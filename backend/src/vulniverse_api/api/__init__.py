@@ -101,6 +101,7 @@ from . import (  # noqa: F401
     admin,
     auth,
     cna_credentials,
+    compare_vulnerabilities,
     convert,
     cpe_search,
     patch2vuln,

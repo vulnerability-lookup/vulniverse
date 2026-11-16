@@ -23,6 +23,10 @@ import {
   patch2vulnPanel,
 } from "./patch2vuln";
 
+import {
+  compareVulnerabilitiesPanel,
+} from "./compare-vulnerabilities";
+
 export const BUILTIN_PANELS:
   EditorPanel[] = [
     templatesPanel,
@@ -31,6 +35,7 @@ export const BUILTIN_PANELS:
     cveProgramPanel,
     recordQualityPanel,
     patch2vulnPanel,
+    compareVulnerabilitiesPanel,
   ];
 
 
@@ -53,4 +58,8 @@ export {
 
 export {
   patch2vulnPanel,
+};
+
+export {
+  compareVulnerabilitiesPanel,
 };

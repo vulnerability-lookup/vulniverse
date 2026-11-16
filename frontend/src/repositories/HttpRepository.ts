@@ -15,6 +15,7 @@ import type {
   CpeSearchParams,
   ConversionTarget,
   Patch2VulnJob,
+  PublicRecord,
   Patch2VulnInput,
   BackgroundJobEvent,
 } from "@/editor/contracts";
@@ -337,6 +338,14 @@ export class HttpRepository
           profile,
         }),
       },
+    );
+  }
+
+  async lookupPublicRecord(
+    identifier: string,
+  ): Promise<PublicRecord> {
+    return this.request<PublicRecord>(
+      `/compare-vulnerabilities/${encodeURIComponent(identifier)}`,
     );
   }
 

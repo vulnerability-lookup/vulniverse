@@ -107,6 +107,15 @@ export interface LoadedRecord {
 
 export type ConversionTarget = "csaf" | "osv";
 
+export interface PublicRecord {
+  record: CveRecord;
+  // Where it was found, e.g. "dump of GNA-1 (CIRCL)", and its URL.
+  source: string;
+  url: string;
+  // The same record as a CSAF vulnerability, for comparing.
+  csaf: Record<string, unknown>;
+}
+
 export interface ValidationError {
   path: Array<string | number>;
   schemaPath: Array<string | number>;
@@ -321,6 +330,15 @@ export interface EditorRepository {
     record: EditorDocument,
     profile: string,
   ): Promise<ValidationResult>;
+
+  /**
+   * Optional: a GCVE or CVE record from its public source (the "Public
+   * records" panel, through the backend's GCVE client). Rejects when it
+   * isn't found or the source can't be reached.
+   */
+  lookupPublicRecord?(
+    identifier: string,
+  ): Promise<PublicRecord>;
 
   /**
    * Optional: a CSAF 2.1 or OSV 1.9.2 draft built from a CVE/GCVE record

@@ -22,6 +22,11 @@ dependencies = [
     "cvss>=3.6",
 ]
 
+[project.optional-dependencies]
+gcve = [
+    "gcve>=1.0.0,<2",
+]
+
 
 [build-system]
 requires = ["hatchling"]
