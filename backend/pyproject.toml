@@ -48,6 +48,6 @@ target-version = "py312"
 testpaths = ["tests"]
 
 [[tool.mypy.overrides]]
-# Neither ships a py.typed marker or has a maintained types- stub package.
-module = ["flask_login.*", "flask_wtf.*"]
+# None ships a py.typed marker or has a maintained types- stub package.
+module = ["flask_login.*", "flask_wtf.*", "cvss.*"]
 ignore_missing_imports = true

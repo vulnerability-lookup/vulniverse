@@ -384,7 +384,11 @@ def expand_composite_error(
 def _missing_property(error: ValidationError) -> str | None:
     """The property a "required" error is about: jsonschema reports one
     error per missing property, named only in its message."""
-    if error.validator != "required" or not isinstance(error.instance, dict):
+    if (
+        error.validator != "required"
+        or not isinstance(error.instance, dict)
+        or not isinstance(error.validator_value, list)
+    ):
         return None
 
     return next(
