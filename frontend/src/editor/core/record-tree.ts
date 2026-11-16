@@ -202,3 +202,29 @@ export function layoutTree(
     height: nextRow * ROW_HEIGHT + 2 * PAD,
   };
 }
+
+
+/** Nodes under `root` (itself excluded) whose label or summary contains `query`, in reading order. */
+export function searchTree(root: TreeNode, query: string): TreeNode[] {
+  const needle = query.trim().toLowerCase();
+  const found: TreeNode[] = [];
+
+  function visit(node: TreeNode): void {
+    for (const child of node.children) {
+      if (`${child.label}\n${child.summary}`.toLowerCase().includes(needle)) found.push(child);
+      visit(child);
+    }
+  }
+
+  if (needle) visit(root);
+
+  return found;
+}
+
+
+/** The paths of the nodes above `path`, the root ("") included. */
+export function ancestorPaths(path: string): string[] {
+  const parts = path.split(".");
+
+  return parts.map((_, index) => parts.slice(0, index).join("."));
+}

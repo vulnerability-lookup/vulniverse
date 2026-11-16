@@ -11,8 +11,10 @@ import {
 
 import {
   MAX_TEXT,
+  ancestorPaths,
   layoutTree,
   recordTree,
+  searchTree,
   type PlacedNode,
   type TreeNode,
 } from "../core/record-tree";
@@ -84,6 +86,104 @@ function clip(text: string): string {
 
 const scroller = ref<HTMLElement | null>(null);
 
+// Scrolls only the graph's box (scrollIntoView would move the page too).
+function scrollTo(path: string, always: boolean): void {
+  const box = scroller.value;
+  const node = box?.querySelector(`[data-tree-path="${CSS.escape(path)}"]`);
+
+  if (!box || !node) return;
+
+  const outer = box.getBoundingClientRect();
+  const inner = node.getBoundingClientRect();
+  const visible = inner.left >= outer.left && inner.right <= outer.right
+    && inner.top >= outer.top && inner.bottom <= outer.bottom;
+
+  if (always || !visible) {
+    box.scrollTo({
+      left: box.scrollLeft + inner.left - outer.left + (inner.width - outer.width) / 2,
+      top: box.scrollTop + inner.top - outer.top + (inner.height - outer.height) / 2,
+      behavior: "smooth",
+    });
+  }
+}
+
+/*
+ * Search: every field whose name or value contains the query counts,
+ * open or not. Stepping to a match opens the nodes above it, so only
+ * the matches looked at get opened, not all of them at once.
+ */
+const query = ref("");
+const matches = computed(() => searchTree(root.value, query.value));
+const matchPaths = computed(() => new Set(matches.value.map((node) => node.path)));
+const current = ref(-1);
+
+async function step(by: number): Promise<void> {
+  const count = matches.value.length;
+
+  if (!count) return;
+
+  current.value = current.value < 0 && by < 0
+    ? count - 1
+    : (current.value + by + count) % count;
+
+  const path = matches.value[current.value]!.path;
+  open.value = new Set([...openPaths.value, ...ancestorPaths(path)]);
+
+  await nextTick();
+  scrollTo(path, true);
+}
+
+function search(value: string): void {
+  query.value = value;
+  current.value = -1;
+}
+
+const currentPath = computed(() => matches.value[current.value]?.path ?? null);
+
+/*
+ * Zoom scales the drawing, so the box scrolls over the scaled size.
+ * Ctrl + wheel zooms around the mouse, the buttons around the middle.
+ */
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 2;
+const zoom = ref(1);
+
+async function zoomTo(value: number, anchor?: { x: number; y: number }): Promise<void> {
+  const box = scroller.value;
+  const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(value * 100) / 100));
+
+  if (!box || next === zoom.value) return;
+
+  const at = anchor ?? { x: box.clientWidth / 2, y: box.clientHeight / 2 };
+  const point = { x: (box.scrollLeft + at.x) / zoom.value, y: (box.scrollTop + at.y) / zoom.value };
+
+  zoom.value = next;
+  await nextTick();
+  box.scrollLeft = point.x * next - at.x;
+  box.scrollTop = point.y * next - at.y;
+}
+
+function fit(): void {
+  const box = scroller.value;
+
+  if (box) {
+    const scale = Math.min(1, box.clientWidth / layout.value.width, box.clientHeight / layout.value.height);
+    // Rounded down, so the fitted graph never overflows by a pixel.
+    void zoomTo(Math.floor(scale * 100) / 100);
+  }
+}
+
+function wheel(event: WheelEvent): void {
+  if (!event.ctrlKey) return;
+
+  event.preventDefault();
+  const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  void zoomTo(zoom.value * (event.deltaY < 0 ? 1.1 : 1 / 1.1), {
+    x: event.clientX - box.left,
+    y: event.clientY - box.top,
+  });
+}
+
 async function toggle(node: TreeNode): Promise<void> {
   if (!node.children.length) {
     if (node.path) editor.revealPath(node.path);
@@ -99,10 +199,7 @@ async function toggle(node: TreeNode): Promise<void> {
   if (opening) {
     // Bring the new children into view; they may lie right of or below it.
     await nextTick();
-    const middle = node.children[Math.floor(node.children.length / 2)]!;
-    scroller.value
-      ?.querySelector(`[data-tree-path="${CSS.escape(middle.path)}"]`)
-      ?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+    scrollTo(node.children[Math.floor(node.children.length / 2)]!.path, false);
   }
 }
 </script>
@@ -149,12 +246,97 @@ async function toggle(node: TreeNode): Promise<void> {
 
     <div
       v-if="root.children.length"
+      class="record-graph-toolbar d-flex flex-wrap gap-2 mb-2"
+    >
+      <div class="input-group input-group-sm record-graph-search">
+        <input
+          :value="query"
+          type="search"
+          class="form-control"
+          placeholder="Search names and values"
+          aria-label="Search the tree"
+          @input="search(($event.target as HTMLInputElement).value)"
+          @keydown.enter.prevent="step($event.shiftKey ? -1 : 1)"
+        >
+        <span
+          v-if="query.trim()"
+          class="input-group-text"
+          aria-live="polite"
+        >
+          {{ matches.length ? `${current < 0 ? "–" : current + 1} / ${matches.length}` : "No matches" }}
+        </span>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          aria-label="Previous match"
+          :disabled="!matches.length"
+          @click="step(-1)"
+        >
+          ↑
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          aria-label="Next match"
+          :disabled="!matches.length"
+          @click="step(1)"
+        >
+          ↓
+        </button>
+      </div>
+
+      <div
+        class="btn-group btn-group-sm ms-auto"
+        role="group"
+        aria-label="Zoom"
+      >
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          aria-label="Zoom out"
+          :disabled="zoom <= MIN_ZOOM"
+          @click="zoomTo(zoom / 1.25)"
+        >
+          −
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary record-graph-zoom"
+          title="Reset to 100%"
+          @click="zoomTo(1)"
+        >
+          {{ Math.round(zoom * 100) }}%
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          aria-label="Zoom in"
+          :disabled="zoom >= MAX_ZOOM"
+          @click="zoomTo(zoom * 1.25)"
+        >
+          +
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          title="Fit the open part of the tree in the box"
+          @click="fit"
+        >
+          Fit
+        </button>
+      </div>
+    </div>
+
+    <div
+      v-if="root.children.length"
       ref="scroller"
       class="record-graph"
+      @wheel="wheel"
     >
       <svg
-        :width="layout.width"
-        :height="layout.height"
+        :width="layout.width * zoom"
+        :height="layout.height * zoom"
+        :viewBox="`0 0 ${layout.width} ${layout.height}`"
         role="tree"
         aria-label="Record tree"
       >
@@ -178,6 +360,8 @@ async function toggle(node: TreeNode): Promise<void> {
             {
               'is-closed': placed.node.children.length && !placed.open,
               [`is-${issue(placed.node.path)}`]: issue(placed.node.path),
+              'is-match': matchPaths.has(placed.node.path),
+              'is-current-match': placed.node.path === currentPath,
             },
           ]"
         >
@@ -196,6 +380,11 @@ async function toggle(node: TreeNode): Promise<void> {
             <circle
               class="record-graph-hit"
               r="11"
+            />
+            <circle
+              v-if="placed.node.path === currentPath"
+              class="record-graph-found"
+              r="12"
             />
             <circle
               v-if="issue(placed.node.path)"

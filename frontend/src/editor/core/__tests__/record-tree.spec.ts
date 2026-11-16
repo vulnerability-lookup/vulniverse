@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { humanize, layoutTree, recordTree } from "../record-tree";
+import { ancestorPaths, humanize, layoutTree, recordTree, searchTree } from "../record-tree";
 import { isWithin, itemIndex } from "../reveal";
 
 const schema = {
@@ -57,6 +57,15 @@ describe("layoutTree", () => {
     expect(top!.y).toBe((a!.y + b!.y) / 2);
     expect(x!.x).toBeGreaterThan(a!.x);
     expect([a!.labelLeft, b!.labelLeft]).toEqual([true, false]);
+  });
+
+  it("finds nodes by label or value, below the root", () => {
+    const named = { ...root, children: [{ ...root.children[0]!, summary: "Widget" }, leaf("b")] };
+
+    expect(searchTree(named, " a.Y ").map((n) => n.path)).toEqual(["a.y"]);
+    expect(searchTree(named, "widget").map((n) => n.path)).toEqual(["a"]);
+    expect(searchTree(named, "")).toEqual([]);
+    expect(ancestorPaths("a.b.c")).toEqual(["", "a", "a.b"]);
   });
 
   it("hides the children of closed nodes", () => {

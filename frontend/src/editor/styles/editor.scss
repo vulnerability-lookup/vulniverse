@@ -424,7 +424,7 @@
       stroke-width: 2;
     }
 
-    &.is-closed circle:not(.record-graph-hit, .record-graph-halo) {
+    &.is-closed circle:not(.record-graph-hit, .record-graph-halo, .record-graph-found) {
       fill: var(--node-color);
     }
 
@@ -444,6 +444,26 @@
       stroke: var(--bs-warning);
       stroke-dasharray: 3 2;
     }
+  }
+
+  // Search: matches in the primary colour, the current one ringed.
+  .record-graph-node.is-match .record-graph-label {
+    fill: var(--bs-primary);
+    font-weight: 700;
+  }
+
+  .record-graph-node .record-graph-found {
+    fill: rgba(var(--bs-primary-rgb), 0.15);
+    stroke: var(--bs-primary);
+    stroke-width: 1.5;
+  }
+
+  .record-graph-search {
+    max-width: 26rem;
+  }
+
+  .record-graph-zoom {
+    min-width: 3.75rem;
   }
 
   .record-graph-dot {
