@@ -49,6 +49,11 @@ export {
 } from "./editor/contracts";
 
 export {
+  downloadAction,
+  tutorialAction,
+} from "./editor/actions";
+
+export {
   cveProgramPanel,
   patch2vulnPanel,
   recordQualityPanel,

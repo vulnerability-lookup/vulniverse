@@ -246,6 +246,33 @@
   line-height: 1;
 }
 
+// The guided tour (tutorial/EditorTutorial.vue): everything but the current
+// element dimmed by the spotlight's huge shadow, the explanation beside it.
+.editor-tutorial-spotlight,
+.editor-tutorial-backdrop {
+  position: fixed;
+  z-index: 1080;
+  pointer-events: none;
+}
+
+.editor-tutorial-spotlight {
+  border-radius: var(--bs-border-radius);
+  box-shadow: 0 0 0 200vmax rgba(15, 23, 33, 0.5);
+  transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+.editor-tutorial-backdrop {
+  inset: 0;
+  background: rgba(15, 23, 33, 0.5);
+}
+
+.editor-tutorial-popover {
+  position: fixed;
+  z-index: 1081;
+  width: min(20rem, calc(100vw - 2rem));
+  outline: none;
+}
+
 .editor-dialog::backdrop {
   background: rgba(15, 23, 33, 0.35);
 }

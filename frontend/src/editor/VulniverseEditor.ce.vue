@@ -44,6 +44,13 @@ import RejectDialog from
 import EditorNotifications from
   "./components/EditorNotifications.vue";
 
+import EditorTutorial from
+  "./tutorial/EditorTutorial.vue";
+
+import {
+  TUTORIAL_STEPS,
+} from "./tutorial/steps";
+
 import {
   BUILTIN_NAVIGATION_ITEMS,
   useEditorExtensions,
@@ -189,6 +196,8 @@ const extensions =
     isRejected:
       controller.isRejected,
 
+    startTutorial,
+
     onError(error) {
       emit(
         "error",
@@ -232,6 +241,20 @@ const rejectDialogRef =
   ref<
     InstanceType<typeof RejectDialog> | null
   >(null);
+
+const tutorialRef =
+  ref<
+    InstanceType<typeof EditorTutorial> | null
+  >(null);
+
+// The tutorial switches sections as it goes; afterwards the user is back
+// where they started it.
+let sectionBeforeTutorial = "editor";
+
+function startTutorial(): void {
+  sectionBeforeTutorial = activeSection.value;
+  tutorialRef.value?.start();
+}
 
 function handleRejectClick(): void {
   rejectDialogRef.value?.open();
@@ -299,6 +322,13 @@ onMounted(controller.load);
       </main>
 
       <EditorNotifications />
+
+      <EditorTutorial
+        ref="tutorialRef"
+        :steps="TUTORIAL_STEPS"
+        @section="(id) => activeSection = id"
+        @end="activeSection = sectionBeforeTutorial"
+      />
     </div>
 
     <div

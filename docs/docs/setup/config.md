@@ -93,6 +93,7 @@ timeout_seconds = 300
 
 [actions]
 "download" = true
+"tutorial" = true
 ```
 
 A panel id not listed defaults to enabled. Most panels are a plain

@@ -54,3 +54,4 @@ timeout_seconds = 300
 # Which header-button actions the standalone app shows, keyed by
 # EditorAction.id.
 "download" = true
+"tutorial" = true

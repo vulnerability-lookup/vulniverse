@@ -2,6 +2,10 @@ import {
   downloadAction,
 } from "./download";
 
+import {
+  tutorialAction,
+} from "./tutorial";
+
 import type {
   EditorAction,
 } from "../contracts";
@@ -15,6 +19,7 @@ import type {
  */
 export const BUILTIN_ACTIONS: EditorAction[] = [
   downloadAction,
+  tutorialAction,
 ];
 
-export { downloadAction };
+export { downloadAction, tutorialAction };

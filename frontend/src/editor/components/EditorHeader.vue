@@ -20,6 +20,7 @@ defineProps<{
   actions: Array<{
     id: string;
     label: string;
+    icon?: string;
     options?: { id: string; label: string }[];
     enabled: boolean;
   }>;
@@ -132,7 +133,10 @@ function transitionButtonClass(
           </div>
         </div>
 
-      <div class="d-flex flex-wrap align-items-center gap-2">
+      <div
+        class="d-flex flex-wrap align-items-center gap-2"
+        data-tutorial="actions"
+      >
         <div
           class="btn-group"
           role="group"
@@ -233,6 +237,17 @@ function transitionButtonClass(
                 :aria-expanded="openMenu === action.id"
                 @click="openMenu = openMenu === action.id ? null : action.id"
               >
+                <svg
+                  v-if="action.icon"
+                  class="editor-header-icon"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                ><path :d="action.icon" /></svg>
                 {{ action.label }}
               </button>
 
@@ -264,6 +279,17 @@ function transitionButtonClass(
               :disabled="loading || !action.enabled"
               @click="$emit('runAction', action.id)"
             >
+              <svg
+                v-if="action.icon"
+                class="editor-header-icon"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              ><path :d="action.icon" /></svg>
               {{ action.label }}
             </button>
           </template>

@@ -17,6 +17,7 @@ import {
 // Only actions that run entirely in the browser: there is no backend here.
 import {
   downloadAction,
+  tutorialAction,
 } from "@/editor/actions";
 
 // One SandboxRepository instance per page load — everything it holds
@@ -96,7 +97,7 @@ function handleError(
         mode="create"
         :profile="selectedProfile"
         :panels="[]"
-        :actions="[downloadAction]"
+        :actions="[downloadAction, tutorialAction]"
         @error="handleError"
       />
     </div>

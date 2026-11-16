@@ -50,6 +50,9 @@ interface EditorExtensionsOptions {
 
   isRejected: Readonly<Ref<boolean>>;
 
+  // Offered to actions as EditorContext.startTutorial.
+  startTutorial(): void;
+
   onError(error: Error): void;
 }
 
@@ -91,6 +94,7 @@ export function useEditorExtensions(
     actions,
     repository,
     isRejected,
+    startTutorial,
   } = options;
 
   const activeProfile =
@@ -115,6 +119,8 @@ export function useEditorExtensions(
 
       isDraft:
         state.isDraft.value,
+
+      ...(state.record.value ? { startTutorial } : {}),
     }));
 
   const visiblePanels =
@@ -206,6 +212,7 @@ export function useEditorExtensions(
           (action) => ({
             id: action.id,
             label: action.label,
+            icon: action.icon,
             options: action.options,
 
             enabled:

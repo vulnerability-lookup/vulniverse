@@ -463,6 +463,12 @@ export interface EditorContext {
   profile: string;
   record: EditorDocument;
   isDraft: boolean;
+
+  /**
+   * Starts the editor's guided tour (what tutorialAction runs). Absent
+   * while there's nothing to show, e.g. no record loaded yet.
+   */
+  startTutorial?(): void;
 }
 
 export interface LifecycleTransition {
@@ -501,6 +507,13 @@ export interface EditorAction {
    * to always enabled.
    */
   isEnabled?(context: EditorContext): boolean;
+
+  /**
+   * An icon before the label: the `d` of one SVG path on a 16×16 grid,
+   * drawn as a line (stroke) like the header's other icons. Path data,
+   * not markup, so a host can't inject anything through it.
+   */
+  icon?: string;
 
   /**
    * Variants offered in a menu on the button (e.g. file formats); the
