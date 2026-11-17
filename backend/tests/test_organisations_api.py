@@ -100,6 +100,7 @@ def test_admin_creates_an_organisation_with_a_derived_slug(admin_client) -> None
         "slug": "acme-security-inc",
         "createdAt": "",
         "memberCount": 0,
+        "recordCount": 0,
     }
 
 
@@ -147,10 +148,10 @@ def test_names_are_unique_ignoring_case(
 ) -> None:
     create = admin_client.post("/api/v1/admin/organisations", json={"name": "ACME"})
     rename = admin_client.patch(
-        f"/api/v1/admin/organisations/{other_organisation.id}", json={"name": "acme"}
+        f"/api/v1/organisations/{other_organisation.id}", json={"name": "acme"}
     )
     keep = admin_client.patch(
-        f"/api/v1/admin/organisations/{organisation.id}", json={"name": "ACME"}
+        f"/api/v1/organisations/{organisation.id}", json={"name": "ACME"}
     )
 
     assert (create.status_code, rename.status_code) == (409, 409)
@@ -161,7 +162,7 @@ def test_names_are_unique_ignoring_case(
 
 def test_admin_renames_an_organisation(admin_client, organisation) -> None:
     response = admin_client.patch(
-        f"/api/v1/admin/organisations/{organisation.id}", json={"name": "Acme CNA"}
+        f"/api/v1/organisations/{organisation.id}", json={"name": "Acme CNA"}
     )
 
     assert response.status_code == 200
@@ -174,7 +175,7 @@ def test_admin_renames_an_organisation(admin_client, organisation) -> None:
 def test_renaming_an_unknown_organisation_is_404(admin_client) -> None:
     assert (
         admin_client.patch(
-            "/api/v1/admin/organisations/999", json={"name": "X"}
+            "/api/v1/organisations/999", json={"name": "X"}
         ).status_code
         == 404
     )
@@ -186,7 +187,7 @@ def test_renaming_an_unknown_organisation_is_404(admin_client) -> None:
 def test_admin_adds_a_member_and_changes_their_role(
     app, admin_client, other_user, organisation
 ) -> None:
-    url = f"/api/v1/admin/organisations/{organisation.id}/members/{other_user.id}"
+    url = f"/api/v1/organisations/{organisation.id}/members/{other_user.id}"
 
     added = admin_client.put(url, json={"role": "editor"})
     changed = admin_client.put(url, json={"role": "admin"})
@@ -203,7 +204,7 @@ def test_admin_adds_a_member_and_changes_their_role(
 
 def test_admin_lists_members_by_email(admin_client, test_user, organisation) -> None:
     body = admin_client.get(
-        f"/api/v1/admin/organisations/{organisation.id}/members"
+        f"/api/v1/organisations/{organisation.id}/members"
     ).get_json()
 
     assert [(m["email"], m["role"]) for m in body["members"]] == [
@@ -215,7 +216,7 @@ def test_admin_lists_members_by_email(admin_client, test_user, organisation) -> 
 def test_member_changes_need_a_valid_role_and_existing_ids(
     admin_client, test_user, organisation
 ) -> None:
-    base = f"/api/v1/admin/organisations/{organisation.id}/members"
+    base = f"/api/v1/organisations/{organisation.id}/members"
 
     assert (
         admin_client.put(f"{base}/{test_user.id}", json={"role": "owner"}).status_code
@@ -224,7 +225,7 @@ def test_member_changes_need_a_valid_role_and_existing_ids(
     assert admin_client.put(f"{base}/999", json={"role": "editor"}).status_code == 404
     assert (
         admin_client.put(
-            f"/api/v1/admin/organisations/999/members/{test_user.id}",
+            f"/api/v1/organisations/999/members/{test_user.id}",
             json={"role": "editor"},
         ).status_code
         == 404
@@ -237,7 +238,7 @@ def test_removing_a_member_ends_their_access_but_keeps_the_records(
     rid = insert_record(app, "CVE-2026-02002", test_user.id, is_draft=True)
 
     response = admin_client.delete(
-        f"/api/v1/admin/organisations/{organisation.id}/members/{test_user.id}"
+        f"/api/v1/organisations/{organisation.id}/members/{test_user.id}"
     )
 
     assert response.status_code == 200
@@ -251,7 +252,7 @@ def test_removing_a_member_ends_their_access_but_keeps_the_records(
 def test_removing_a_non_member_is_404(admin_client, other_user, organisation) -> None:
     assert (
         admin_client.delete(
-            f"/api/v1/admin/organisations/{organisation.id}/members/{other_user.id}"
+            f"/api/v1/organisations/{organisation.id}/members/{other_user.id}"
         ).status_code
         == 404
     )

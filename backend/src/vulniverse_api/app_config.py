@@ -37,6 +37,13 @@ def _panel_enabled(value: Any) -> bool:
     return bool(value)
 
 
+# Who may create an account in multi-user mode: anyone ("open", the
+# behaviour before this setting existed), only with an invitation link
+# ("invite"), or nobody ("closed"; invitations then only work for people
+# who already have an account).
+REGISTRATION_MODES = ("open", "invite", "closed")
+
+
 @lru_cache(maxsize=1)
 def load_app_config() -> dict[str, dict[str, Any]]:
     """Load config/vulniverse.toml, falling back to the committed
@@ -51,6 +58,7 @@ def load_app_config() -> dict[str, dict[str, Any]]:
         return {
             "server": {
                 "mode": "local",
+                "registration": "open",
             },
             "panels": {},
             "actions": {},
@@ -63,6 +71,7 @@ def load_app_config() -> dict[str, dict[str, Any]]:
     return {
         "server": {
             "mode": data.get("server", {}).get("mode", "local"),
+            "registration": data.get("server", {}).get("registration", "open"),
         },
         "features": {
             **DEFAULT_FEATURES,

@@ -7,7 +7,7 @@ from typing import Any
 from dotenv import load_dotenv
 from flask import Flask
 
-from .app_config import load_app_config
+from .app_config import REGISTRATION_MODES, load_app_config
 from .auth.identity import init_auth
 from .extensions import csrf, db, login_manager, migrate
 
@@ -32,6 +32,14 @@ def create_app(
     if mode not in {"local", "multiuser"}:
         raise RuntimeError(
             f"Invalid Vulniverse deployment mode: {mode}"
+        )
+
+    registration = app_config["server"]["registration"]
+
+    if registration not in REGISTRATION_MODES:
+        raise RuntimeError(
+            f"Invalid [server] registration: {registration!r}"
+            f" (one of {', '.join(REGISTRATION_MODES)})"
         )
 
     instance_path = Path(app.instance_path)
@@ -67,6 +75,7 @@ def create_app(
         ),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         VULNIVERSE_MODE=mode,
+        VULNIVERSE_REGISTRATION=registration,
     )
 
     if test_config:

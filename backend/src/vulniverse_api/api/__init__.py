@@ -25,6 +25,10 @@ EXEMPT_ENDPOINTS = frozenset({
     "api_v1.login",
     "api_v1.csrf_token",
     "api_v1.validate",
+    # An invitation link's landing page and the register form need these
+    # before an account exists; the invitation token is the secret.
+    "api_v1.invitation_info",
+    "api_v1.registration_mode",
 })
 
 

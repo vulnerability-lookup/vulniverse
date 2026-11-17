@@ -98,3 +98,73 @@ class Membership(
 
     user: Mapped[User] = relationship()
     organisation: Mapped[Organisation] = relationship()
+
+
+class Invitation(
+    db.Model,  # type: ignore[name-defined]
+):
+    """A single-use link to join an organisation with a role.
+
+    Only a hash of the link's token is stored, so the database alone
+    can't be used to join; the link itself is shown once, on creation.
+    """
+
+    __tablename__ = "invitation"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+    )
+
+    organisation_id: Mapped[int] = mapped_column(
+        ForeignKey("organisation.id"),
+        nullable=False,
+        index=True,
+    )
+
+    # SHA-256 of the token, hex.
+    token_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        unique=True,
+    )
+
+    role: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+    )
+
+    created_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("user.id"),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    # Set once used (single use) or revoked; either ends the invitation.
+    accepted_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("user.id"),
+        nullable=True,
+    )
+
+    accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    organisation: Mapped[Organisation] = relationship()
+    created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id])
+    accepted_by: Mapped[User | None] = relationship(foreign_keys=[accepted_by_id])

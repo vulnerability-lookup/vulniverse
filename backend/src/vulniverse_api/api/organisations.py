@@ -1,22 +1,44 @@
-"""Organisations and their members, managed by instance admins.
+"""Organisations, their members and invitations.
 
-Organisation admins managing their own members is phase 2; until then
-the "admin" role is stored but grants nothing beyond "editor". Deleting
-an organisation isn't offered: its records would need a new home first.
+- Instance admins create organisations (/admin/organisations) and may
+  add any existing account to one.
+- An organisation's own admins (and instance admins) manage its name,
+  members and invitation links (/organisations/<id>/...).
+- Anyone with a valid invitation link joins with its role
+  (/invitations/<token>); an organisation always keeps one admin.
+
+Only an empty organisation can be deleted (by instance admins): its
+records would otherwise need a new home first.
 """
 
 from __future__ import annotations
 
 import re
+from datetime import UTC, datetime
 from typing import Any
 
-from flask import request
+from flask import request, session
+from flask_login import current_user
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
+from ..auth.organisations import SESSION_KEY, can_manage_organisation, is_member
 from ..auth.permissions import admin_required, multiuser_only
 from ..extensions import db
-from ..models import MEMBERSHIP_ROLES, Membership, Organisation, User
+from ..models import (
+    MEMBERSHIP_ROLES,
+    Invitation,
+    Membership,
+    Organisation,
+    User,
+    VulnerabilityRecord,
+)
+from ..services.invitations import (
+    accept_invitation,
+    create_invitation,
+    find_invitation,
+    invitation_state,
+)
 from . import api_bp
 
 type ApiResponse = tuple[dict[str, Any], int]
@@ -33,6 +55,9 @@ def slug_from(name: str) -> str:
 
 def organisation_response(organisation: Organisation) -> dict[str, Any]:
     members = Membership.query.filter_by(organisation_id=organisation.id).count()
+    records = VulnerabilityRecord.query.filter_by(
+        organisation_id=organisation.id
+    ).count()
 
     return {
         "id": organisation.id,
@@ -40,6 +65,8 @@ def organisation_response(organisation: Organisation) -> dict[str, Any]:
         "slug": organisation.slug,
         "createdAt": organisation.created_at.isoformat(),
         "memberCount": members,
+        # Only an organisation without records can be deleted.
+        "recordCount": records,
     }
 
 
@@ -161,13 +188,78 @@ def create_organisation() -> ApiResponse:
     return organisation_response(organisation), 201
 
 
-@api_bp.patch("/admin/organisations/<int:organisation_id>")
+@api_bp.delete("/admin/organisations/<int:organisation_id>")
 @multiuser_only
 @admin_required
-def update_organisation(organisation_id: int) -> ApiResponse:
+def delete_organisation(organisation_id: int) -> ApiResponse:
+    """Only an empty organisation: its records would otherwise need a new
+    home. Its memberships and invitations go with it; the accounts stay,
+    and whoever had it as their current organisation falls back to
+    their next one."""
     organisation = db.session.get(Organisation, organisation_id)
     if organisation is None:
         return {"message": "Organisation not found."}, 404
+
+    records = VulnerabilityRecord.query.filter_by(
+        organisation_id=organisation_id
+    ).count()
+    if records:
+        return {
+            "message": f"{organisation.name} still has {records} record(s);"
+            " move or delete them first.",
+        }, 409
+
+    Invitation.query.filter_by(organisation_id=organisation_id).delete()
+    Membership.query.filter_by(organisation_id=organisation_id).delete()
+    db.session.delete(organisation)
+    db.session.commit()
+
+    return {"id": organisation_id}, 200
+
+
+def managed_organisation(organisation_id: int) -> Organisation | ApiResponse:
+    """The organisation if the current user may manage it, else the error:
+    404 if it doesn't exist, 403 if they may not."""
+    organisation = db.session.get(Organisation, organisation_id)
+    if organisation is None:
+        return {"message": "Organisation not found."}, 404
+    if not can_manage_organisation(current_user, organisation_id):
+        return {"message": "Only the organisation's admins can do this."}, 403
+
+    return organisation
+
+
+def admin_count(organisation_id: int) -> int:
+    return Membership.query.filter_by(
+        organisation_id=organisation_id, role="admin"
+    ).count()
+
+
+LAST_ADMIN: ApiResponse = (
+    {
+        "message": "An organisation needs at least one admin."
+        " Make someone else an admin first.",
+    },
+    409,
+)
+
+
+@api_bp.get("/organisations/<int:organisation_id>")
+@multiuser_only
+def get_organisation(organisation_id: int) -> ApiResponse:
+    organisation = managed_organisation(organisation_id)
+    if isinstance(organisation, tuple):
+        return organisation
+
+    return organisation_response(organisation), 200
+
+
+@api_bp.patch("/organisations/<int:organisation_id>")
+@multiuser_only
+def update_organisation(organisation_id: int) -> ApiResponse:
+    organisation = managed_organisation(organisation_id)
+    if isinstance(organisation, tuple):
+        return organisation
 
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
@@ -191,12 +283,12 @@ def update_organisation(organisation_id: int) -> ApiResponse:
     return organisation_response(organisation), 200
 
 
-@api_bp.get("/admin/organisations/<int:organisation_id>/members")
+@api_bp.get("/organisations/<int:organisation_id>/members")
 @multiuser_only
-@admin_required
 def list_members(organisation_id: int) -> ApiResponse:
-    if db.session.get(Organisation, organisation_id) is None:
-        return {"message": "Organisation not found."}, 404
+    organisation = managed_organisation(organisation_id)
+    if isinstance(organisation, tuple):
+        return organisation
 
     members = (
         Membership.query.filter_by(organisation_id=organisation_id)
@@ -208,13 +300,15 @@ def list_members(organisation_id: int) -> ApiResponse:
     return {"members": [member_response(m) for m in members]}, 200
 
 
-@api_bp.put("/admin/organisations/<int:organisation_id>/members/<int:user_id>")
+@api_bp.put("/organisations/<int:organisation_id>/members/<int:user_id>")
 @multiuser_only
-@admin_required
 def set_member(organisation_id: int, user_id: int) -> ApiResponse:
-    """Add the user to the organisation, or change their role there."""
-    if db.session.get(Organisation, organisation_id) is None:
-        return {"message": "Organisation not found."}, 404
+    """Change a member's role. Instance admins may also add any existing
+    account this way; organisation admins invite with a link instead,
+    so they never see the instance's list of accounts."""
+    organisation = managed_organisation(organisation_id)
+    if isinstance(organisation, tuple):
+        return organisation
     if db.session.get(User, user_id) is None:
         return {"message": "User not found."}, 404
 
@@ -232,8 +326,17 @@ def set_member(organisation_id: int, user_id: int) -> ApiResponse:
     created = membership is None
 
     if membership is None:
+        if not current_user.is_admin:
+            return {"message": "Invite new members with an invitation link."}, 403
         membership = Membership(organisation_id=organisation_id, user_id=user_id)
         db.session.add(membership)
+    elif (
+        membership.role == "admin"
+        and role != "admin"
+        and admin_count(organisation_id) == 1
+    ):
+        return LAST_ADMIN
+
     membership.role = role
 
     try:
@@ -246,20 +349,141 @@ def set_member(organisation_id: int, user_id: int) -> ApiResponse:
     return member_response(membership), 201 if created else 200
 
 
-@api_bp.delete("/admin/organisations/<int:organisation_id>/members/<int:user_id>")
+@api_bp.delete("/organisations/<int:organisation_id>/members/<int:user_id>")
 @multiuser_only
-@admin_required
 def remove_member(organisation_id: int, user_id: int) -> ApiResponse:
     """The user loses access to the organisation's drafts; the records
     they created stay with the organisation."""
+    organisation = managed_organisation(organisation_id)
+    if isinstance(organisation, tuple):
+        return organisation
+
     membership = Membership.query.filter_by(
         organisation_id=organisation_id,
         user_id=user_id,
     ).first()
     if membership is None:
         return {"message": "Membership not found."}, 404
+    if membership.role == "admin" and admin_count(organisation_id) == 1:
+        return LAST_ADMIN
 
     db.session.delete(membership)
     db.session.commit()
 
     return {"organisationId": organisation_id, "userId": user_id}, 200
+
+
+# --- Invitations -----------------------------------------------------------
+
+
+def invitation_response(invitation: Invitation) -> dict[str, Any]:
+    return {
+        "id": invitation.id,
+        "role": invitation.role,
+        "state": invitation_state(invitation),
+        "createdAt": invitation.created_at.isoformat(),
+        "expiresAt": invitation.expires_at.isoformat(),
+        "createdBy": invitation.created_by.email if invitation.created_by else None,
+        "acceptedBy": invitation.accepted_by.email if invitation.accepted_by else None,
+    }
+
+
+@api_bp.get("/organisations/<int:organisation_id>/invitations")
+@multiuser_only
+def list_invitations(organisation_id: int) -> ApiResponse:
+    organisation = managed_organisation(organisation_id)
+    if isinstance(organisation, tuple):
+        return organisation
+
+    invitations = (
+        Invitation.query.filter_by(organisation_id=organisation_id)
+        .order_by(Invitation.created_at.desc(), Invitation.id.desc())
+        .all()
+    )
+
+    return {"invitations": [invitation_response(i) for i in invitations]}, 200
+
+
+@api_bp.post("/organisations/<int:organisation_id>/invitations")
+@multiuser_only
+def create_organisation_invitation(organisation_id: int) -> ApiResponse:
+    """A new invitation link's token is in this response only."""
+    organisation = managed_organisation(organisation_id)
+    if isinstance(organisation, tuple):
+        return organisation
+
+    payload = request.get_json(silent=True)
+    role = payload.get("role") if isinstance(payload, dict) else None
+    if role not in MEMBERSHIP_ROLES:
+        return {
+            "message": f"'role' must be one of: {', '.join(MEMBERSHIP_ROLES)}."
+        }, 400
+
+    invitation, token = create_invitation(organisation, role, current_user)
+
+    return {**invitation_response(invitation), "token": token}, 201
+
+
+@api_bp.delete("/organisations/<int:organisation_id>/invitations/<int:invitation_id>")
+@multiuser_only
+def revoke_invitation(organisation_id: int, invitation_id: int) -> ApiResponse:
+    organisation = managed_organisation(organisation_id)
+    if isinstance(organisation, tuple):
+        return organisation
+
+    invitation = db.session.get(Invitation, invitation_id)
+    if invitation is None or invitation.organisation_id != organisation_id:
+        return {"message": "Invitation not found."}, 404
+
+    if invitation_state(invitation) == "valid":
+        invitation.revoked_at = datetime.now(UTC)
+        db.session.commit()
+
+    return invitation_response(invitation), 200
+
+
+@api_bp.get("/invitations/<token>")
+@multiuser_only
+def invitation_info(token: str) -> ApiResponse:
+    """What an invitation link offers, for its landing page; needs no
+    login, the token itself is the secret."""
+    invitation = find_invitation(token)
+    if invitation is None:
+        return {"message": "This invitation link isn't valid."}, 404
+
+    return {
+        "organisation": invitation.organisation.name,
+        "role": invitation.role,
+        "state": invitation_state(invitation),
+    }, 200
+
+
+@api_bp.post("/invitations/<token>/accept")
+@multiuser_only
+def accept_organisation_invitation(token: str) -> ApiResponse:
+    """Join the invitation's organisation, which becomes the current one."""
+    invitation = find_invitation(token)
+    error = invitation_error(invitation)
+    if error is not None:
+        return error
+    assert invitation is not None
+
+    if is_member(current_user, invitation.organisation_id):
+        return {"message": "You're already a member of this organisation."}, 409
+
+    membership = accept_invitation(invitation, current_user)
+    session[SESSION_KEY] = membership.organisation_id
+
+    return {"organisationId": membership.organisation_id, "role": membership.role}, 200
+
+
+def invitation_error(invitation: Invitation | None) -> ApiResponse | None:
+    """Why the invitation can't be used, or None if it can."""
+    if invitation is None:
+        return {"message": "This invitation link isn't valid."}, 404
+
+    state = invitation_state(invitation)
+    if state != "valid":
+        return {"message": f"This invitation has been {state}; ask for a new one."}, 410
+
+    return None

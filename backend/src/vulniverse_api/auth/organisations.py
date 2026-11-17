@@ -61,3 +61,17 @@ def can_read_record(record: VulnerabilityRecord) -> bool:
 
 def can_modify_record(record: VulnerabilityRecord) -> bool:
     return current_user.is_admin or is_member(current_user, record.organisation_id)
+
+
+def can_manage_organisation(user: User, organisation_id: int) -> bool:
+    """Instance admins, and the organisation's own admins, manage its
+    members, invitations and name."""
+    if user.is_admin:
+        return True
+
+    membership = Membership.query.filter_by(
+        user_id=user.id,
+        organisation_id=organisation_id,
+    ).first()
+
+    return membership is not None and membership.role == "admin"

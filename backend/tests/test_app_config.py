@@ -31,7 +31,7 @@ def test_falls_back_to_sample_file_when_real_config_absent(
     result = app_config.load_app_config()
 
     assert result == {
-        "server": {"mode": "local"},
+        "server": {"mode": "local", "registration": "open"},
         "features": dict(app_config.DEFAULT_FEATURES),
         "panels": {"stats": True},
         "actions": {"download": False},
@@ -164,7 +164,7 @@ def test_empty_tables_when_neither_file_exists(
     result = app_config.load_app_config()
 
     assert result == {
-        "server": {"mode": "local"},
+        "server": {"mode": "local", "registration": "open"},
         "panels": {},
         "actions": {},
         "features": dict(app_config.DEFAULT_FEATURES),

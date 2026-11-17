@@ -32,6 +32,7 @@ features it's allowed to use.
 ```toml
 [server]
 mode = "local" # local or multiuser -> Multiuser is still WIP, do not use in prod
+registration = "open" # multi-user mode: open, invite or closed
 ```
 
 `local` (the default) auto-authenticates every request as a single
@@ -47,6 +48,18 @@ mode, since `db upgrade` only creates the `user` table, not this row —
 see [Get started](setup.md). `multiuser` enables real accounts
 (registration/login), but is explicitly still work in progress and isn't
 meant for a real deployment yet.
+
+`registration` decides who may create an account in multi-user mode:
+
+- `open` (the default): anyone can register. An invitation link still
+  adds the new account to its organisation.
+- `invite`: registering needs an organisation's invitation link.
+- `closed`: nobody can register. Invitation links still work for
+  people who already have an account.
+
+Organisation admins create invitation links on their organisation's
+page; a link works once, for seven days, and can be revoked. Any other
+value stops the backend from starting.
 
 ### `[features]`
 

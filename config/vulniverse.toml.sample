@@ -7,6 +7,9 @@
 
 [server]
 mode = "local" # local or multiuser -> Mulituser still WIP (do not use in prod)
+# Multi-user mode only: who may create an account. "open" (anyone),
+# "invite" (only with an organisation's invitation link) or "closed".
+registration = "open"
 
 [features]
 # Vendor/product autocomplete, backed by the local CPE catalog (see

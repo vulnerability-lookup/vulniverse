@@ -64,10 +64,11 @@ export const useAuthStore = defineStore("auth", () => {
     });
   }
 
-  async function register(email: string, password: string): Promise<void> {
+  /** With an invitation link's token, the account joins its organisation. */
+  async function register(email: string, password: string, invitation?: string): Promise<void> {
     currentUser.value = await apiRequest<AuthUser>("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, invitation }),
     });
   }
 

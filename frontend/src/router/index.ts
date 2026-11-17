@@ -27,6 +27,12 @@ import RegisterPage from
 import CnaCredentialsPage from
   "@/pages/CnaCredentialsPage.vue";
 
+import InvitePage from
+  "@/pages/InvitePage.vue";
+
+import OrganisationPage from
+  "@/pages/OrganisationPage.vue";
+
 import AdminOrganisationsPage from
   "@/pages/AdminOrganisationsPage.vue";
 
@@ -80,6 +86,19 @@ export const router = createRouter({
       name: "admin-users",
       component: AdminUsersPage,
       meta: { adminOnly: true },
+    },
+    {
+      // The current organisation, for its admins.
+      path: "/organisation",
+      name: "organisation",
+      component: OrganisationPage,
+    },
+    {
+      // Where invitation links lead; works logged in or out.
+      path: "/invite/:token",
+      name: "invite",
+      component: InvitePage,
+      meta: { public: true },
     },
     {
       path: "/admin/organisations",

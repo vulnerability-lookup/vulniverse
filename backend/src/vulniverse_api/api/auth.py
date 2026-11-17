@@ -17,7 +17,9 @@ from ..auth.organisations import (
 from ..auth.permissions import multiuser_only
 from ..extensions import db
 from ..models import User
+from ..services.invitations import accept_invitation, find_invitation
 from . import api_bp
+from .organisations import invitation_error
 
 
 @api_bp.get("/auth/csrf-token")
@@ -49,13 +51,44 @@ def _serialize(user: User) -> dict[str, Any]:
     }
 
 
+@api_bp.get("/auth/registration")
+@multiuser_only
+def registration_mode() -> tuple[dict, int]:
+    """Who may register ([server] registration): "open", "invite" or
+    "closed"; the register page adapts to it."""
+    return {"mode": current_app.config["VULNIVERSE_REGISTRATION"]}, 200
+
+
 @api_bp.post("/auth/register")
 @multiuser_only
 def register() -> tuple[dict, int]:
+    """Create an account, joining an organisation if an invitation link's
+    token comes along ("invitation"). Whether that's needed, or possible
+    at all, is [server] registration's call."""
     payload = request.get_json(silent=True)
 
     if not isinstance(payload, dict):
         return {"message": "A JSON object is required."}, 400
+
+    mode = current_app.config["VULNIVERSE_REGISTRATION"]
+
+    if mode == "closed":
+        return {"message": "Registration is closed on this instance."}, 403
+
+    token = payload.get("invitation")
+    invitation = None
+
+    # Checked before the account exists, so a bad link doesn't leave one
+    # behind without the organisation it was meant for.
+    if token is not None:
+        invitation = find_invitation(token) if isinstance(token, str) else None
+        error = invitation_error(invitation)
+        if error is not None:
+            return error
+    elif mode == "invite":
+        return {
+            "message": "Registration needs an invitation link from an organisation.",
+        }, 403
 
     email = payload.get("email")
     password = payload.get("password")
@@ -89,6 +122,10 @@ def register() -> tuple[dict, int]:
     db.session.commit()
 
     login_user(user)
+
+    if invitation is not None:
+        membership = accept_invitation(invitation, user)
+        session[SESSION_KEY] = membership.organisation_id
 
     return _serialize(user), 201
 
