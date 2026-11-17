@@ -44,7 +44,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(
-        __dirname,
+        import.meta.dirname,
         "src/element.ts",
       ),
       formats: ["es"],
