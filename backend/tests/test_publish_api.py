@@ -6,6 +6,7 @@ import httpx
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
+from test_record_validation import minimal_gcve_record
 
 from vulniverse_api.api import publish as publish_module
 from vulniverse_api.extensions import db
@@ -160,9 +161,24 @@ def test_reject_requires_reason(
     assert response.status_code == 400
 
 
+@pytest.fixture
+def valid_record(client: FlaskClient) -> dict[str, Any]:
+    """A saved, fully valid record, as {id, version}."""
+    response = client.post(
+        "/api/v1/records",
+        json={
+            "record": minimal_gcve_record(recordType="advisory"),
+            "profile": "gcve-bcp-05-1.7",
+            "isDraft": False,
+        },
+    )
+    assert response.status_code == 201, response.get_json()
+    return response.get_json()
+
+
 def test_reserve_publish_reject_happy_path(
     client: FlaskClient,
-    record: int,
+    valid_record: dict[str, Any],
     configured_vl: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -175,6 +191,7 @@ def test_reserve_publish_reject_happy_path(
 
     monkeypatch.setattr(service_module.httpx, "request", fake_request)
 
+    record = valid_record["id"]
     reserve_response = client.post(
         f"/api/v1/publish/vl/{record}/reserve",
         json={"year": 2026},
@@ -183,7 +200,10 @@ def test_reserve_publish_reject_happy_path(
     assert reserve_response.get_json()["status"] == "RESERVED"
     assert reserve_response.get_json()["cveId"] == "CVE-2026-00005"
 
-    publish_response = client.post(f"/api/v1/publish/vl/{record}/publish")
+    publish_response = client.post(
+        f"/api/v1/publish/vl/{record}/publish",
+        json={"version": valid_record["version"]},
+    )
     assert publish_response.status_code == 200
     assert publish_response.get_json()["status"] == "PUBLISHED"
 
@@ -246,3 +266,61 @@ def test_non_owner_cannot_act_on_a_published_record(
     )
 
     assert response.status_code == 403
+
+
+# --- What goes out: the version the user saw, and only a valid one ------------
+
+
+def reserved(client: FlaskClient, record: int, monkeypatch) -> list[str]:
+    """Reserve an ID; returns the list upstream calls get recorded in."""
+    calls: list[str] = []
+
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        calls.append(url)
+        if url.endswith("/cve-id"):
+            return FakeResponse({"cve_ids": [{"cve_id": "CVE-2026-00005"}]})
+        return FakeResponse({"state": "PUBLISHED"})
+
+    monkeypatch.setattr(service_module.httpx, "request", fake_request)
+    client.post(f"/api/v1/publish/vl/{record}/reserve", json={"year": 2026})
+    calls.clear()
+    return calls
+
+
+def test_publishing_an_outdated_version_is_refused(
+    client: FlaskClient,
+    valid_record: dict[str, Any],
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    record = valid_record["id"]
+    calls = reserved(client, record, monkeypatch)
+    # Someone saves after the editor loaded version 1.
+    client.put(
+        f"/api/v1/records/{record}",
+        json={"record": minimal_gcve_record(recordType="advisory"), "isDraft": False},
+    )
+
+    response = client.post(
+        f"/api/v1/publish/vl/{record}/publish",
+        json={"version": valid_record["version"]},
+    )
+
+    assert response.status_code == 409
+    assert response.get_json()["code"] == "CHANGED_MEANWHILE"
+    assert calls == []
+
+
+def test_an_invalid_draft_is_not_published(
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = reserved(client, record, monkeypatch)
+
+    response = client.post(f"/api/v1/publish/vl/{record}/publish")
+
+    assert response.status_code == 422
+    assert response.get_json()["errors"]
+    assert calls == []

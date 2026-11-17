@@ -671,7 +671,12 @@ export class HttpRepository
   ): Promise<CnaPublication> {
     return this.request<CnaPublication>(
       `/publish/${target}/${encodeURIComponent(recordIdentifier)}/publish`,
-      { method: "POST" },
+      {
+        method: "POST",
+        // The version this editor shows: the backend refuses to publish
+        // if the stored record is another one (see updateRecord).
+        body: JSON.stringify({ version: this.versions.get(recordIdentifier) }),
+      },
     );
   }
 

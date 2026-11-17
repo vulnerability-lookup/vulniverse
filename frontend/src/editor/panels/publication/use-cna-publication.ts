@@ -4,6 +4,7 @@ import {
 } from "vue";
 
 import {
+  useEditorContext,
   useEditorRepository,
   useEditorSave,
 } from "../../core/context";
@@ -11,6 +12,10 @@ import {
 import {
   EditorRepositoryError,
 } from "../../core/errors";
+
+import {
+  RecordValidationError,
+} from "../../contracts";
 
 import type {
   CnaPublication,
@@ -34,6 +39,7 @@ export function useCnaPublication(
 ) {
   const repository = useEditorRepository();
   const requestSave = useEditorSave();
+  const editor = useEditorContext();
 
   const supported = computed(() => Boolean(repository.value?.getCnaPublication));
 
@@ -43,7 +49,19 @@ export function useCnaPublication(
   const notConfigured = ref(false);
 
   function applyError(err: unknown, fallback: string): void {
-    notConfigured.value = err instanceof EditorRepositoryError && err.status === 409;
+    // Publishing refused an invalid record: mark its fields, as a save does.
+    if (err instanceof RecordValidationError) {
+      editor.validationErrors.value = err.errors;
+      notConfigured.value = false;
+      error.value = "Fix the marked fields before publishing.";
+      return;
+    }
+
+    // 409 means "no credentials" here, except for a record someone else
+    // saved in the meantime (api/records.py's CHANGED_MEANWHILE).
+    notConfigured.value = err instanceof EditorRepositoryError
+      && err.status === 409
+      && (err.details as { code?: string } | undefined)?.code !== "CHANGED_MEANWHILE";
 
     let hasUpstreamDetail = false;
 
@@ -112,8 +130,20 @@ export function useCnaPublication(
     return context.identifier || await requestSave({ silent: true });
   }
 
+  /*
+   * Publishing sends the stored record, so unsaved edits are saved first
+   * (silently, like ensureIdentifier()): what goes out is what the user
+   * sees. A failed save stops here; the editor already shows why.
+   */
+  async function savedIdentifier(): Promise<string | null> {
+    return context.identifier && !editor.dirty.value
+      ? context.identifier
+      : await requestSave({ silent: true });
+  }
+
   async function runAction(
     action: (repo: EditorRepository, identifier: string) => Promise<CnaPublication>,
+    identify: () => Promise<string | null> = ensureIdentifier,
   ): Promise<void> {
     if (!repository.value) {
       return;
@@ -123,7 +153,7 @@ export function useCnaPublication(
     error.value = null;
 
     try {
-      const identifier = await ensureIdentifier();
+      const identifier = await identify();
 
       if (!identifier) {
         return;
@@ -145,7 +175,7 @@ export function useCnaPublication(
     notConfigured,
     refresh,
     reserve: (year: number) => runAction((repo, id) => repo.reserveCveId!(target, id, year)),
-    publish: () => runAction((repo, id) => repo.publishCna!(target, id)),
+    publish: () => runAction((repo, id) => repo.publishCna!(target, id), savedIdentifier),
     reject: (reason: string) => runAction((repo, id) => repo.rejectCna!(target, id, reason)),
     abort: () => runAction((repo, id) => repo.abortCna!(target, id)),
   };

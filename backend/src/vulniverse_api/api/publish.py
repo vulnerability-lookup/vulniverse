@@ -17,7 +17,7 @@ from ..services.cna_publication import (
     IntegrationNotConfiguredError,
 )
 from . import api_bp
-from .records import find_record
+from .records import find_record, stale_version_error, validation_failure
 
 
 def _serialize(
@@ -142,12 +142,25 @@ def publish_record(
     target: str,
     record_id: int,
 ) -> tuple[dict, int]:
+    """{"version"}: the record version the editor shows, so exactly that
+    goes out; without it (older clients), the stored one does."""
     service, error = _resolve_service(target, record_id, modify=True)
 
     if error:
         return error
 
     assert service is not None
+
+    # What's sent is the stored record: it must be the version the user
+    # saw, and valid (drafts are saved unvalidated). Nothing leaves the
+    # server otherwise.
+    record = find_record(record_id)
+    assert record is not None
+    refusal = stale_version_error(record) or validation_failure(
+        record.document, record.profile
+    )
+    if refusal is not None:
+        return refusal
 
     try:
         publication = service.publish(record_id)

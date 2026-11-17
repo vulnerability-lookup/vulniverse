@@ -44,4 +44,16 @@ describe("HttpRepository record versions", () => {
 
     expect(calls.find((call) => call.body)?.body).not.toHaveProperty("version");
   });
+
+  it("publishes naming the version it last saved", async () => {
+    const calls = stubFetch(response(3), response(4), { status: "PUBLISHED" });
+    const repository = new HttpRepository("/api/v1");
+
+    await repository.loadRecord("7");
+    await repository.updateRecord("7", {}, "cve-5.2.0", true);
+    await repository.publishCna("vl", "7");
+
+    const publish = calls.find((call) => call.url.endsWith("/publish/vl/7/publish"));
+    expect(publish?.body).toEqual({ version: 4 });
+  });
 });

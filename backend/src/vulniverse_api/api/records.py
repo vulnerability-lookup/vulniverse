@@ -79,7 +79,13 @@ def publication_error(data: RecordInput) -> ApiResponse | None:
     if data.is_draft:
         return None
 
-    errors = validate_record(data.document, data.profile)
+    return validation_failure(data.document, data.profile)
+
+
+def validation_failure(document: dict[str, Any], profile: str) -> ApiResponse | None:
+    """422 with the errors (the editor marks the fields) unless the
+    document passes full validation; warnings don't count."""
+    errors = validate_record(document, profile)
     if any(error.get("severity", "error") == "error" for error in errors):
         return {"message": "The record is not publishable.", "errors": errors}, 422
 
@@ -260,6 +266,7 @@ def create_record() -> ApiResponse:
 
 CHANGED_MEANWHILE: ApiResponse = (
     {
+        "code": "CHANGED_MEANWHILE",
         "message": "Someone else saved this record after you opened it."
         " Reload to see their version (copy your changes first,"
         " e.g. from Advanced JSON, if you need them).",
