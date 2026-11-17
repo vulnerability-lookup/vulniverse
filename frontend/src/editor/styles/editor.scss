@@ -69,6 +69,10 @@
   border-radius: 0.75rem;
   overflow: hidden;
 
+  // Marks what differs from the last save (core/changes.ts): a calmer,
+  // darker cyan than --bs-info on white; the dark theme keeps --bs-info.
+  --vulniverse-changed: #0aa2c0;
+
   // Brand colour as text (selected tab): the dark theme needs a lighter tint.
   --vulniverse-accent-text: var(--bs-primary);
 
@@ -77,6 +81,7 @@
   // theme, from the host's --vulniverse-* colours, which are light ones.
   &[data-bs-theme="dark"] {
     --vulniverse-accent-text: var(--bs-primary-text-emphasis);
+    --vulniverse-changed: var(--bs-info);
     --bs-body-color: #dee2e6;
     --bs-body-bg: #212529;
     --bs-secondary-color: rgba(222, 226, 230, 0.75);
@@ -182,6 +187,37 @@
     --bs-btn-color: var(--bs-danger-text-emphasis);
     --bs-btn-border-color: var(--bs-danger-text-emphasis);
   }
+}
+
+/*
+ * Changed since the last save (core/changes.ts): a bar just left of the
+ * field or card, in the gap beside it so nothing shifts when it appears;
+ * a dot after a tab's name. The header's "Unsaved changes" badge
+ * explains them.
+ */
+.editor-changed {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0.125rem;
+    bottom: 0.125rem;
+    left: -0.5rem;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--vulniverse-changed);
+  }
+}
+
+.editor-changed-dot {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-left: 0.375rem;
+  vertical-align: 0.15em;
+  border-radius: 50%;
+  background: var(--vulniverse-changed);
 }
 
 // Two columns of metric dropdowns (and CVSS 4.0's extra groups) need
@@ -624,7 +660,7 @@
       stroke-width: 2;
     }
 
-    &.is-closed circle:not(.record-graph-hit, .record-graph-halo, .record-graph-found) {
+    &.is-closed circle:not(.record-graph-hit, .record-graph-halo, .record-graph-found, .record-graph-changed) {
       fill: var(--node-color);
     }
 
@@ -649,7 +685,7 @@
   // A placeholder for a field the record lacks but an error points at.
   .record-graph-node.is-missing,
   .record-graph-legend .is-missing {
-    circle:not(.record-graph-hit, .record-graph-halo, .record-graph-found) {
+    circle:not(.record-graph-hit, .record-graph-halo, .record-graph-found, .record-graph-changed) {
       stroke: var(--bs-danger);
       stroke-dasharray: 2 2;
     }
@@ -659,6 +695,14 @@
       fill: var(--bs-danger);
       font-style: italic;
     }
+  }
+
+  // Differs from the last save: a dot at the node's top right.
+  .record-graph-node .record-graph-changed,
+  .record-graph-legend .record-graph-changed {
+    fill: var(--vulniverse-changed);
+    stroke: var(--bs-body-bg);
+    stroke-width: 1;
   }
 
   // Search: matches in the primary colour, the current one ringed.

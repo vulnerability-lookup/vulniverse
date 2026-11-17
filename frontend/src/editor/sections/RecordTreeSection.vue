@@ -245,6 +245,12 @@ async function toggle(node: TreeNode): Promise<void> {
         <li class="list-inline-item is-object is-missing">
           <svg viewBox="-7 -7 14 14"><circle r="5" /></svg>Missing
         </li>
+        <li class="list-inline-item">
+          <svg viewBox="-7 -7 14 14"><circle
+            class="record-graph-changed"
+            r="3.5"
+          /></svg>Changed
+        </li>
         <li class="list-inline-item is-error">
           <svg viewBox="-7 -7 14 14"><circle
             class="record-graph-halo"
@@ -404,6 +410,14 @@ async function toggle(node: TreeNode): Promise<void> {
             />
             <circle r="5" />
           </g>
+
+          <circle
+            v-if="editor.changedPaths.value.has(placed.node.path)"
+            class="record-graph-changed"
+            cx="8"
+            cy="-8"
+            r="3.25"
+          />
 
           <text
             :x="placed.labelLeft ? -11 : 11"

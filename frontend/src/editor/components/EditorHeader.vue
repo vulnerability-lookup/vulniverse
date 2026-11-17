@@ -131,7 +131,8 @@ function transitionButtonClass(
 
             <span
               v-if="dirty"
-              class="badge text-bg-info"
+              class="badge bg-info-subtle text-info-emphasis border border-info-subtle"
+              title="Changed fields and cards have a bar in this colour on their left; tabs and Tree nodes with changes a dot"
             >
               Unsaved changes
             </span>

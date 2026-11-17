@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import {
+  useIsChanged,
+} from "../../../core/changes";
+
+import {
   computed,
   inject,
   ref,
@@ -381,6 +385,9 @@ function statementLabel(
 
   return `Statement ${sIndex + 1} (${groupCount} ${groupCount === 1 ? "group" : "groups"})`;
 }
+
+// Marks what differs from the last save (core/changes.ts).
+const isChanged = useIsChanged();
 </script>
 
 <template>
@@ -393,7 +400,7 @@ function statementLabel(
 
       <button
         type="button"
-        class="btn btn-primary btn-sm"
+        class="btn btn-outline-primary btn-sm"
         :disabled="!control.enabled"
         @click="addStatement"
       >
@@ -452,6 +459,7 @@ function statementLabel(
       v-for="(statement, sIndex) in statements"
       :key="`${control.path}-${sIndex}`"
       :data-path="`${control.path}.${sIndex}`"
+      :class="{ 'editor-changed': isChanged(`${control.path}.${sIndex}`) }"
       class="card mb-2"
     >
       <div class="card-header d-flex justify-content-between align-items-center">

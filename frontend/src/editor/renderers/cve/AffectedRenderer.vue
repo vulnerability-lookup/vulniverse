@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import {
+  useIsChanged,
+} from "../../core/changes";
+
+import {
   computed,
 } from "vue";
 
@@ -141,6 +145,9 @@ function addAffected(): void {
     {},
   )?.();
 }
+
+// Marks what differs from the last save (core/changes.ts).
+const isChanged = useIsChanged();
 </script>
 
 <template>
@@ -153,7 +160,7 @@ function addAffected(): void {
 
       <button
         type="button"
-        class="btn btn-primary btn-sm"
+        class="btn btn-outline-primary btn-sm"
         :disabled="!control.enabled"
         @click="addAffected"
       >
@@ -172,6 +179,7 @@ function addAffected(): void {
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
       :data-path="`${control.path}.${index}`"
+      :class="{ 'editor-changed': isChanged(`${control.path}.${index}`) }"
       class="card mb-3"
     >
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -211,6 +219,7 @@ function addAffected(): void {
           <div
             class="col-md-6"
             :data-path="`${control.path}.${index}.vendor`"
+            :class="{ 'editor-changed': isChanged(`${control.path}.${index}.vendor`) }"
           >
             <label
               :for="`${control.id}-${index}-vendor`"
@@ -233,6 +242,7 @@ function addAffected(): void {
           <div
             class="col-md-6"
             :data-path="`${control.path}.${index}.product`"
+            :class="{ 'editor-changed': isChanged(`${control.path}.${index}.product`) }"
           >
             <label
               :for="`${control.id}-${index}-product`"

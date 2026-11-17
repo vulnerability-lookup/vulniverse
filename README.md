@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="docs/docs/images/logo.png" alt="Vulniverse logo" width="400">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/docs/images/logo-dark.png">
+    <img src="docs/docs/images/logo.png" alt="Vulniverse logo" width="400">
+  </picture>
 </p>
 
 

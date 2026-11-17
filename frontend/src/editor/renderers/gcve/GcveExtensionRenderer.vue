@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import {
+  useIsChanged,
+} from "../../core/changes";
+
+import {
   computed,
   inject,
   ref,
@@ -536,6 +540,9 @@ function addEntry(): void {
     { vulnId: "", recordType: "" },
   )?.();
 }
+
+// Marks what differs from the last save (core/changes.ts).
+const isChanged = useIsChanged();
 </script>
 
 <template>
@@ -548,7 +555,7 @@ function addEntry(): void {
 
       <button
         type="button"
-        class="btn btn-primary btn-sm"
+        class="btn btn-outline-primary btn-sm"
         :disabled="!control.enabled"
         @click="addEntry"
       >
@@ -567,6 +574,7 @@ function addEntry(): void {
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
       :data-path="`${control.path}.${index}`"
+      :class="{ 'editor-changed': isChanged(`${control.path}.${index}`) }"
       class="card mb-3"
     >
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -771,6 +779,7 @@ function addEntry(): void {
             :key="extensionId"
             class="card mb-3"
             :data-path="`${itemPath(index)}.extensions.${extensionId}`"
+            :class="{ 'editor-changed': isChanged(`${itemPath(index)}.extensions.${extensionId}`) }"
           >
             <div
               class="card-header d-flex align-items-center justify-content-between"

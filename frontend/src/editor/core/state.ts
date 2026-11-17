@@ -3,6 +3,10 @@ import {
   ref,
 } from "vue";
 
+import {
+  changedPaths as findChangedPaths,
+} from "./changes";
+
 import type {
   EditorDocument,
   LoadedRecord,
@@ -68,6 +72,13 @@ export function useEditorState() {
       JSON.stringify(originalRecord.value);
   });
 
+  // Paths that differ from the last load or save (core/changes.ts).
+  const changedPaths = computed(() => (
+    record.value && originalRecord.value
+      ? findChangedPaths(record.value, originalRecord.value)
+      : new Set<string>()
+  ));
+
   function replaceRecord(
     loaded: LoadedRecord,
   ): void {
@@ -104,6 +115,7 @@ export function useEditorState() {
   return {
     record,
     originalRecord,
+    changedPaths,
     identifier,
     vulnerabilityId,
     profile,

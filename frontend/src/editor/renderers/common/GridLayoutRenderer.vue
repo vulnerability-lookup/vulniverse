@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import {
+  useIsChanged,
+} from "../../core/changes";
+
+import {
   computed,
   inject,
 } from "vue";
@@ -79,6 +83,9 @@ const isGroup = computed(() => layout.value.uischema.type === "Group");
 const label = computed(() => {
   return (layout.value.uischema as Layout & { label?: string }).label;
 });
+
+// Marks what differs from the last save (core/changes.ts).
+const isChanged = useIsChanged();
 </script>
 
 <template>
@@ -98,7 +105,7 @@ const label = computed(() => {
       <div
         v-for="(element, index) in layout.uischema.elements"
         :key="`${layout.path}-${index}`"
-        :class="`editor-field-${widths[index]}`"
+        :class="[`editor-field-${widths[index]}`, { 'editor-changed': paths[index] && isChanged(paths[index]) }]"
         :data-path="paths[index]"
       >
         <DispatchRenderer

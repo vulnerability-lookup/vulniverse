@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import {
+  useIsChanged,
+} from "../../core/changes";
+
+import {
   computed,
   ref,
 } from "vue";
@@ -235,6 +239,9 @@ function deleteEntry(
 
   removeItems?.(control.value.path, [index])?.();
 }
+
+// Marks what differs from the last save (core/changes.ts).
+const isChanged = useIsChanged();
 </script>
 
 <template>
@@ -247,7 +254,7 @@ function deleteEntry(
 
       <button
         type="button"
-        class="btn btn-primary btn-sm"
+        class="btn btn-outline-primary btn-sm"
         :disabled="!control.enabled"
         @click="addEntry"
       >
@@ -266,6 +273,7 @@ function deleteEntry(
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
       :data-path="`${control.path}.${index}`"
+      :class="{ 'editor-changed': isChanged(`${control.path}.${index}`) }"
       class="card mb-3"
     >
       <div class="card-header d-flex justify-content-between align-items-center">

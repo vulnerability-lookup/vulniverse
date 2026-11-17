@@ -86,6 +86,15 @@ function tabFor(path: string): number | null {
 
 const state = inject(editorStateKey, null);
 
+// A tab with a field that differs from the last save (core/changes.ts
+// lists parents too, so a change deep inside a card counts).
+function tabChanged(index: number): boolean {
+  const changed = state?.changedPaths.value;
+
+  return Boolean(changed?.size)
+    && controlPaths(categories[index]!.value.uischema).some((path) => changed!.has(path));
+}
+
 watch(
   () => state?.reveal.value,
   (request) => {
@@ -114,6 +123,11 @@ watch(
             @click="selected = index"
           >
             <label>{{ category.value.label }}</label>
+            <span
+              v-if="tabChanged(index)"
+              class="editor-changed-dot"
+              title="Changed since the last save"
+            ><span class="visually-hidden">(changed)</span></span>
           </button>
         </div>
       </template>
