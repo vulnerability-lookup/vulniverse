@@ -75,8 +75,9 @@ def configured_vl(app: Flask, user: User) -> User:
 
 
 @pytest.fixture
-def record_id(app: Flask) -> int:
+def record_id(app: Flask, organisation) -> int:
     record = VulnerabilityRecord(
+        organisation_id=organisation.id,
         profile="gcve-bcp-05-1.7",
         document={"containers": {"cna": {}}},
         is_draft=True,
@@ -212,8 +213,11 @@ def test_publish_before_reserve_is_blocked(app: Flask, configured_vl: User, reco
         service.publish(record_id)
 
 
-def test_publish_success(app: Flask, configured_vl: User, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_publish_success(
+    app: Flask, configured_vl: User, organisation, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     record = VulnerabilityRecord(
+        organisation_id=organisation.id,
         identifier="GCVE-0-2026-00004",
         profile="gcve-bcp-05-1.7",
         document={
@@ -250,9 +254,10 @@ def test_publish_success(app: Flask, configured_vl: User, monkeypatch: pytest.Mo
 
 
 def test_publish_does_not_override_existing_provider_metadata(
-    app: Flask, configured_vl: User, monkeypatch: pytest.MonkeyPatch,
+    app: Flask, configured_vl: User, organisation, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     record = VulnerabilityRecord(
+        organisation_id=organisation.id,
         identifier="GCVE-0-2026-00009",
         profile="gcve-bcp-05-1.7",
         document={

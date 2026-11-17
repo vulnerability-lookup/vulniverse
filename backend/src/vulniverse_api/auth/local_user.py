@@ -5,9 +5,10 @@ import secrets
 from werkzeug.security import generate_password_hash
 
 from ..extensions import db
-from ..models import User
+from ..models import Membership, Organisation, User
 
 LOCAL_USER_EMAIL = "local@vulniverse.invalid"
+LOCAL_ORGANISATION_SLUG = "local"
 
 
 def get_local_user() -> User | None:
@@ -19,7 +20,8 @@ def get_local_user() -> User | None:
 
 
 def create_local_user() -> User:
-    """Create the local user if it does not exist."""
+    """Create the local user if it does not exist, and make sure it
+    belongs to an organisation (records always do)."""
 
     user = get_local_user()
 
@@ -29,6 +31,7 @@ def create_local_user() -> User:
                 "The local user has an invalid configuration."
             )
 
+        ensure_local_organisation(user)
         return user
 
     user = User(
@@ -42,5 +45,31 @@ def create_local_user() -> User:
 
     db.session.add(user)
     db.session.commit()
+    ensure_local_organisation(user)
 
     return user
+
+
+def ensure_local_organisation(user: User) -> None:
+    """Local mode has one organisation, "Local workspace". An installation
+    upgraded from before organisations already has the local user in the
+    migration's default organisation, which is kept."""
+
+    if Membership.query.filter_by(user_id=user.id).first() is not None:
+        return
+
+    organisation = Organisation.query.filter_by(
+        slug=LOCAL_ORGANISATION_SLUG,
+    ).first()
+
+    if organisation is None:
+        organisation = Organisation(
+            name="Local workspace",
+            slug=LOCAL_ORGANISATION_SLUG,
+        )
+        db.session.add(organisation)
+
+    db.session.add(
+        Membership(user=user, organisation=organisation, role="admin"),
+    )
+    db.session.commit()

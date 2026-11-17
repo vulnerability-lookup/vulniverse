@@ -8,6 +8,7 @@ from flask import request
 from flask_login import current_user
 
 from ..app_config import load_app_config
+from ..auth.organisations import can_modify_record
 from ..models import CnaPublication
 from ..services.cna_credentials import is_credential_configured
 from ..services.cna_publication import (
@@ -16,7 +17,7 @@ from ..services.cna_publication import (
     IntegrationNotConfiguredError,
 )
 from . import api_bp
-from .records import can_modify_record, find_record
+from .records import find_record
 
 
 def _serialize(

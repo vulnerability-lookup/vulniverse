@@ -22,6 +22,8 @@ defineProps<{
   isRejected: boolean;
   dirty: boolean;
   loading: boolean;
+  // The record couldn't be loaded: there's nothing to act on.
+  loadFailed: boolean;
   actions: Array<{
     id: string;
     label: string;
@@ -101,7 +103,7 @@ function transitionButtonClass(
       >
         <div>
           <h1 class="h5 mb-1">
-            {{ displayIdentifier(vulnerabilityId, Boolean(identifier)) }}
+            {{ loadFailed ? "Record unavailable" : displayIdentifier(vulnerabilityId, Boolean(identifier)) }}
           </h1>
 
           <div
@@ -140,6 +142,7 @@ function transitionButtonClass(
         </div>
 
       <div
+        v-if="!loadFailed"
         class="d-flex flex-wrap align-items-center gap-2"
         data-tutorial="actions"
       >

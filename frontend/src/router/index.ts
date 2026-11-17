@@ -27,6 +27,9 @@ import RegisterPage from
 import CnaCredentialsPage from
   "@/pages/CnaCredentialsPage.vue";
 
+import AdminOrganisationsPage from
+  "@/pages/AdminOrganisationsPage.vue";
+
 import AdminUsersPage from
   "@/pages/AdminUsersPage.vue";
 
@@ -76,6 +79,12 @@ export const router = createRouter({
       path: "/admin/users",
       name: "admin-users",
       component: AdminUsersPage,
+      meta: { adminOnly: true },
+    },
+    {
+      path: "/admin/organisations",
+      name: "admin-organisations",
+      component: AdminOrganisationsPage,
       meta: { adminOnly: true },
     },
     {

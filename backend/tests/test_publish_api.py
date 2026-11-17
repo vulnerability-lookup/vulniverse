@@ -195,7 +195,7 @@ def test_unknown_record_is_404(client: FlaskClient, configured_vl: None) -> None
 
 
 def test_non_owner_cannot_act_on_a_published_record(
-    app: Flask, test_user, other_client: FlaskClient,
+    app: Flask, test_user, organisation, other_client: FlaskClient,
 ) -> None:
     with app.app_context():
         published = VulnerabilityRecord(
@@ -203,6 +203,7 @@ def test_non_owner_cannot_act_on_a_published_record(
             profile="cve-5.2.0",
             document={"containers": {"cna": {}}},
             is_draft=False,
+            organisation_id=organisation.id,
             created_by_id=test_user.id,
         )
         db.session.add(published)

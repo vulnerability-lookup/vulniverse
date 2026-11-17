@@ -37,6 +37,20 @@ const showCnaCredentialsLink = computed(() =>
   (panelFlags.value["cve-program"] ?? true),
 );
 
+const switchError = ref<string | null>(null);
+
+// Switching shows that organisation's records.
+async function onSwitchOrganisation(event: Event): Promise<void> {
+  switchError.value = null;
+
+  try {
+    await auth.switchOrganisation(Number((event.target as HTMLSelectElement).value));
+    await router.push({ name: "records" });
+  } catch (error) {
+    switchError.value = error instanceof Error ? error.message : "Unable to switch.";
+  }
+}
+
 async function onLogout(): Promise<void> {
   await auth.logout();
   await router.replace("/login");
@@ -61,6 +75,33 @@ async function onLogout(): Promise<void> {
       v-if="auth.isAuthenticated"
       class="d-flex align-items-center ms-auto gap-3"
     >
+      <template v-if="!auth.isLocalMode && auth.currentUser">
+        <select
+          v-if="auth.currentUser.organisations.length > 1"
+          class="form-select form-select-sm app-header-organisation"
+          aria-label="Current organisation"
+          :title="switchError ?? 'Current organisation: new records go here'"
+          :value="auth.currentUser.currentOrganisationId"
+          @change="onSwitchOrganisation"
+        >
+          <option
+            v-for="organisation in auth.currentUser.organisations"
+            :key="organisation.id"
+            :value="organisation.id"
+          >
+            {{ organisation.name }}
+          </option>
+        </select>
+
+        <span
+          v-else-if="auth.currentOrganisation"
+          class="fw-semibold"
+          title="Your organisation"
+        >
+          {{ auth.currentOrganisation.name }}
+        </span>
+      </template>
+
       <RouterLink
         to="/records"
         class="text-decoration-none"
@@ -73,7 +114,15 @@ async function onLogout(): Promise<void> {
         to="/admin/users"
         class="text-decoration-none"
       >
-        Admin
+        Users
+      </RouterLink>
+
+      <RouterLink
+        v-if="!auth.isLocalMode && auth.currentUser?.isAdmin"
+        to="/admin/organisations"
+        class="text-decoration-none"
+      >
+        Organisations
       </RouterLink>
 
       <RouterLink
@@ -182,6 +231,11 @@ async function onLogout(): Promise<void> {
 </template>
 
 <style scoped>
+.app-header-organisation {
+  width: auto;
+  max-width: 14rem;
+}
+
 .app-header-theme-icon {
   width: 1rem;
   height: 1rem;

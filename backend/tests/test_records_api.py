@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from vulniverse_api.extensions import db
-from vulniverse_api.models import CnaPublication, VulnerabilityRecord
+from vulniverse_api.models import CnaPublication, Membership, VulnerabilityRecord
 
 
 def minimal_cve_record(cve_id: str) -> dict[str, Any]:
@@ -95,11 +95,14 @@ def insert_record(
     inserted directly) sidesteps that entirely.
     """
     with app.app_context():
+        # In the owner's organisation, as a record they created would be.
+        membership = Membership.query.filter_by(user_id=owner_id).first()
         record = VulnerabilityRecord(
             identifier=cve_id,
             profile=profile,
             document=minimal_cve_record(cve_id),
             is_draft=is_draft,
+            organisation_id=membership.organisation_id,
             created_by_id=owner_id,
         )
         db.session.add(record)
@@ -360,13 +363,14 @@ def test_draft_is_visible_in_list_for_its_owner(app, test_user, client) -> None:
     assert "CVE-2026-00011" in identifiers
 
 
-def test_published_record_is_visible_to_everyone(app, test_user, other_client) -> None:
+def test_other_organisations_published_records_are_not_listed(app, test_user, other_client) -> None:
+    # Still readable by link: test_get_published_record_succeeds_for_non_owner.
     insert_record(app, "CVE-2026-00012", test_user.id, is_draft=False)
 
     response = other_client.get("/api/v1/records")
     identifiers = {record["identifier"] for record in response.get_json()["records"]}
 
-    assert "CVE-2026-00012" in identifiers
+    assert "CVE-2026-00012" not in identifiers
 
 
 def test_admin_sees_others_drafts_in_list(app, test_user, admin_client) -> None:

@@ -7,11 +7,21 @@ import { ApiError } from "@/shared/errors";
 
 export type AuthMode = "local" | "multiuser";
 
+export interface AuthOrganisation {
+  id: number;
+  name: string;
+  role: "admin" | "editor";
+}
+
 export interface AuthUser {
   id: number;
   email: string;
   isAdmin: boolean;
   authMode: AuthMode;
+  organisations: AuthOrganisation[];
+  /** Where new records go and which records the list shows; null
+   * without any organisation. */
+  currentOrganisationId: number | null;
 }
 
 export const useAuthStore = defineStore("auth", () => {
@@ -25,6 +35,12 @@ export const useAuthStore = defineStore("auth", () => {
 
   const isLocalMode = computed(
     () => currentUser.value?.authMode === "local",
+  );
+
+  const currentOrganisation = computed(
+    () => currentUser.value?.organisations.find(
+      (organisation) => organisation.id === currentUser.value?.currentOrganisationId,
+    ) ?? null,
   );
 
   async function fetchMe(): Promise<void> {
@@ -55,6 +71,13 @@ export const useAuthStore = defineStore("auth", () => {
     });
   }
 
+  async function switchOrganisation(id: number): Promise<void> {
+    currentUser.value = await apiRequest<AuthUser>("/auth/organisation", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    });
+  }
+
   async function logout(): Promise<void> {
     await apiRequest("/auth/logout", { method: "POST" });
     currentUser.value = null;
@@ -66,7 +89,9 @@ export const useAuthStore = defineStore("auth", () => {
     initialized,
     isAuthenticated,
     isLocalMode,
+    currentOrganisation,
     fetchMe,
+    switchOrganisation,
     login,
     register,
     logout,

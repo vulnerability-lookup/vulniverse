@@ -47,6 +47,7 @@ export interface RecordSummary {
   isDraft: boolean;
   updatedAt: string;
   createdBy: string | null;
+  organisation: { id: number; name: string };
 }
 
 /** The backend addresses records by database id; the editor contract
@@ -57,6 +58,8 @@ interface RecordResponse {
   profile: string;
   record: EditorDocument;
   isDraft: boolean;
+  /** Counts saves; sent back with the next save (see `versions`). */
+  version: number;
 }
 
 function toLoadedRecord(response: RecordResponse): LoadedRecord {
@@ -236,9 +239,24 @@ export class HttpRepository
     ...CLOSED_SUGGESTION_FEATURES,
   };
 
+  /*
+   * The version of each record as last loaded or saved here, sent with
+   * its next save: the backend refuses a save based on an outdated copy
+   * (someone else saved in between) instead of overwriting their work.
+   * Kept here, not in the editor contract, so hosts with their own
+   * repositories (Vulnerability-Lookup) are unaffected.
+   */
+  private readonly versions = new Map<string, number>();
+
   constructor(
     private readonly apiRoot = "/api/v1",
   ) { }
+
+  private remember(response: RecordResponse): LoadedRecord {
+    this.versions.set(String(response.id), response.version);
+
+    return toLoadedRecord(response);
+  }
 
   async listRecords(): Promise<RecordSummary[]> {
     const result = await this.request<{ records: RecordSummary[] }>(
@@ -281,7 +299,7 @@ export class HttpRepository
   async loadRecord(
     identifier: string,
   ): Promise<LoadedRecord> {
-    return toLoadedRecord(await this.request<RecordResponse>(
+    return this.remember(await this.request<RecordResponse>(
       `/records/${encodeURIComponent(identifier)}`,
     ));
   }
@@ -291,7 +309,7 @@ export class HttpRepository
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
-    return toLoadedRecord(await this.request<RecordResponse>(
+    return this.remember(await this.request<RecordResponse>(
       "/records",
       {
         method: "POST",
@@ -310,7 +328,7 @@ export class HttpRepository
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
-    return toLoadedRecord(await this.request<RecordResponse>(
+    return this.remember(await this.request<RecordResponse>(
       `/records/${encodeURIComponent(identifier)}`,
       {
         method: "PUT",
@@ -318,6 +336,8 @@ export class HttpRepository
           record,
           profile,
           isDraft,
+          // Absent for a record not loaded here; JSON drops undefined.
+          version: this.versions.get(identifier),
         }),
       },
     ));

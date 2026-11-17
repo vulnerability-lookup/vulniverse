@@ -102,6 +102,7 @@ from . import (  # noqa: F401
     auth,
     cna_credentials,
     cpe_search,
+    organisations,
     patch2vuln,
     publish,
     record_quality,
