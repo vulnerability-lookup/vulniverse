@@ -1,3 +1,7 @@
+import {
+  ICONS,
+} from "../../icons";
+
 import type {
   EditorPanel,
 } from "../../contracts";
@@ -7,6 +11,7 @@ import RecordStatsPanel from "./RecordStatsPanel.vue";
 export const recordStatsPanel: EditorPanel = {
   id: "stats",
   label: "Stats",
+  icon: ICONS.stats,
   component: RecordStatsPanel,
   // The panel reads containers.cna, which only CVE-shaped records have.
   isVisible(context) {

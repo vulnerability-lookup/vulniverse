@@ -536,6 +536,8 @@ export interface EditorAction {
 export interface EditorPanel {
   id: string;
   label: string;
+  // Sidebar icon, like EditorAction.icon; a generic one when absent.
+  icon?: string;
   component: Component;
   isVisible?(context: EditorContext): boolean;
 }

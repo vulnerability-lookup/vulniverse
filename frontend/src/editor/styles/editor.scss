@@ -375,6 +375,55 @@
   overflow-y: auto;
 }
 
+.editor-layout.is-sidebar-collapsed {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.editor-sidebar {
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+
+  &.is-collapsed {
+    padding-inline: 0.5rem;
+
+    .nav-link {
+      justify-content: center;
+      padding-inline: 0.625rem;
+    }
+  }
+}
+
+.editor-sidebar-icon {
+  flex: 0 0 auto;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+// Collapse/expand: top right, centred once collapsed; its chevron turns.
+.editor-sidebar-toggle {
+  align-self: flex-end;
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0.375rem;
+  color: var(--bs-secondary-color);
+  border: 0;
+
+  &:hover {
+    color: var(--bs-body-color);
+    background: var(--bs-secondary-bg);
+  }
+
+  .is-collapsed & {
+    align-self: center;
+
+    svg {
+      transform: rotate(180deg);
+    }
+  }
+}
+
 .editor-sidebar-divider {
   margin: 0.75rem 0;
   border-top: 1px solid var(--bs-border-color);
@@ -906,6 +955,27 @@
   .editor-sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--bs-border-color);
+
+    // Stacked above the content: collapsed, the icons form one row.
+    // !important against Bootstrap's .flex-column utility on the nav.
+    &.is-collapsed {
+      flex-direction: row !important;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.25rem;
+
+      .editor-sidebar-toggle {
+        margin-bottom: 0;
+      }
+
+      .editor-sidebar-divider {
+        display: none;
+      }
+    }
+  }
+
+  .editor-layout.is-sidebar-collapsed {
+    grid-template-columns: 1fr;
   }
 
   .editor-content {

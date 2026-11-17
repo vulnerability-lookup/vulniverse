@@ -2,6 +2,10 @@ import {
   computed,
 } from "vue";
 
+import {
+  ICONS,
+} from "../icons";
+
 import type {
   Component,
   Ref,
@@ -59,18 +63,22 @@ interface EditorExtensionsOptions {
 export const BUILTIN_NAVIGATION_ITEMS = [
   {
     id: "editor",
+    icon: ICONS.editor,
     label: "Editor",
   },
   {
     id: "tree",
+    icon: ICONS.tree,
     label: "Tree",
   },
   {
     id: "preview",
+    icon: ICONS.preview,
     label: "Preview",
   },
   {
     id: "json",
+    icon: ICONS.json,
     label: "Advanced JSON",
   },
 ];
@@ -139,6 +147,7 @@ export function useEditorExtensions(
         (panel) => ({
           id: panel.id,
           label: panel.label,
+          icon: panel.icon ?? ICONS.panel,
         }),
       ),
     );

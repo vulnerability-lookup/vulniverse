@@ -1,3 +1,7 @@
+import {
+  ICONS,
+} from "../../icons";
+
 import { markRaw } from "vue";
 
 import type {
@@ -10,6 +14,7 @@ import Patch2VulnPanel from "./Patch2VulnPanel.vue";
 export const patch2vulnPanel: EditorPanel = {
   id: "patch2vuln",
   label: "Patch2Vuln",
+  icon: ICONS.patch,
 
   component: markRaw(Patch2VulnPanel),
 

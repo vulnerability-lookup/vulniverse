@@ -179,6 +179,29 @@ provide(
 
 const activeSection = ref("editor");
 
+// The sidebar shows only its icons; remembered in this browser.
+const SIDEBAR_KEY = "vulniverse-sidebar-collapsed";
+
+function storedCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === "true";
+  } catch {
+    // Storage blocked (private mode, policy): start expanded.
+    return false;
+  }
+}
+
+const sidebarCollapsed = ref(storedCollapsed());
+
+watch(sidebarCollapsed, (collapsed) => {
+  try {
+    if (collapsed) localStorage.setItem(SIDEBAR_KEY, "true");
+    else localStorage.removeItem(SIDEBAR_KEY);
+  } catch {
+    // Not remembered then; it still holds for this visit.
+  }
+});
+
 // Showing a field (record tree, validation error) happens in the Editor.
 watch(
   () => state.reveal.value,
@@ -326,9 +349,11 @@ onMounted(controller.load);
     <div
       v-else-if="state.record.value"
       class="editor-layout"
+      :class="{ 'is-sidebar-collapsed': sidebarCollapsed }"
     >
       <EditorNavigation
         v-model="activeSection"
+        v-model:collapsed="sidebarCollapsed"
         :items="BUILTIN_NAVIGATION_ITEMS"
         :panel-items="panelNavigationItems"
       />

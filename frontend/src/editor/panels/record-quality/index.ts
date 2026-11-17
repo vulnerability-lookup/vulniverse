@@ -1,4 +1,8 @@
 import {
+  ICONS,
+} from "../../icons";
+
+import {
   markRaw,
 } from "vue";
 
@@ -14,6 +18,7 @@ export const recordQualityPanel:
   EditorPanel = {
     id: "record-quality",
     label: "Record Quality",
+    icon: ICONS.quality,
 
     component:
       markRaw(
