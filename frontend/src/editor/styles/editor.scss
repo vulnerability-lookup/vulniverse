@@ -69,28 +69,18 @@
   border-radius: 0.75rem;
   overflow: hidden;
 
-  .alert-danger {
-    color: #842029;
-    background-color: #f8d7da;
-    border-color: #f5c2c7;
-  }
+  // Brand colour as text (selected tab): the dark theme needs a lighter tint.
+  --vulniverse-accent-text: var(--bs-primary);
 
-  .alert-warning {
-    color: #664d03;
-    background-color: #fff3cd;
-    border-color: #ffecb5;
-  }
-
-  .alert-info {
-    color: #055160;
-    background-color: #cff4fc;
-    border-color: #b6effb;
-  }
-
-  .alert-success {
-    color: #0f5132;
-    background-color: #d1e7dd;
-    border-color: #badbcc;
+  // Dark theme (core/theme.ts). The rest of Bootstrap's palette switches
+  // with data-bs-theme itself; these four are set above for the light
+  // theme, from the host's --vulniverse-* colours, which are light ones.
+  &[data-bs-theme="dark"] {
+    --vulniverse-accent-text: var(--bs-primary-text-emphasis);
+    --bs-body-color: #dee2e6;
+    --bs-body-bg: #212529;
+    --bs-secondary-color: rgba(222, 226, 230, 0.75);
+    --bs-border-color: #495057;
   }
 }
 
@@ -145,12 +135,53 @@
  * it the same way any other rule here does.
  */
 .editor-dialog {
+  // Not the browser's default white: the editor's theme.
+  color: var(--bs-body-color);
+  background: var(--bs-body-bg);
   border: 1px solid var(--bs-border-color);
   border-radius: 0.75rem;
   padding: 0;
   width: 28rem;
   max-width: 90vw;
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
+}
+
+/*
+ * Dark theme, inside the editor and in the standalone app around it.
+ * _bootstrap-variables.scss fixes card headers, card borders and input
+ * borders to light greys, and outline buttons draw their text in the
+ * plain theme colour, too dark to read on a dark background; here they
+ * use the dark palette's lighter "text emphasis" tints. Only variables,
+ * so an editor kept light inside a dark page still resolves its own.
+ * :where() keeps this at the base rules' weight, so :focus, :hover and
+ * .is-invalid still win.
+ */
+:where([data-bs-theme="dark"]) {
+  .card {
+    --bs-card-cap-bg: var(--bs-tertiary-bg);
+    --bs-card-border-color: var(--bs-border-color);
+  }
+
+  .form-control,
+  .form-select,
+  .input-group-text {
+    border-color: var(--bs-border-color);
+  }
+
+  .btn-outline-primary {
+    --bs-btn-color: var(--bs-primary-text-emphasis);
+    --bs-btn-border-color: var(--bs-primary-text-emphasis);
+  }
+
+  .btn-outline-secondary {
+    --bs-btn-color: var(--bs-secondary-color);
+    --bs-btn-border-color: var(--bs-border-color);
+  }
+
+  .btn-outline-danger {
+    --bs-btn-color: var(--bs-danger-text-emphasis);
+    --bs-btn-border-color: var(--bs-danger-text-emphasis);
+  }
 }
 
 // Two columns of metric dropdowns (and CVSS 4.0's extra groups) need
@@ -248,6 +279,13 @@
 
 // The guided tour (tutorial/EditorTutorial.vue): everything but the current
 // element dimmed by the spotlight's huge shadow, the explanation beside it.
+// The tutorial's own element only anchors it in the DOM; everything it
+// shows is position: fixed. Without a box it isn't a third item in
+// .editor-layout's grid, which would add a row and split its height.
+.editor-tutorial {
+  display: contents;
+}
+
 .editor-tutorial-spotlight,
 .editor-tutorial-backdrop {
   position: fixed;
@@ -480,11 +518,11 @@
   }
 
   .categorization-category button:hover {
-    color: var(--bs-primary);
+    color: var(--vulniverse-accent-text);
   }
 
   .categorization-selected {
-    color: var(--bs-primary) !important;
+    color: var(--vulniverse-accent-text) !important;
     border-bottom-color: var(--bs-primary) !important;
   }
 

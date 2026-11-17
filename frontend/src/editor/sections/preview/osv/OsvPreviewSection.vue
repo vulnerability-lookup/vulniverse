@@ -233,7 +233,7 @@ const affected =
                 <span
                   v-for="value in values"
                   :key="value"
-                  class="badge text-bg-light border me-1"
+                  class="badge bg-body-tertiary text-body border me-1"
                 >
                   {{ value }}
                 </span>
@@ -335,7 +335,7 @@ const affected =
           >
             <span
               v-if="text(reference.type)"
-              class="badge text-bg-light border me-1"
+              class="badge bg-body-tertiary text-body border me-1"
             >
               {{ text(reference.type) }}
             </span>

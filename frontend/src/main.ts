@@ -1,3 +1,6 @@
+// First: sets the page's theme before anything draws.
+import "./theme"
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 

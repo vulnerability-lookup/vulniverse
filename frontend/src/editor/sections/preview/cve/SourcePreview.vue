@@ -586,7 +586,7 @@ function isEmptySource(
               :key="index"
               class="mb-2"
             >
-              <span class="badge text-bg-light text-secondary border me-2">
+              <span class="badge bg-body-tertiary text-secondary border me-2">
                 {{ entry.lang }}
               </span>
 
@@ -881,7 +881,7 @@ function isEmptySource(
               <span
                 v-for="(tag, tagIndex) in referenceTagsOf(reference)"
                 :key="tagIndex"
-                class="badge text-bg-light text-secondary border ms-1"
+                class="badge bg-body-tertiary text-secondary border ms-1"
               >
                 {{ tag }}
               </span>
@@ -939,7 +939,7 @@ function isEmptySource(
           <span
             v-for="(tag, index) in tagsOf(source.data)"
             :key="index"
-            class="badge text-bg-light text-secondary border me-1"
+            class="badge bg-body-tertiary text-secondary border me-1"
           >
             {{ tag }}
           </span>

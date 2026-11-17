@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
-import vulniverseLogo from "../../assets/vulniverse-logo.webp";
+// Header-sized, light lettering for the dark theme; both made by
+// scripts/make_dark_logo.py (the web component embeds its images).
+import vulniverseLogo from "../../assets/vulniverse-logo-header.webp";
+import vulniverseLogoDark from "../../assets/vulniverse-logo-header-dark.webp";
 
 import { displayIdentifier } from "../identifier";
 
 import type { LifecycleTransition } from "../contracts";
 
 defineProps<{
+  // The editor's theme is dark: the logo with light lettering.
+  dark: boolean;
   canDelete: boolean;
   canReject: boolean;
   identifier: string | null;
@@ -82,7 +87,7 @@ function transitionButtonClass(
     <div class="editor-header-grid">
       <div class="editor-header-logo-slot">
         <img
-          :src="vulniverseLogo"
+          :src="dark ? vulniverseLogoDark : vulniverseLogo"
           alt="Vulniverse"
           class="editor-header-logo"
         >

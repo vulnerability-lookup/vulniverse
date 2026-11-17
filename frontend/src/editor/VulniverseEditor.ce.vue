@@ -44,6 +44,14 @@ import RejectDialog from
 import EditorNotifications from
   "./components/EditorNotifications.vue";
 
+import {
+  useEditorTheme,
+} from "./core/theme";
+
+import type {
+  ThemePreference,
+} from "./core/theme";
+
 import EditorTutorial from
   "./tutorial/EditorTutorial.vue";
 
@@ -68,12 +76,15 @@ const props = withDefaults(
     profile?: string;
     actions?: EditorAction[];
     panels?: EditorPanel[];
+    // "auto" follows the page's data-bs-theme, else the system setting.
+    theme?: ThemePreference;
   }>(),
   {
     mode: "create",
     profile: DEFAULT_PROFILE_ID,
     actions: () => [],
     panels: () => [],
+    theme: "auto",
   },
 );
 
@@ -242,6 +253,9 @@ const rejectDialogRef =
     InstanceType<typeof RejectDialog> | null
   >(null);
 
+const rootRef = ref<HTMLElement | null>(null);
+const currentTheme = useEditorTheme(toRef(props, "theme"), rootRef);
+
 const tutorialRef =
   ref<
     InstanceType<typeof EditorTutorial> | null
@@ -264,9 +278,14 @@ onMounted(controller.load);
 </script>
 
 <template>
-  <div class="vulniverse-editor">
+  <div
+    ref="rootRef"
+    class="vulniverse-editor"
+    :data-bs-theme="currentTheme"
+  >
     <EditorHeader
       :identifier="state.identifier.value"
+      :dark="currentTheme === 'dark'"
       :vulnerability-id="state.vulnerabilityId.value"
       :profile="state.profile.value"
       :is-draft="state.isDraft.value"

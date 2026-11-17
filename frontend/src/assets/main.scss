@@ -15,6 +15,14 @@
   --vulniverse-primary-rgb: 65, 84, 216;
 }
 
+// The dark theme (src/theme.ts sets data-bs-theme on <html>). The
+// editor brings its own dark colours; this is the page around it.
+[data-bs-theme="dark"] {
+  color-scheme: dark;
+
+  --vulniverse-page-background: #16181c;
+}
+
 html,
 body,
 #app {

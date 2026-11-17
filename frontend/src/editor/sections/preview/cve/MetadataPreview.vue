@@ -34,7 +34,7 @@ defineProps<{
           v-if="secondaryIdentifier"
           class="
             badge
-            text-bg-light
+            bg-body-tertiary text-body
             text-secondary
             border
           "

@@ -96,7 +96,7 @@ function handleDeleted(
 
 <template>
   <div class="editor-page">
-    <div class="editor-card card shadow-sm">
+    <div class="editor-card shadow-sm">
       <VulniverseEditor
         :repository="repository"
         mode="edit"
@@ -137,6 +137,12 @@ function handleDeleted(
  * rounded corners.
  */
 .editor-card {
+  /*
+   * Only the shadow: the editor draws its own border and rounded corners
+   * (it needs them when embedded elsewhere), and a card's second border
+   * with a smaller radius showed as a double line at the corners.
+   */
+  border-radius: 0.75rem;
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;

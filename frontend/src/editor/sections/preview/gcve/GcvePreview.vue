@@ -194,7 +194,7 @@ function pathLabel(
             "
             class="
               badge
-              text-bg-light
+              bg-body-tertiary text-body
               text-secondary
               border
             "
@@ -208,7 +208,7 @@ function pathLabel(
             "
             class="
               badge
-              text-bg-light
+              bg-body-tertiary text-body
               text-secondary
               border
             "

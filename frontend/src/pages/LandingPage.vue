@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useAuthStore } from "@/stores/auth";
 import vulniverseLogo from "@/assets/vulniverse-logo.webp";
+import vulniverseLogoDark from "@/assets/vulniverse-logo-dark.webp";
+import { appTheme } from "@/theme";
 
 const auth = useAuthStore();
 
@@ -13,7 +15,7 @@ const isGithubPages =
     <div class="row justify-content-center text-center mb-5">
       <div class="col-lg-8">
         <img
-          :src="vulniverseLogo"
+          :src="appTheme === 'dark' ? vulniverseLogoDark : vulniverseLogo"
           alt="Vulniverse"
           class="mb-4"
         >
