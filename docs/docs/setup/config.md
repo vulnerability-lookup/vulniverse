@@ -126,6 +126,11 @@ enabled = false
 [panels.vl]
 enabled = true
 
+[[panels.vl.instances]]
+id = "circl"
+name = "CIRCL Vulnerability-Lookup"
+api_url = "https://vulnerability.circl.lu/api/cna"
+
 [panels.cve-program]
 enabled = false
 
@@ -156,11 +161,33 @@ As with `[features]`, disabling a panel here is enforced on the backend:
 the underlying routes for a disabled panel return 404, not just a hidden
 button in the UI.
 
-CNA-publication credentials — "Vulnerability-Lookup" (target id `vl`) and
-"CVE Program" (target id `cve-program`) — are **not** configured here.
-Each registered user sets their own under the standalone app's own
-`/cna-credentials` page; they're stored per-user, encrypted at rest using
-`CNA_CREDENTIAL_ENCRYPTION_KEY` (see below).
+The servers the CNA-publication panels — "Vulnerability-Lookup" (target
+id `vl`) and "CVE Program" (target id `cve-program`) — may send to are
+configured here, as a list per target:
+
+```toml
+[[panels.cve-program.instances]]
+id = "cve-test"
+name = "CVE Program (test)"
+api_url = "https://cveawg-test.mitre.org/api"
+```
+
+Each entry needs a unique `id`, a `name` shown to users and an http(s)
+`api_url`; anything else stops the backend from starting. Without an
+entry, publishing to that target isn't possible. Only listed servers are
+ever contacted, so users can't make the backend send requests (and their
+API keys) anywhere else. If several organisations use different
+Vulnerability-Lookup instances, list each of them.
+
+The credentials themselves are **not** configured here. Each registered
+user sets their own under the standalone app's `/cna-credentials` page:
+which of the listed servers, and their CNA identity and API key. They're
+stored per user, encrypted at rest using `CNA_CREDENTIAL_ENCRYPTION_KEY`
+(see below). Changing the server requires entering the API key again.
+
+When upgrading, stored credentials whose URL matches a listed server are
+assigned to it automatically; the others have to pick a server (and
+enter their key again) before publishing works.
 
 ## Backend environment (`.env`)
 

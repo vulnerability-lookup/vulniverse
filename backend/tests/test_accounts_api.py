@@ -86,7 +86,7 @@ def test_deleting_ones_account_keeps_records_but_not_what_is_only_ones_own(
             UserCnaCredential(
                 user_id=test_user.id,
                 target="vl",
-                cve_url="https://example.com",
+                instance="test",
                 short_name="x",
                 org_id="x",
                 cve_api_org="x",

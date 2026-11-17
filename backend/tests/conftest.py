@@ -41,6 +41,15 @@ def app(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Flask]:
             # whatever config/vulniverse.toml(.sample) says, same mechanism
             # as every other setting above.
             "VULNIVERSE_MODE": "multiuser",
+            # The one server publishing may go to ([[panels.vl.instances]]).
+            "VULNIVERSE_PUBLISH_INSTANCES": {
+                "vl": [
+                    {"id": "test", "name": "Test VL", "api_url": "http://test/api/cna"}
+                ],
+                "cve-program": [
+                    {"id": "test", "name": "Test CVE", "api_url": "http://test/api"}
+                ],
+            },
         }
     )
 

@@ -35,6 +35,7 @@ def test_falls_back_to_sample_file_when_real_config_absent(
         "features": dict(app_config.DEFAULT_FEATURES),
         "panels": {"stats": True},
         "actions": {"download": False},
+        "publish_instances": {},
     }
 
 
@@ -181,6 +182,7 @@ def test_empty_tables_when_neither_file_exists(
         "server": {"mode": "local", "registration": "open", "two_factor": False},
         "panels": {},
         "actions": {},
+        "publish_instances": {},
         "features": dict(app_config.DEFAULT_FEATURES),
     }
 

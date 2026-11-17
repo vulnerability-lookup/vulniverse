@@ -44,7 +44,7 @@ def configured_vl(app: Flask, test_user) -> None:
         test_user.id,
         "vl",
         {
-            "cve_url": "http://test/api/cna",
+            "instance": "test",
             "short_name": "test-cna",
             "org_id": "TEST-ORG",
             "cve_api_org": "TEST-ORG",

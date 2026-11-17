@@ -33,9 +33,19 @@ enabled = false
 
 [panels.vl]
 enabled = false
+# The servers users may publish to; each user picks one of these for
+# their CNA credentials. Only listed servers are ever contacted.
+# [[panels.vl.instances]]
+# id = "circl"
+# name = "CIRCL Vulnerability-Lookup"
+# api_url = "https://vulnerability.circl.lu/api/cna"
 
 [panels.cve-program]
 enabled = false
+# [[panels.cve-program.instances]]
+# id = "cve"
+# name = "CVE Program"
+# api_url = "https://cveawg.mitre.org/api"
 
 [panels.record-quality]
 enabled = true

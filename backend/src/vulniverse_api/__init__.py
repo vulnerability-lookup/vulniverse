@@ -7,7 +7,11 @@ from typing import Any
 from dotenv import load_dotenv
 from flask import Flask
 
-from .app_config import REGISTRATION_MODES, load_app_config
+from .app_config import (
+    REGISTRATION_MODES,
+    load_app_config,
+    publish_instances_problem,
+)
 from .auth.identity import init_auth
 from .extensions import csrf, db, login_manager, migrate
 
@@ -39,6 +43,10 @@ def create_app(
             f"Invalid [server] registration: {registration!r}"
             f" (one of {', '.join(REGISTRATION_MODES)})"
         )
+
+    problem = publish_instances_problem(app_config["publish_instances"])
+    if problem:
+        raise RuntimeError(f"Invalid config: {problem}")
 
     instance_path = Path(app.instance_path)
     instance_path.mkdir(parents=True, exist_ok=True)
@@ -75,6 +83,7 @@ def create_app(
         VULNIVERSE_MODE=mode,
         VULNIVERSE_REGISTRATION=registration,
         VULNIVERSE_TWO_FACTOR=app_config["server"]["two_factor"],
+        VULNIVERSE_PUBLISH_INSTANCES=app_config["publish_instances"],
     )
 
     if test_config:

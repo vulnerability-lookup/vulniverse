@@ -9,7 +9,7 @@ import httpx
 
 from ..extensions import db
 from ..models import CnaPublication, VulnerabilityRecord
-from .cna_credentials import get_credential
+from .cna_credentials import find_instance, get_credential
 from .identifiers import canonical_id
 
 REQUEST_TIMEOUT_SECONDS = 30.0
@@ -84,8 +84,19 @@ class CnaPublicationService:
                 "up under your account's CNA credentials.",
             )
 
+        instance = find_instance(target, credentials["instance"])
+
+        if instance is None:
+            raise IntegrationNotConfiguredError(
+                f"The {target!r} instance in your CNA credentials isn't offered"
+                " on this server (anymore); choose one under CNA credentials.",
+            )
+
         self.target = target
-        self.base_url = credentials["cve_url"].rstrip("/")
+        # Only operator-configured URLs (see app_config.py), never one a
+        # user typed: the server mustn't be sent to arbitrary addresses.
+        # httpx doesn't follow redirects either (its default); keep it so.
+        self.base_url = instance["api_url"].rstrip("/")
         self.short_name = credentials["short_name"]
         self.org_id = credentials["org_id"]
         self._api_key = credentials["cve_api_key"]

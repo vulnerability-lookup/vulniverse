@@ -48,8 +48,11 @@ class UserCnaCredential(
         nullable=False,
     )
 
-    cve_url: Mapped[str] = mapped_column(
-        String(512),
+    # Which of the operator's [[panels.<target>.instances]] the key is
+    # for; the URL comes from there, never from the user. "" when an
+    # older stored URL matched no configured instance.
+    instance: Mapped[str] = mapped_column(
+        String(64),
         nullable=False,
     )
 

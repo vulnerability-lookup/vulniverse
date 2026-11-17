@@ -63,6 +63,7 @@ def load_app_config() -> dict[str, dict[str, Any]]:
             },
             "panels": {},
             "actions": {},
+            "publish_instances": {},
             "features": dict(DEFAULT_FEATURES),
         }
 
@@ -89,4 +90,38 @@ def load_app_config() -> dict[str, dict[str, Any]]:
             for name, value in dict(data.get("panels", {})).items()
         },
         "actions": dict(data.get("actions", {})),
+        "publish_instances": _publish_instances(data.get("panels", {})),
     }
+
+
+def _publish_instances(panels: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
+    """[[panels.<target>.instances]]: the servers a publication target
+    ("vl", "cve-program") may send to, each {id, name, api_url}. Only the
+    operator chooses these; users pick one of them for their credentials.
+    Checked in create_app()."""
+    return {
+        target: list(value.get("instances", []))
+        for target, value in panels.items()
+        if isinstance(value, dict) and "instances" in value
+    }
+
+
+def publish_instances_problem(
+    instances: dict[str, list[dict[str, str]]],
+) -> str | None:
+    """Why the configured publication instances are unusable, or None."""
+    for target, entries in instances.items():
+        ids = set()
+        for entry in entries:
+            if not isinstance(entry, dict) or not all(
+                isinstance(entry.get(key), str) and entry[key].strip()
+                for key in ("id", "name", "api_url")
+            ):
+                return f"[[panels.{target}.instances]] each need id, name and api_url."
+            if not entry["api_url"].startswith(("https://", "http://")):
+                return f"[[panels.{target}.instances]] {entry['id']}: api_url must be http(s)."
+            if entry["id"] in ids:
+                return f"[[panels.{target}.instances]]: the id {entry['id']!r} is used twice."
+            ids.add(entry["id"])
+
+    return None

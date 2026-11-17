@@ -12,7 +12,7 @@ from ..models import UserCnaCredential
 # these — set_credential validates them together, there's no notion of a
 # partially-configured target.
 CREDENTIAL_FIELDS = (
-    "cve_url",
+    "instance",
     "short_name",
     "org_id",
     "cve_api_org",
@@ -31,6 +31,19 @@ def fernet() -> Fernet:
     key = current_app.config["CNA_CREDENTIAL_ENCRYPTION_KEY"]
 
     return Fernet(key.encode() if isinstance(key, str) else key)
+
+
+def configured_instances(target: str) -> list[dict[str, str]]:
+    """The operator's [[panels.<target>.instances]]: {id, name, api_url}."""
+    instances = current_app.config.get("VULNIVERSE_PUBLISH_INSTANCES", {})
+    return list(instances.get(target, []))
+
+
+def find_instance(target: str, instance_id: str) -> dict[str, str] | None:
+    return next(
+        (i for i in configured_instances(target) if i["id"] == instance_id),
+        None,
+    )
 
 
 def get_credential(user_id: int, target: str) -> dict[str, str] | None:
@@ -52,7 +65,7 @@ def get_credential(user_id: int, target: str) -> dict[str, str] | None:
         ) from exc
 
     return {
-        "cve_url": row.cve_url,
+        "instance": row.instance,
         "short_name": row.short_name,
         "org_id": row.org_id,
         "cve_api_org": row.cve_api_org,
@@ -76,7 +89,7 @@ def list_credentials(user_id: int) -> dict[str, dict[str, Any]]:
 
     return {
         row.target: {
-            "cveUrl": row.cve_url,
+            "instance": row.instance,
             "shortName": row.short_name,
             "orgId": row.org_id,
             "cveApiOrg": row.cve_api_org,
@@ -107,10 +120,22 @@ def set_credential(
     if missing:
         raise ValueError(f"Missing required field(s): {', '.join(missing)}")
 
+    if find_instance(target, fields["instance"]) is None:
+        raise ValueError(f"Unknown instance {fields['instance']!r} for {target!r}.")
+
+    # The stored key goes only where it was entered for: someone in a
+    # hijacked session can't redirect it to another instance.
+    if (
+        row is not None
+        and row.instance != fields["instance"]
+        and not fields.get("cve_api_key")
+    ):
+        raise ValueError("Enter the API key again when changing the instance.")
+
     if row is None:
         row = UserCnaCredential(user_id=user_id, target=target)
 
-    row.cve_url = fields["cve_url"]
+    row.instance = fields["instance"]
     row.short_name = fields["short_name"]
     row.org_id = fields["org_id"]
     row.cve_api_org = fields["cve_api_org"]
