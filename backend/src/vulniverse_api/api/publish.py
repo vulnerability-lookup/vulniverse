@@ -29,9 +29,15 @@ def _serialize(
         "target": publication.target,
         "status": publication.status,
         "cveId": publication.cve_id,
-        "reservedAt": publication.reserved_at.isoformat() if publication.reserved_at else None,
-        "publishedAt": publication.published_at.isoformat() if publication.published_at else None,
-        "rejectedAt": publication.rejected_at.isoformat() if publication.rejected_at else None,
+        "reservedAt": publication.reserved_at.isoformat()
+        if publication.reserved_at
+        else None,
+        "publishedAt": publication.published_at.isoformat()
+        if publication.published_at
+        else None,
+        "rejectedAt": publication.rejected_at.isoformat()
+        if publication.rejected_at
+        else None,
         "lastError": publication.last_error,
         "createdAt": publication.created_at.isoformat(),
         "updatedAt": publication.updated_at.isoformat(),

@@ -15,17 +15,14 @@ def record_quality():
     profile = payload.get("profile")
     if profile not in PROFILES:
         return {
-            "message":
-                "Record quality scoring is not "
-                "supported for this profile.",
+            "message": "Record quality scoring is not supported for this profile.",
         }, 400
 
     record = payload.get("record")
 
     if not isinstance(record, dict):
         return {
-            "message":
-                "record must be an object.",
+            "message": "record must be an object.",
         }, 400
 
     return score_record_quality(

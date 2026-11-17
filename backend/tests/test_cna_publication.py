@@ -63,14 +63,18 @@ def user(app: Flask) -> User:
 
 @pytest.fixture
 def configured_vl(app: Flask, user: User) -> User:
-    set_credential(user.id, "vl", {
-        "cve_url": "http://test/api/cna",
-        "short_name": "test-cna",
-        "org_id": "TEST-ORG",
-        "cve_api_org": "TEST-ORG",
-        "cve_api_user": "tester@example.com",
-        "cve_api_key": API_KEY,
-    })
+    set_credential(
+        user.id,
+        "vl",
+        {
+            "cve_url": "http://test/api/cna",
+            "short_name": "test-cna",
+            "org_id": "TEST-ORG",
+            "cve_api_org": "TEST-ORG",
+            "cve_api_user": "tester@example.com",
+            "cve_api_key": API_KEY,
+        },
+    )
     return user
 
 
@@ -92,11 +96,19 @@ def test_raises_when_target_not_configured(configured_vl: User) -> None:
         CnaPublicationService(configured_vl.id, "cve-program")
 
 
-def test_reserve_success(app: Flask, configured_vl: User, record_id: int, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_reserve_success(
+    app: Flask, configured_vl: User, record_id: int, monkeypatch: pytest.MonkeyPatch
+) -> None:
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
         assert method == "POST"
         assert url == "http://test/api/cna/cve-id"
-        return FakeResponse({"cve_ids": [{"cve_id": "CVE-2026-00001", "reserved": "2026-01-01T00:00:00Z"}]})
+        return FakeResponse(
+            {
+                "cve_ids": [
+                    {"cve_id": "CVE-2026-00001", "reserved": "2026-01-01T00:00:00Z"}
+                ]
+            }
+        )
 
     monkeypatch.setattr(service_module.httpx, "request", fake_request)
 
@@ -110,14 +122,19 @@ def test_reserve_success(app: Flask, configured_vl: User, record_id: int, monkey
 
 
 def test_reserve_falls_back_to_vuln_id_when_cve_id_blank(
-    app: Flask, configured_vl: User, record_id: int, monkeypatch: pytest.MonkeyPatch,
+    app: Flask,
+    configured_vl: User,
+    record_id: int,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     # VL's own GNA-shaped reservation response: no official CVE assigned
     # yet (cve_id is blank), the real identifier is the GCVE-format vuln_id.
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
-        return FakeResponse({
-            "cve_ids": [{"cve_id": "", "vuln_id": "GCVE-0-2026-00099"}],
-        })
+        return FakeResponse(
+            {
+                "cve_ids": [{"cve_id": "", "vuln_id": "GCVE-0-2026-00099"}],
+            }
+        )
 
     monkeypatch.setattr(service_module.httpx, "request", fake_request)
 
@@ -136,13 +153,17 @@ def test_reserve_stores_vls_lowercase_gcve_id_in_uppercase(
 ) -> None:
     # VL returns its GCVE IDs lowercased (its internal key form).
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
-        return FakeResponse({
-            "cve_ids": [{"cve_id": "", "vuln_id": "gcve-65535-2026-20128"}],
-        })
+        return FakeResponse(
+            {
+                "cve_ids": [{"cve_id": "", "vuln_id": "gcve-65535-2026-20128"}],
+            }
+        )
 
     monkeypatch.setattr(service_module.httpx, "request", fake_request)
 
-    publication = CnaPublicationService(configured_vl.id, "vl").reserve_cve_id(record_id, 2026)
+    publication = CnaPublicationService(configured_vl.id, "vl").reserve_cve_id(
+        record_id, 2026
+    )
 
     assert publication.cve_id == "GCVE-65535-2026-20128"
 
@@ -154,20 +175,27 @@ def test_reserve_uppercases_only_the_id_prefix(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
-        return FakeResponse({
-            "cve_ids": [{"cve_id": "", "vuln_id": "gcve-1-2026-abc1"}],
-        })
+        return FakeResponse(
+            {
+                "cve_ids": [{"cve_id": "", "vuln_id": "gcve-1-2026-abc1"}],
+            }
+        )
 
     monkeypatch.setattr(service_module.httpx, "request", fake_request)
 
-    publication = CnaPublicationService(configured_vl.id, "vl").reserve_cve_id(record_id, 2026)
+    publication = CnaPublicationService(configured_vl.id, "vl").reserve_cve_id(
+        record_id, 2026
+    )
 
     # Only "gcve" is case-insensitive; the rest is kept exactly.
     assert publication.cve_id == "GCVE-1-2026-abc1"
 
 
 def test_reserve_fails_when_neither_cve_id_nor_vuln_id_present(
-    app: Flask, configured_vl: User, record_id: int, monkeypatch: pytest.MonkeyPatch,
+    app: Flask,
+    configured_vl: User,
+    record_id: int,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
         return FakeResponse({"cve_ids": [{"cve_id": ""}]})
@@ -181,7 +209,10 @@ def test_reserve_fails_when_neither_cve_id_nor_vuln_id_present(
 
 
 def test_reserve_upstream_error_sets_pending_and_scrubs_key(
-    app: Flask, configured_vl: User, record_id: int, monkeypatch: pytest.MonkeyPatch,
+    app: Flask,
+    configured_vl: User,
+    record_id: int,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
         return FakeResponse(
@@ -204,7 +235,9 @@ def test_reserve_upstream_error_sets_pending_and_scrubs_key(
     assert "[REDACTED]" in publication.last_error
 
 
-def test_publish_before_reserve_is_blocked(app: Flask, configured_vl: User, record_id: int) -> None:
+def test_publish_before_reserve_is_blocked(
+    app: Flask, configured_vl: User, record_id: int
+) -> None:
     # LOCAL_ONLY isn't in ALLOWED_TRANSITIONS[PUBLISHED] — the transition
     # guard rejects this before the cve_id check is ever reached.
     service = CnaPublicationService(configured_vl.id, "vl")
@@ -214,7 +247,10 @@ def test_publish_before_reserve_is_blocked(app: Flask, configured_vl: User, reco
 
 
 def test_publish_success(
-    app: Flask, configured_vl: User, organisation, monkeypatch: pytest.MonkeyPatch,
+    app: Flask,
+    configured_vl: User,
+    organisation,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     record = VulnerabilityRecord(
         organisation_id=organisation.id,
@@ -254,7 +290,10 @@ def test_publish_success(
 
 
 def test_publish_does_not_override_existing_provider_metadata(
-    app: Flask, configured_vl: User, organisation, monkeypatch: pytest.MonkeyPatch,
+    app: Flask,
+    configured_vl: User,
+    organisation,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     record = VulnerabilityRecord(
         organisation_id=organisation.id,
@@ -264,7 +303,10 @@ def test_publish_does_not_override_existing_provider_metadata(
             "containers": {
                 "cna": {
                     "descriptions": [{"lang": "en", "value": "A bug."}],
-                    "providerMetadata": {"orgId": "real-uuid-1234", "shortName": "Acme"},
+                    "providerMetadata": {
+                        "orgId": "real-uuid-1234",
+                        "shortName": "Acme",
+                    },
                 },
             },
         },
@@ -290,14 +332,18 @@ def test_publish_does_not_override_existing_provider_metadata(
     service.publish(record.id)
 
 
-def test_reject_requires_nonempty_reason(app: Flask, configured_vl: User, record_id: int) -> None:
+def test_reject_requires_nonempty_reason(
+    app: Flask, configured_vl: User, record_id: int
+) -> None:
     service = CnaPublicationService(configured_vl.id, "vl")
 
     with pytest.raises(ValueError, match="rejection reason"):
         service.reject(record_id, "   ")
 
 
-def test_reject_before_reserve_is_blocked(app: Flask, configured_vl: User, record_id: int) -> None:
+def test_reject_before_reserve_is_blocked(
+    app: Flask, configured_vl: User, record_id: int
+) -> None:
     service = CnaPublicationService(configured_vl.id, "vl")
 
     with pytest.raises(ValueError, match="cannot transition"):
@@ -311,7 +357,9 @@ def test_abort_from_local_only(app: Flask, configured_vl: User, record_id: int) 
     assert publication.status == PublicationStatus.ABORTED.value
 
 
-def test_abort_twice_is_blocked(app: Flask, configured_vl: User, record_id: int) -> None:
+def test_abort_twice_is_blocked(
+    app: Flask, configured_vl: User, record_id: int
+) -> None:
     service = CnaPublicationService(configured_vl.id, "vl")
     service.abort(record_id)
 

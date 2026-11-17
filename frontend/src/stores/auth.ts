@@ -22,6 +22,14 @@ export interface AuthUser {
   /** Where new records go and which records the list shows; null
    * without any organisation. */
   currentOrganisationId: number | null;
+  /** [server] two_factor: required for every account; enabled once set up. */
+  twoFactor: { required: boolean; enabled: boolean };
+}
+
+export interface TwoFactorSetup {
+  secret: string;
+  /** otpauth:// URI, for the QR code. */
+  uri: string;
 }
 
 export const useAuthStore = defineStore("auth", () => {
@@ -35,6 +43,11 @@ export const useAuthStore = defineStore("auth", () => {
 
   const isLocalMode = computed(
     () => currentUser.value?.authMode === "local",
+  );
+
+  // Until it's set up, the backend refuses everything else.
+  const needsTwoFactorSetup = computed(
+    () => currentUser.value?.twoFactor.required === true && !currentUser.value.twoFactor.enabled,
   );
 
   const currentOrganisation = computed(
@@ -57,10 +70,33 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
-  async function login(email: string, password: string): Promise<void> {
-    currentUser.value = await apiRequest<AuthUser>("/auth/login", {
+  /** "code": the password was right, now loginCode() with the 2FA code. */
+  async function login(email: string, password: string): Promise<"done" | "code"> {
+    const response = await apiRequest<AuthUser | { twoFactorRequired: true }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    });
+
+    if ("twoFactorRequired" in response) return "code";
+    currentUser.value = response;
+    return "done";
+  }
+
+  async function loginCode(code: string): Promise<void> {
+    currentUser.value = await apiRequest<AuthUser>("/auth/login/two-factor", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  function startTwoFactorSetup(): Promise<TwoFactorSetup> {
+    return apiRequest<TwoFactorSetup>("/auth/two-factor/setup", { method: "POST" });
+  }
+
+  async function finishTwoFactorSetup(code: string): Promise<void> {
+    currentUser.value = await apiRequest<AuthUser>("/auth/two-factor", {
+      method: "POST",
+      body: JSON.stringify({ code }),
     });
   }
 
@@ -108,7 +144,11 @@ export const useAuthStore = defineStore("auth", () => {
     isAuthenticated,
     isLocalMode,
     currentOrganisation,
+    needsTwoFactorSetup,
     fetchMe,
+    loginCode,
+    startTwoFactorSetup,
+    finishTwoFactorSetup,
     switchOrganisation,
     changePassword,
     deleteAccount,

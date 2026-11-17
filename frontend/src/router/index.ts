@@ -18,6 +18,9 @@ import EditorPage from
 import NewRecordPage from
   "@/pages/NewRecordPage.vue";
 
+import TwoFactorSetupPage from
+  "@/pages/TwoFactorSetupPage.vue";
+
 import LoginPage from
   "@/pages/LoginPage.vue";
 
@@ -97,6 +100,12 @@ export const router = createRouter({
       component: AccountPage,
     },
     {
+      // Required first when [server] two_factor is on (see the guard).
+      path: "/two-factor",
+      name: "two-factor",
+      component: TwoFactorSetupPage,
+    },
+    {
       // The current organisation, for its admins.
       path: "/organisation",
       name: "organisation",
@@ -170,6 +179,10 @@ router.beforeEach(async (to) => {
   // once you're already signed in.
   if (to.meta.guestOnly && auth.isAuthenticated) {
     return { name: "records" };
+  }
+
+  if (auth.needsTwoFactorSetup && !to.meta.public && to.name !== "two-factor") {
+    return { name: "two-factor" };
   }
 
   if (to.meta.adminOnly && !auth.currentUser?.isAdmin) {

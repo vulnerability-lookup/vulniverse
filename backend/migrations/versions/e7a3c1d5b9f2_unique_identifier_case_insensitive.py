@@ -12,27 +12,28 @@ Revises: d4e2b7c9a1f0
 Create Date: 2026-11-10 11:00:00.000000
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = 'e7a3c1d5b9f2'
-down_revision = 'd4e2b7c9a1f0'
+revision = "e7a3c1d5b9f2"
+down_revision = "d4e2b7c9a1f0"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
     op.create_index(
-        'uq_vulnerability_record_identifier_lower',
-        'vulnerability_record',
-        [sa.text('lower(identifier)')],
+        "uq_vulnerability_record_identifier_lower",
+        "vulnerability_record",
+        [sa.text("lower(identifier)")],
         unique=True,
     )
 
 
 def downgrade():
     op.drop_index(
-        'uq_vulnerability_record_identifier_lower',
-        table_name='vulnerability_record',
+        "uq_vulnerability_record_identifier_lower",
+        table_name="vulnerability_record",
     )

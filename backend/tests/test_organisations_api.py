@@ -174,9 +174,7 @@ def test_admin_renames_an_organisation(admin_client, organisation) -> None:
 
 def test_renaming_an_unknown_organisation_is_404(admin_client) -> None:
     assert (
-        admin_client.patch(
-            "/api/v1/organisations/999", json={"name": "X"}
-        ).status_code
+        admin_client.patch("/api/v1/organisations/999", json={"name": "X"}).status_code
         == 404
     )
 

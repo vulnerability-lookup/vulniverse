@@ -22,5 +22,9 @@ def search_products(
     vendor_q: str | None = None,
 ) -> dict[str, Any]:
     return search_catalog(
-        "products", q, page=page, per_page=per_page, vendor_q=vendor_q,
+        "products",
+        q,
+        page=page,
+        per_page=per_page,
+        vendor_q=vendor_q,
     )

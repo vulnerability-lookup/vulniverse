@@ -25,7 +25,9 @@ class FakeResponse:
             raise httpx.HTTPStatusError(
                 "error",
                 request=self.request,
-                response=httpx.Response(self.status_code, request=self.request, json=self._payload),
+                response=httpx.Response(
+                    self.status_code, request=self.request, json=self._payload
+                ),
             )
 
     def json(self) -> Any:
@@ -38,14 +40,18 @@ class FakeResponse:
 
 @pytest.fixture
 def configured_vl(app: Flask, test_user) -> None:
-    set_credential(test_user.id, "vl", {
-        "cve_url": "http://test/api/cna",
-        "short_name": "test-cna",
-        "org_id": "TEST-ORG",
-        "cve_api_org": "TEST-ORG",
-        "cve_api_user": "tester@example.com",
-        "cve_api_key": "key123",
-    })
+    set_credential(
+        test_user.id,
+        "vl",
+        {
+            "cve_url": "http://test/api/cna",
+            "short_name": "test-cna",
+            "org_id": "TEST-ORG",
+            "cve_api_org": "TEST-ORG",
+            "cve_api_user": "tester@example.com",
+            "cve_api_key": "key123",
+        },
+    )
 
 
 @pytest.fixture
@@ -54,7 +60,11 @@ def record(client: FlaskClient) -> int:
     response = client.post(
         "/api/v1/records",
         json={
-            "record": {"containers": {"cna": {"descriptions": [{"lang": "en", "value": "bug"}]}}},
+            "record": {
+                "containers": {
+                    "cna": {"descriptions": [{"lang": "en", "value": "bug"}]}
+                }
+            },
             "profile": "gcve-bcp-05-1.7",
             "isDraft": True,
         },
@@ -63,7 +73,8 @@ def record(client: FlaskClient) -> int:
 
 
 def test_targets_endpoint_reports_configured(
-    client: FlaskClient, configured_vl: None,
+    client: FlaskClient,
+    configured_vl: None,
 ) -> None:
     response = client.get("/api/v1/publish/targets")
 
@@ -80,7 +91,10 @@ def test_unknown_target_is_404(client: FlaskClient, record: int) -> None:
 
 
 def test_disabled_panel_target_is_404(
-    client: FlaskClient, record: int, configured_vl: None, monkeypatch: pytest.MonkeyPatch,
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     real_load_app_config = publish_module.load_app_config
 
@@ -97,7 +111,9 @@ def test_disabled_panel_target_is_404(
 
 
 def test_unconfigured_target_is_409(
-    client: FlaskClient, record: int, configured_vl: None,
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
 ) -> None:
     response = client.get(f"/api/v1/publish/cve-program/{record}")
 
@@ -105,7 +121,9 @@ def test_unconfigured_target_is_409(
 
 
 def test_get_publication_creates_local_only(
-    client: FlaskClient, record: int, configured_vl: None,
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
 ) -> None:
     response = client.get(f"/api/v1/publish/vl/{record}")
 
@@ -117,7 +135,9 @@ def test_get_publication_creates_local_only(
 
 
 def test_reserve_rejects_non_integer_year(
-    client: FlaskClient, record: int, configured_vl: None,
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
 ) -> None:
     response = client.post(
         f"/api/v1/publish/vl/{record}/reserve",
@@ -128,7 +148,9 @@ def test_reserve_rejects_non_integer_year(
 
 
 def test_reject_requires_reason(
-    client: FlaskClient, record: int, configured_vl: None,
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
 ) -> None:
     response = client.post(
         f"/api/v1/publish/vl/{record}/reject",
@@ -139,7 +161,10 @@ def test_reject_requires_reason(
 
 
 def test_reserve_publish_reject_happy_path(
-    client: FlaskClient, record: int, configured_vl: None, monkeypatch: pytest.MonkeyPatch,
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
         if url.endswith("/cve-id"):
@@ -171,7 +196,10 @@ def test_reserve_publish_reject_happy_path(
 
 
 def test_upstream_failure_returns_502_with_publication_state(
-    client: FlaskClient, record: int, configured_vl: None, monkeypatch: pytest.MonkeyPatch,
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
         return FakeResponse({"message": "nope"}, status_code=500)
@@ -195,7 +223,10 @@ def test_unknown_record_is_404(client: FlaskClient, configured_vl: None) -> None
 
 
 def test_non_owner_cannot_act_on_a_published_record(
-    app: Flask, test_user, organisation, other_client: FlaskClient,
+    app: Flask,
+    test_user,
+    organisation,
+    other_client: FlaskClient,
 ) -> None:
     with app.app_context():
         published = VulnerabilityRecord(
@@ -210,6 +241,8 @@ def test_non_owner_cannot_act_on_a_published_record(
         db.session.commit()
         rid = published.id
 
-    response = other_client.post(f"/api/v1/publish/vl/{rid}/reserve", json={"year": 2026})
+    response = other_client.post(
+        f"/api/v1/publish/vl/{rid}/reserve", json={"year": 2026}
+    )
 
     assert response.status_code == 403

@@ -227,7 +227,9 @@ def get_job_status(job_id: str) -> dict[str, Any]:
 
 def _drop_nulls(value: Any) -> Any:
     if isinstance(value, dict):
-        return {key: _drop_nulls(item) for key, item in value.items() if item is not None}
+        return {
+            key: _drop_nulls(item) for key, item in value.items() if item is not None
+        }
 
     if isinstance(value, list):
         return [_drop_nulls(item) for item in value if item is not None]
@@ -329,7 +331,9 @@ def get_job_result(job_id: str) -> dict[str, Any]:
 
     return {
         "record": record,
-        "osv": _without_nulls(osv, "database_specific") if isinstance(osv, dict) else None,
+        "osv": _without_nulls(osv, "database_specific")
+        if isinstance(osv, dict)
+        else None,
         "analysis": records.get("analysis"),
     }
 
@@ -408,7 +412,10 @@ def stream_job_status(token: str, job_id: str) -> Iterator[str]:
         if now - started >= STREAM_MAX_SECONDS:
             # Status null: patch2vuln was never reached during this stream.
             yield _format_status_event(
-                token, *(last or (None, None)), expired=True, unreachable=unreachable,
+                token,
+                *(last or (None, None)),
+                expired=True,
+                unreachable=unreachable,
             )
             return
 
@@ -422,7 +429,9 @@ def stream_job_status(token: str, job_id: str) -> Iterator[str]:
             # once, so the client stops presenting the status as current.
             if unreachable is None:
                 unreachable = str(exc)
-                yield _format_status_event(token, *(last or (None, None)), unreachable=unreachable)
+                yield _format_status_event(
+                    token, *(last or (None, None)), unreachable=unreachable
+                )
                 last_heartbeat = now
             elif now - last_heartbeat >= HEARTBEAT_INTERVAL_SECONDS:
                 yield ": heartbeat\n\n"

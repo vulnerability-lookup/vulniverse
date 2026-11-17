@@ -60,3 +60,20 @@ class User(
         server_default=func.now(),
         nullable=False,
     )
+
+    # Two-factor authentication (TOTP, services/two_factor.py), when
+    # [server] two_factor is on. The secret is Fernet-encrypted; None
+    # until the user sets it up.
+    two_factor_secret_encrypted: Mapped[str | None] = mapped_column(String(256))
+
+    # The last accepted code's time step: a code works only once.
+    two_factor_last_step: Mapped[int | None] = mapped_column()
+
+    # Wrong codes in a row, and when the last one came: too many and the
+    # code step waits (TWO_FACTOR_MAX_FAILURES), against guessing codes.
+    two_factor_failures: Mapped[int] = mapped_column(
+        nullable=False, default=0, server_default="0"
+    )
+    two_factor_failed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )

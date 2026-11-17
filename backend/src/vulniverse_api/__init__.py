@@ -30,9 +30,7 @@ def create_app(
     mode = app_config["server"]["mode"]
 
     if mode not in {"local", "multiuser"}:
-        raise RuntimeError(
-            f"Invalid Vulniverse deployment mode: {mode}"
-        )
+        raise RuntimeError(f"Invalid Vulniverse deployment mode: {mode}")
 
     registration = app_config["server"]["registration"]
 
@@ -61,7 +59,7 @@ def create_app(
     if not cna_encryption_key and test_config is None:
         raise RuntimeError(
             "CNA_CREDENTIAL_ENCRYPTION_KEY environment variable is not "
-            "set. Generate one with `python -c \"from cryptography.fernet "
+            'set. Generate one with `python -c "from cryptography.fernet '
             'import Fernet; print(Fernet.generate_key().decode())"` and '
             "set it in backend/.env (see docs/setup/production.md).",
         )
@@ -76,6 +74,7 @@ def create_app(
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         VULNIVERSE_MODE=mode,
         VULNIVERSE_REGISTRATION=registration,
+        VULNIVERSE_TWO_FACTOR=app_config["server"]["two_factor"],
     )
 
     if test_config:

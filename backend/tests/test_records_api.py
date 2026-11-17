@@ -119,14 +119,16 @@ def test_list_records_is_empty_with_no_records(client) -> None:
 
 def test_list_records_returns_created_records(client, test_user) -> None:
     cve_id = record_id(create_draft(client, "CVE-2026-00001"))
-    gcve_id = record_id(client.post(
-        "/api/v1/records",
-        json={
-            "record": minimal_gcve_record("GCVE-0-2026-00002"),
-            "profile": "gcve-bcp-05-1.7",
-            "isDraft": True,
-        },
-    ))
+    gcve_id = record_id(
+        client.post(
+            "/api/v1/records",
+            json={
+                "record": minimal_gcve_record("GCVE-0-2026-00002"),
+                "profile": "gcve-bcp-05-1.7",
+                "isDraft": True,
+            },
+        )
+    )
 
     response = client.get("/api/v1/records")
 
@@ -152,9 +154,7 @@ def test_list_records_orders_most_recently_updated_first(client) -> None:
     create_draft(client, "CVE-2026-00002")
 
     response = client.get("/api/v1/records")
-    identifiers = [
-        record["identifier"] for record in response.get_json()["records"]
-    ]
+    identifiers = [record["identifier"] for record in response.get_json()["records"]]
 
     assert identifiers == ["CVE-2026-00002", "CVE-2026-00001"]
 
@@ -191,19 +191,21 @@ def test_delete_record_cleans_up_its_cna_publication_rows(app, client) -> None:
     rid = record_id(create_draft(client, "CVE-2026-00001"))
 
     with app.app_context():
-        db.session.add_all([
-            CnaPublication(
-                record_id=rid,
-                target="vl",
-                status="RESERVED",
-                cve_id="GCVE-0-2026-00001",
-            ),
-            CnaPublication(
-                record_id=rid,
-                target="cve-program",
-                status="LOCAL_ONLY",
-            ),
-        ])
+        db.session.add_all(
+            [
+                CnaPublication(
+                    record_id=rid,
+                    target="vl",
+                    status="RESERVED",
+                    cve_id="GCVE-0-2026-00001",
+                ),
+                CnaPublication(
+                    record_id=rid,
+                    target="cve-program",
+                    status="LOCAL_ONLY",
+                ),
+            ]
+        )
         db.session.commit()
 
     response = client.delete(f"/api/v1/records/{rid}")
@@ -281,13 +283,20 @@ def test_typed_lowercase_gcve_id_is_saved_with_uppercase_prefix(client) -> None:
 
     response = client.put(
         f"/api/v1/records/{rid}",
-        json={"record": minimal_gcve_record("gcve-65535-2026-20128"), "profile": "gcve-bcp-05-1.7", "isDraft": True},
+        json={
+            "record": minimal_gcve_record("gcve-65535-2026-20128"),
+            "profile": "gcve-bcp-05-1.7",
+            "isDraft": True,
+        },
     )
 
     body = response.get_json()
     assert response.status_code == 200
     assert body["identifier"] == "GCVE-65535-2026-20128"
-    assert body["record"]["containers"]["cna"]["x_gcve"][0]["vulnId"] == "GCVE-65535-2026-20128"
+    assert (
+        body["record"]["containers"]["cna"]["x_gcve"][0]["vulnId"]
+        == "GCVE-65535-2026-20128"
+    )
 
 
 def test_typed_lowercase_cve_id_is_saved_with_uppercase_prefix(client) -> None:
@@ -301,7 +310,11 @@ def test_typed_lowercase_cve_id_is_saved_with_uppercase_prefix(client) -> None:
 def test_osv_ids_keep_their_case(client) -> None:
     response = client.post(
         "/api/v1/records",
-        json={"record": minimal_osv_record("GHSA-q7jr-4jmj-7c77"), "profile": "osv-1.9.2", "isDraft": True},
+        json={
+            "record": minimal_osv_record("GHSA-q7jr-4jmj-7c77"),
+            "profile": "osv-1.9.2",
+            "isDraft": True,
+        },
     )
 
     assert response.get_json()["identifier"] == "GHSA-q7jr-4jmj-7c77"
@@ -309,10 +322,18 @@ def test_osv_ids_keep_their_case(client) -> None:
 
 def test_database_rejects_an_identifier_differing_only_in_case(app, test_user) -> None:
     """The app checks first; this is the backstop for two saves racing."""
-    insert_record(app, "GCVE-1-2026-0001", test_user.id, is_draft=True, profile="gcve-bcp-05-1.7")
+    insert_record(
+        app, "GCVE-1-2026-0001", test_user.id, is_draft=True, profile="gcve-bcp-05-1.7"
+    )
 
     with pytest.raises(IntegrityError):
-        insert_record(app, "gcve-1-2026-0001", test_user.id, is_draft=True, profile="gcve-bcp-05-1.7")
+        insert_record(
+            app,
+            "gcve-1-2026-0001",
+            test_user.id,
+            is_draft=True,
+            profile="gcve-bcp-05-1.7",
+        )
 
 
 def test_several_identifierless_drafts_pass_the_case_insensitive_index(client) -> None:
@@ -324,7 +345,11 @@ def test_update_record_rejects_real_identifier_change(client) -> None:
 
     response = client.put(
         f"/api/v1/records/{rid}",
-        json={"record": minimal_cve_record("CVE-2026-99999"), "profile": "cve-5.2.0", "isDraft": True},
+        json={
+            "record": minimal_cve_record("CVE-2026-99999"),
+            "profile": "cve-5.2.0",
+            "isDraft": True,
+        },
     )
 
     assert response.status_code == 400
@@ -363,7 +388,9 @@ def test_draft_is_visible_in_list_for_its_owner(app, test_user, client) -> None:
     assert "CVE-2026-00011" in identifiers
 
 
-def test_other_organisations_published_records_are_not_listed(app, test_user, other_client) -> None:
+def test_other_organisations_published_records_are_not_listed(
+    app, test_user, other_client
+) -> None:
     # Still readable by link: test_get_published_record_succeeds_for_non_owner.
     insert_record(app, "CVE-2026-00012", test_user.id, is_draft=False)
 
@@ -398,7 +425,9 @@ def test_get_others_draft_succeeds_for_admin(app, test_user, admin_client) -> No
     assert response.status_code == 200
 
 
-def test_get_published_record_succeeds_for_non_owner(app, test_user, other_client) -> None:
+def test_get_published_record_succeeds_for_non_owner(
+    app, test_user, other_client
+) -> None:
     rid = insert_record(app, "CVE-2026-00016", test_user.id, is_draft=False)
 
     response = other_client.get(f"/api/v1/records/{rid}")
@@ -476,12 +505,18 @@ def test_identifierless_draft_is_listed_and_fetchable(client) -> None:
     assert get_response.get_json()["identifier"] is None
 
 
-def test_updating_identifierless_draft_without_an_identifier_keeps_it_null(client) -> None:
+def test_updating_identifierless_draft_without_an_identifier_keeps_it_null(
+    client,
+) -> None:
     rid = create_identifierless_draft(client)
 
     response = client.put(
         f"/api/v1/records/{rid}",
-        json={"record": {"dataType": "CVE_RECORD"}, "profile": "cve-5.2.0", "isDraft": True},
+        json={
+            "record": {"dataType": "CVE_RECORD"},
+            "profile": "cve-5.2.0",
+            "isDraft": True,
+        },
     )
 
     assert response.status_code == 200
@@ -503,10 +538,15 @@ def test_first_real_identifier_is_assigned_without_changing_the_id(client) -> No
     assert response.status_code == 200
     assert response.get_json()["id"] == rid
     assert response.get_json()["identifier"] == "GCVE-0-2026-00042"
-    assert client.get(f"/api/v1/records/{rid}").get_json()["identifier"] == "GCVE-0-2026-00042"
+    assert (
+        client.get(f"/api/v1/records/{rid}").get_json()["identifier"]
+        == "GCVE-0-2026-00042"
+    )
 
 
-def test_updating_identifierless_draft_rejects_publish_without_identifier(client) -> None:
+def test_updating_identifierless_draft_rejects_publish_without_identifier(
+    client,
+) -> None:
     rid = create_identifierless_draft(client)
 
     response = client.put(
@@ -517,7 +557,9 @@ def test_updating_identifierless_draft_rejects_publish_without_identifier(client
     assert response.status_code == 400
 
 
-def test_identifierless_draft_publishes_with_a_real_identifier_in_one_save(client) -> None:
+def test_identifierless_draft_publishes_with_a_real_identifier_in_one_save(
+    client,
+) -> None:
     rid = create_identifierless_draft(client)
 
     response = client.put(
@@ -540,13 +582,19 @@ def test_assigning_an_identifier_conflicts_when_already_taken(client) -> None:
 
     response = client.put(
         f"/api/v1/records/{rid}",
-        json={"record": minimal_cve_record("CVE-2026-00020"), "profile": "cve-5.2.0", "isDraft": True},
+        json={
+            "record": minimal_cve_record("CVE-2026-00020"),
+            "profile": "cve-5.2.0",
+            "isDraft": True,
+        },
     )
 
     assert response.status_code == 409
 
 
-def test_publication_rows_stay_attached_when_an_identifier_is_assigned(app, client) -> None:
+def test_publication_rows_stay_attached_when_an_identifier_is_assigned(
+    app, client
+) -> None:
     rid = create_identifierless_draft(client, profile="gcve-bcp-05-1.7")
 
     with app.app_context():
@@ -589,7 +637,11 @@ def minimal_osv_record(osv_id: str) -> dict[str, Any]:
 def test_osv_record_is_published_with_its_id_as_identifier(client) -> None:
     response = client.post(
         "/api/v1/records",
-        json={"record": minimal_osv_record("PYSEC-2026-1"), "profile": "osv-1.9.2", "isDraft": False},
+        json={
+            "record": minimal_osv_record("PYSEC-2026-1"),
+            "profile": "osv-1.9.2",
+            "isDraft": False,
+        },
     )
 
     assert response.status_code == 201, response.get_json()
@@ -621,7 +673,11 @@ def osv_record_with_gcve(vuln_id: str) -> dict[str, Any]:
 def test_osv_record_with_valid_x_gcve_is_published(client) -> None:
     response = client.post(
         "/api/v1/records",
-        json={"record": osv_record_with_gcve("GCVE-1-2026-0001"), "profile": "osv-1.9.2", "isDraft": False},
+        json={
+            "record": osv_record_with_gcve("GCVE-1-2026-0001"),
+            "profile": "osv-1.9.2",
+            "isDraft": False,
+        },
     )
 
     assert response.status_code == 201, response.get_json()
@@ -630,7 +686,11 @@ def test_osv_record_with_valid_x_gcve_is_published(client) -> None:
 def test_osv_record_x_gcve_is_checked_by_the_gcve_validator(client) -> None:
     response = client.post(
         "/api/v1/records",
-        json={"record": osv_record_with_gcve("not-a-gcve-id"), "profile": "osv-1.9.2", "isDraft": False},
+        json={
+            "record": osv_record_with_gcve("not-a-gcve-id"),
+            "profile": "osv-1.9.2",
+            "isDraft": False,
+        },
     )
 
     assert response.status_code == 422

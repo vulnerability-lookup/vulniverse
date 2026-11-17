@@ -27,7 +27,7 @@ class CredentialDecryptionError(RuntimeError):
     """
 
 
-def _fernet() -> Fernet:
+def fernet() -> Fernet:
     key = current_app.config["CNA_CREDENTIAL_ENCRYPTION_KEY"]
 
     return Fernet(key.encode() if isinstance(key, str) else key)
@@ -44,7 +44,7 @@ def get_credential(user_id: int, target: str) -> dict[str, str] | None:
         return None
 
     try:
-        api_key = _fernet().decrypt(row.cve_api_key_encrypted.encode()).decode()
+        api_key = fernet().decrypt(row.cve_api_key_encrypted.encode()).decode()
     except InvalidToken as exc:
         raise CredentialDecryptionError(
             f"Stored CNA credential for target {target!r} could not be "
@@ -117,7 +117,9 @@ def set_credential(
     row.cve_api_user = fields["cve_api_user"]
 
     if fields.get("cve_api_key"):
-        row.cve_api_key_encrypted = _fernet().encrypt(fields["cve_api_key"].encode()).decode()
+        row.cve_api_key_encrypted = (
+            fernet().encrypt(fields["cve_api_key"].encode()).decode()
+        )
 
     db.session.add(row)
     db.session.commit()

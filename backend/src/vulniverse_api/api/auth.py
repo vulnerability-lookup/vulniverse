@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from flask import current_app, request, session
@@ -17,6 +18,7 @@ from ..auth.organisations import (
 from ..auth.permissions import multiuser_only
 from ..extensions import db
 from ..models import User
+from ..services import two_factor
 from ..services.accounts import (
     delete_account,
     deletion_problem,
@@ -26,7 +28,7 @@ from ..services.accounts import (
 )
 from ..services.invitations import accept_invitation, find_invitation
 from . import api_bp
-from .organisations import invitation_error
+from .invitations import invitation_error
 
 
 @api_bp.get("/auth/csrf-token")
@@ -55,7 +57,18 @@ def _serialize(user: User) -> dict[str, Any]:
             for membership in memberships(user)
         ],
         "currentOrganisationId": current.id if current else None,
+        "twoFactor": {
+            "required": two_factor.required(),
+            "enabled": two_factor.is_set_up(user),
+        },
     }
+
+
+# Between the password and the code: who, and since when (the session
+# cookie is signed, so neither can be forged).
+PENDING_KEY = "two_factor_pending"
+PENDING_SECONDS = 300
+SETUP_KEY = "two_factor_setup"
 
 
 @api_bp.get("/auth/registration")
@@ -110,9 +123,7 @@ def register() -> tuple[dict, int]:
     email = email.strip().lower()
 
     if email == LOCAL_USER_EMAIL:
-        return {
-            "message": "This email address is reserved."
-        }, 400
+        return {"message": "This email address is reserved."}, 400
 
     existing = User.query.filter_by(email=email).first()
 
@@ -165,6 +176,42 @@ def login() -> tuple[dict, int]:
     if not user.is_active:
         return {"message": "This account has been deactivated."}, 403
 
+    if two_factor.required() and two_factor.is_set_up(user):
+        session[PENDING_KEY] = {"userId": user.id, "at": time.time()}
+        return {"twoFactorRequired": True}, 200
+
+    # Without 2FA set up yet, the session can only set it up (require_login).
+    login_user(user)
+
+    return _serialize(user), 200
+
+
+@api_bp.post("/auth/login/two-factor")
+@multiuser_only
+def login_two_factor() -> tuple[dict, int]:
+    """{"code"}: the second login step, after the password."""
+    pending = session.get(PENDING_KEY)
+    if (
+        not isinstance(pending, dict)
+        or time.time() - pending.get("at", 0) > PENDING_SECONDS
+    ):
+        session.pop(PENDING_KEY, None)
+        return {"message": "Log in again with your password."}, 401
+
+    user = db.session.get(User, pending.get("userId"))
+    if user is None or not user.is_active or not two_factor.is_set_up(user):
+        session.pop(PENDING_KEY, None)
+        return {"message": "Log in again with your password."}, 401
+
+    if two_factor.paused(user):
+        return {"message": "Too many wrong codes; wait 15 minutes."}, 429
+
+    payload = request.get_json(silent=True)
+    code = payload.get("code") if isinstance(payload, dict) else None
+    if not isinstance(code, str) or not two_factor.verify(user, code):
+        return {"message": "That code is wrong or was already used."}, 400
+
+    session.pop(PENDING_KEY, None)
     login_user(user)
 
     return _serialize(user), 200
@@ -237,6 +284,44 @@ def delete_own_account() -> tuple[dict, int]:
     delete_account(user)
 
     return {"message": "Account deleted."}, 200
+
+
+@api_bp.post("/auth/two-factor/setup")
+@multiuser_only
+def start_two_factor_setup() -> tuple[dict, int]:
+    """A new secret for the user's authenticator app; it's stored once
+    POST /auth/two-factor confirms a code from it. Losing the device
+    means an admin resets it (or `flask reset-two-factor`)."""
+    if not two_factor.required():
+        return {"message": "Two-factor authentication is off on this instance."}, 404
+    if two_factor.is_set_up(current_user):
+        return {"message": "Two-factor authentication is already set up."}, 409
+
+    secret = two_factor.generate_secret()
+    session[SETUP_KEY] = secret
+
+    return {
+        "secret": secret,
+        "uri": two_factor.provisioning_uri(secret, current_user.email),
+    }, 200
+
+
+@api_bp.post("/auth/two-factor")
+@multiuser_only
+def finish_two_factor_setup() -> tuple[dict, int]:
+    """{"code"}: a code from the app, proving it has the secret."""
+    secret = session.get(SETUP_KEY)
+    if not isinstance(secret, str) or two_factor.is_set_up(current_user):
+        return {"message": "Start the setup again."}, 409
+
+    payload = request.get_json(silent=True)
+    code = payload.get("code") if isinstance(payload, dict) else None
+    if not isinstance(code, str) or not two_factor.enable(current_user, secret, code):
+        return {"message": "That code is wrong; check the time on your device."}, 400
+
+    session.pop(SETUP_KEY, None)
+
+    return _serialize(current_user), 200
 
 
 @api_bp.post("/auth/organisation")

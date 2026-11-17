@@ -28,7 +28,9 @@ def enabled_config(**overrides: Any) -> Patch2VulnConfig:
 @pytest.fixture(autouse=True)
 def _enabled(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        patch2vuln_api, "get_patch2vuln_config", enabled_config,
+        patch2vuln_api,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
 
@@ -54,7 +56,9 @@ def test_create_job_returns_403_when_disabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln_api, "get_patch2vuln_config", lambda: enabled_config(enabled=False),
+        patch2vuln_api,
+        "get_patch2vuln_config",
+        lambda: enabled_config(enabled=False),
     )
 
     response = client.post(
@@ -191,7 +195,9 @@ def test_cancel_job_rejects_another_users_token(
 ) -> None:
     token = _token_for(app, "job-123", other_user)
     monkeypatch.setattr(
-        patch2vuln_api, "cancel_job", lambda job_id: pytest.fail("must not cancel"),
+        patch2vuln_api,
+        "cancel_job",
+        lambda job_id: pytest.fail("must not cancel"),
     )
 
     response = client.delete(f"/api/v1/patch2vuln/jobs/{token}")
@@ -208,7 +214,9 @@ def test_get_job_reports_running_status(
     token = _token_for(app, "job-123", test_user)
 
     monkeypatch.setattr(
-        patch2vuln_api, "get_job_status", lambda job_id: {"status": "running"},
+        patch2vuln_api,
+        "get_job_status",
+        lambda job_id: {"status": "running"},
     )
 
     response = client.get(f"/api/v1/patch2vuln/jobs/{token}")
@@ -233,7 +241,11 @@ def test_get_job_reports_a_missing_worker(
 
     response = client.get(f"/api/v1/patch2vuln/jobs/{token}")
 
-    assert response.get_json() == {"jobId": token, "status": "queued", "workerAvailable": False}
+    assert response.get_json() == {
+        "jobId": token,
+        "status": "queued",
+        "workerAvailable": False,
+    }
 
 
 def test_get_job_includes_result_once_completed(
@@ -245,7 +257,9 @@ def test_get_job_includes_result_once_completed(
     token = _token_for(app, "job-123", test_user)
 
     monkeypatch.setattr(
-        patch2vuln_api, "get_job_status", lambda job_id: {"status": "completed"},
+        patch2vuln_api,
+        "get_job_status",
+        lambda job_id: {"status": "completed"},
     )
     monkeypatch.setattr(
         patch2vuln_api,
@@ -270,7 +284,9 @@ def test_get_job_surfaces_result_fetch_failure_as_failed(
     token = _token_for(app, "job-123", test_user)
 
     monkeypatch.setattr(
-        patch2vuln_api, "get_job_status", lambda job_id: {"status": "completed"},
+        patch2vuln_api,
+        "get_job_status",
+        lambda job_id: {"status": "completed"},
     )
 
     def fail(job_id: str) -> dict[str, Any]:
@@ -294,7 +310,9 @@ def test_get_job_reports_failed_status(
     token = _token_for(app, "job-123", test_user)
 
     monkeypatch.setattr(
-        patch2vuln_api, "get_job_status", lambda job_id: {"status": "failed"},
+        patch2vuln_api,
+        "get_job_status",
+        lambda job_id: {"status": "failed"},
     )
 
     response = client.get(f"/api/v1/patch2vuln/jobs/{token}")
@@ -339,7 +357,9 @@ def test_events_streams_status_updates(
     # stream_job_status() lives in the service module and calls its own
     # get_job_status directly, not the route module's imported reference.
     monkeypatch.setattr(
-        patch2vuln_service, "get_job_status", lambda job_id: {"status": "completed"},
+        patch2vuln_service,
+        "get_job_status",
+        lambda job_id: {"status": "completed"},
     )
 
     response = client.get(f"/api/v1/patch2vuln/jobs/{token}/events")
@@ -370,9 +390,12 @@ def test_disabled_panel_404s_every_route(
 
     token = _token_for(app, "job-123", test_user)
 
-    assert client.post(
-        "/api/v1/patch2vuln/jobs",
-        data={"commitUrls": '["https://github.com/o/r/commit/abcdef1.patch"]'},
-    ).status_code == 404
+    assert (
+        client.post(
+            "/api/v1/patch2vuln/jobs",
+            data={"commitUrls": '["https://github.com/o/r/commit/abcdef1.patch"]'},
+        ).status_code
+        == 404
+    )
     assert client.get(f"/api/v1/patch2vuln/jobs/{token}").status_code == 404
     assert client.get(f"/api/v1/patch2vuln/jobs/{token}/events").status_code == 404

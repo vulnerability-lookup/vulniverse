@@ -78,16 +78,19 @@ def _fetch_cwe_names(
     concurrently instead.
     """
     batches = [
-        ids[start:start + CWE_NAME_BATCH_SIZE]
+        ids[start : start + CWE_NAME_BATCH_SIZE]
         for start in range(0, len(ids), CWE_NAME_BATCH_SIZE)
     ]
 
     names: dict[str, str] = {}
 
-    with httpx.Client(
-        base_url=CWE_API_ROOT,
-        timeout=REQUEST_TIMEOUT_SECONDS,
-    ) as client, ThreadPoolExecutor(max_workers=len(batches) or 1) as executor:
+    with (
+        httpx.Client(
+            base_url=CWE_API_ROOT,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        ) as client,
+        ThreadPoolExecutor(max_workers=len(batches) or 1) as executor,
+    ):
         for batch_names in executor.map(
             lambda batch: _fetch_cwe_name_batch(client, batch),
             batches,

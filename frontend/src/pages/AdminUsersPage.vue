@@ -10,6 +10,7 @@ interface AdminUser {
   email: string;
   isAdmin: boolean;
   isActive: boolean;
+  twoFactorEnabled: boolean;
   createdAt: string;
 }
 
@@ -84,6 +85,23 @@ async function resetPassword(user: AdminUser): Promise<void> {
   }
 }
 
+async function resetTwoFactor(user: AdminUser): Promise<void> {
+  if (!window.confirm(`Reset two-factor authentication for ${user.email}? They set it up again at their next login.`)) {
+    return;
+  }
+
+  pendingUserId.value = user.id;
+  actionError.value = null;
+
+  try {
+    Object.assign(user, await apiRequest<AdminUser>(`/admin/users/${user.id}/two-factor`, { method: "DELETE" }));
+  } catch (error) {
+    actionError.value = error instanceof ApiError ? error.message : "Unable to reset two-factor authentication.";
+  } finally {
+    pendingUserId.value = null;
+  }
+}
+
 async function deleteUser(user: AdminUser): Promise<void> {
   if (!window.confirm(
     `Delete ${user.email}? Their templates and CNA credentials are deleted;`
@@ -151,6 +169,9 @@ onMounted(loadUsers);
             <th>Created</th>
             <th>Status</th>
             <th>Role</th>
+            <th v-if="auth.currentUser?.twoFactor.required">
+              2FA
+            </th>
             <th></th>
           </tr>
         </thead>
@@ -182,6 +203,14 @@ onMounted(loadUsers);
                 {{ user.isAdmin ? "Admin" : "User" }}
               </span>
             </td>
+            <td v-if="auth.currentUser?.twoFactor.required">
+              <span
+                class="badge"
+                :class="user.twoFactorEnabled ? 'text-bg-success' : 'text-bg-warning'"
+              >
+                {{ user.twoFactorEnabled ? "Set up" : "Not yet" }}
+              </span>
+            </td>
             <td class="text-end">
               <button
                 type="button"
@@ -208,6 +237,16 @@ onMounted(loadUsers);
                 @click="resetPassword(user)"
               >
                 Reset password
+              </button>
+
+              <button
+                v-if="user.twoFactorEnabled"
+                type="button"
+                class="btn btn-outline-secondary btn-sm ms-2"
+                :disabled="pendingUserId === user.id"
+                @click="resetTwoFactor(user)"
+              >
+                Reset 2FA
               </button>
 
               <button

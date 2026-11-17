@@ -77,10 +77,7 @@ def test_fresh_draft_without_state_gets_published_branch_errors() -> None:
 
     assert any("providerMetadata" in message for message in messages)
     assert not any("rejectedReasons" in message for message in messages)
-    assert not any(
-        "do not match any of the regexes" in message
-        for message in messages
-    )
+    assert not any("do not match any of the regexes" in message for message in messages)
 
 
 def test_valid_cve_record_passes() -> None:
@@ -90,9 +87,11 @@ def test_valid_cve_record_passes() -> None:
 
 
 def test_valid_gcve_record_passes() -> None:
-    record = minimal_gcve_record(relationships=[
-        {"destId": "CVE-2026-00002", "type": "related"},
-    ])
+    record = minimal_gcve_record(
+        relationships=[
+            {"destId": "CVE-2026-00002", "type": "related"},
+        ]
+    )
 
     errors = validate_record(record, "gcve-bcp-05-1.7")
 
@@ -129,9 +128,11 @@ def test_translation_requires_language() -> None:
 
 
 def test_unknown_relationship_type_is_a_warning_not_an_error() -> None:
-    record = minimal_gcve_record(relationships=[
-        {"destId": "CVE-2026-00002", "type": "unheard-of-type"},
-    ])
+    record = minimal_gcve_record(
+        relationships=[
+            {"destId": "CVE-2026-00002", "type": "unheard-of-type"},
+        ]
+    )
 
     errors = validate_record(record, "gcve-bcp-05-1.7")
 

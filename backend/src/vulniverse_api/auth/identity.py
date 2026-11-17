@@ -8,10 +8,7 @@ from .local_user import get_local_user
 
 
 def is_local_mode() -> bool:
-    return (
-        current_app.config["VULNIVERSE_MODE"]
-        == "local"
-    )
+    return current_app.config["VULNIVERSE_MODE"] == "local"
 
 
 def init_auth() -> None:

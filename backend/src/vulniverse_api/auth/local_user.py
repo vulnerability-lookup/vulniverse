@@ -27,18 +27,14 @@ def create_local_user() -> User:
 
     if user is not None:
         if not user.is_active or user.is_admin:
-            raise RuntimeError(
-                "The local user has an invalid configuration."
-            )
+            raise RuntimeError("The local user has an invalid configuration.")
 
         ensure_local_organisation(user)
         return user
 
     user = User(
         email=LOCAL_USER_EMAIL,
-        password_hash=generate_password_hash(
-            secrets.token_urlsafe(48)
-        ),
+        password_hash=generate_password_hash(secrets.token_urlsafe(48)),
         is_admin=False,
         is_active=True,
     )

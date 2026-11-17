@@ -446,8 +446,7 @@ def _calculate_credits(
 
     description = (_english_description(cna.get("descriptions")) or "").strip()
 
-    description_length = 0 if _PLACEHOLDER.match(
-        description) else len(description)
+    description_length = 0 if _PLACEHOLDER.match(description) else len(description)
 
     credits["description"] = _description_credit(description_length)
 
@@ -468,14 +467,12 @@ def _calculate_credits(
     affected = _dict_items(cna.get("affected"))
 
     has_vendor_and_product = any(
-        _is_real_value(entry.get("vendor")) and _is_real_value(
-            entry.get("product"))
+        _is_real_value(entry.get("vendor")) and _is_real_value(entry.get("product"))
         for entry in affected
     )
 
     has_vendor_or_product = any(
-        _is_real_value(entry.get("vendor")) or _is_real_value(
-            entry.get("product"))
+        _is_real_value(entry.get("vendor")) or _is_real_value(entry.get("product"))
         for entry in affected
     )
 
@@ -521,8 +518,7 @@ def _calculate_credits(
         for match in _dict_items(node.get("cpeMatch"))
     )
 
-    credits["cpe"] = 1.0 if (
-        has_affected_cpe or has_cpe_applicability) else 0.0
+    credits["cpe"] = 1.0 if (has_affected_cpe or has_cpe_applicability) else 0.0
 
     # ------------------------------------------------------------------
     # Assess

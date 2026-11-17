@@ -23,7 +23,9 @@ def test_get_credentials_starts_empty(client) -> None:
 
 
 def test_put_unknown_target_is_404(client) -> None:
-    response = client.put("/api/v1/cna-credentials/not-a-real-target", json=VALID_PAYLOAD)
+    response = client.put(
+        "/api/v1/cna-credentials/not-a-real-target", json=VALID_PAYLOAD
+    )
 
     assert response.status_code == 404
 
@@ -77,7 +79,9 @@ def test_delete_unconfigured_target_is_404(client) -> None:
 
 
 def test_update_without_key_keeps_existing_key(
-    app: Flask, client, test_user: User,
+    app: Flask,
+    client,
+    test_user: User,
 ) -> None:
     client.put("/api/v1/cna-credentials/vl", json=VALID_PAYLOAD)
 

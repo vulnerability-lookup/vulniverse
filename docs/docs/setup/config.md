@@ -33,6 +33,7 @@ features it's allowed to use.
 [server]
 mode = "local" # local or multiuser -> Multiuser is still WIP, do not use in prod
 registration = "open" # multi-user mode: open, invite or closed
+two_factor = false # multi-user mode: every account must set up 2FA
 ```
 
 `local` (the default) auto-authenticates every request as a single
@@ -60,6 +61,25 @@ meant for a real deployment yet.
 Organisation admins create invitation links on their organisation's
 page; a link works once, for seven days, and can be revoked. Any other
 value stops the backend from starting.
+
+`two_factor = true` makes every account set up two-factor
+authentication: after the next login, a user can do nothing else until
+they have scanned a QR code with an authenticator app (TOTP, such as
+Aegis, Google Authenticator or 1Password) and entered a code from it.
+From then on every login asks for a code after the password. After five
+wrong codes the code step pauses for 15 minutes. The secrets are
+encrypted with `CNA_CREDENTIAL_ENCRYPTION_KEY`; after changing that key,
+the stored secrets can't be read, so reset everyone's 2FA (below).
+
+If someone loses their device, an instance admin resets their 2FA
+under Admin → Users. If the only admin loses theirs:
+
+```bash
+uv run flask --app vulniverse_api reset-two-factor admin@example.com
+```
+
+With `two_factor = false` (the default), logins never ask for a code,
+even for accounts that set it up earlier.
 
 ### `[features]`
 

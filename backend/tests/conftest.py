@@ -20,25 +20,29 @@ def app(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Flask]:
     # defaults (every panel enabled) instead of whatever this checkout's
     # config/vulniverse.toml(.sample) happens to say.
     monkeypatch.setattr(app_config, "CONFIG_PATH", tmp_path / "vulniverse.toml")
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    monkeypatch.setattr(
+        app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample"
+    )
     app_config.load_app_config.cache_clear()
 
-    application = create_app({
-        "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-        # Flask-WTF's own documented testing convention — the test client
-        # doesn't do the browser-side CSRF-token dance the real frontend
-        # does, so mutating requests would otherwise all 400.
-        "WTF_CSRF_ENABLED": False,
-        # A fresh, real key per test run — tests that exercise per-user
-        # CNA credential encryption need this to actually round-trip.
-        "CNA_CREDENTIAL_ENCRYPTION_KEY": Fernet.generate_key().decode(),
-        # The test suite exercises register/login/logout/admin routes,
-        # which are @multiuser_only (404 in local mode) — overrides
-        # whatever config/vulniverse.toml(.sample) says, same mechanism
-        # as every other setting above.
-        "VULNIVERSE_MODE": "multiuser",
-    })
+    application = create_app(
+        {
+            "TESTING": True,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            # Flask-WTF's own documented testing convention — the test client
+            # doesn't do the browser-side CSRF-token dance the real frontend
+            # does, so mutating requests would otherwise all 400.
+            "WTF_CSRF_ENABLED": False,
+            # A fresh, real key per test run — tests that exercise per-user
+            # CNA credential encryption need this to actually round-trip.
+            "CNA_CREDENTIAL_ENCRYPTION_KEY": Fernet.generate_key().decode(),
+            # The test suite exercises register/login/logout/admin routes,
+            # which are @multiuser_only (404 in local mode) — overrides
+            # whatever config/vulniverse.toml(.sample) says, same mechanism
+            # as every other setting above.
+            "VULNIVERSE_MODE": "multiuser",
+        }
+    )
 
     with application.app_context():
         db.create_all()
@@ -77,7 +81,9 @@ def make_user(
         db.session.commit()
 
         if organisation is not None:
-            db.session.add(Membership(user_id=user.id, organisation_id=organisation.id, role=role))
+            db.session.add(
+                Membership(user_id=user.id, organisation_id=organisation.id, role=role)
+            )
             db.session.commit()
 
         db.session.refresh(user)
@@ -112,7 +118,9 @@ def test_user(app: Flask, organisation: Organisation) -> User:
 
 @pytest.fixture
 def admin_user(app: Flask, organisation: Organisation) -> User:
-    return make_user(app, "admin@example.com", organisation, is_admin=True, role="admin")
+    return make_user(
+        app, "admin@example.com", organisation, is_admin=True, role="admin"
+    )
 
 
 @pytest.fixture

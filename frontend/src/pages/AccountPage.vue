@@ -163,6 +163,19 @@ async function deleteAccount(): Promise<void> {
       </div>
     </form>
 
+    <section
+      v-if="auth.currentUser?.twoFactor.enabled"
+      class="card card-body mb-4"
+    >
+      <h2 class="h5">
+        Two-factor authentication
+      </h2>
+      <p class="text-secondary small mb-0">
+        On: every login asks for a code from your authenticator app. If you
+        lose the device, an admin of this instance can reset it.
+      </p>
+    </section>
+
     <form
       class="card card-body border-danger-subtle"
       @submit.prevent="deleteAccount"

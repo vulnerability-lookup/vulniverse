@@ -7,6 +7,7 @@ from .auth.identity import is_local_mode
 from .auth.local_user import create_local_user
 from .extensions import db
 from .models import Template, User, VulnerabilityRecord
+from .services import two_factor
 from .services.cpe_catalog import sync_catalog
 
 
@@ -37,6 +38,20 @@ def register_cli(app: Flask) -> None:
         db.session.commit()
 
         click.echo(f"{user.email} is now an admin.")
+
+    @app.cli.command("reset-two-factor")
+    @click.argument("email")
+    def reset_two_factor(email: str) -> None:
+        """Forget a user's 2FA secret, e.g. when the only admin lost
+        their device; they set it up again at their next login."""
+        user = User.query.filter_by(email=email.strip().lower()).first()
+
+        if user is None:
+            click.echo(f"No user found with email {email!r}.")
+            return
+
+        two_factor.reset(user)
+        click.echo(f"Two-factor authentication reset for {user.email}.")
 
     @app.cli.command("backfill-record-owner")
     @click.argument("email")
@@ -75,15 +90,11 @@ def register_cli(app: Flask) -> None:
         """Initialize the internal user for local mode."""
 
         if not is_local_mode():
-            raise click.ClickException(
-                "Local user initialization requires local mode."
-            )
+            raise click.ClickException("Local user initialization requires local mode.")
 
         user = create_local_user()
 
-        click.echo(
-            f"Local user initialized: {user.email}"
-        )
+        click.echo(f"Local user initialized: {user.email}")
 
     @app.cli.group("cpe")
     def cpe_group() -> None:

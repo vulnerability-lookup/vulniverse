@@ -38,22 +38,29 @@ class PublicationStatus(StrEnum):
 # (website/web/services/cna_pub_service.py), which this whole service
 # mirrors the shape of.
 ALLOWED_TRANSITIONS: dict[PublicationStatus, frozenset[PublicationStatus]] = {
-    PublicationStatus.RESERVED: frozenset({
-        PublicationStatus.LOCAL_ONLY,
-        PublicationStatus.RESERVATION_PENDING,
-    }),
-    PublicationStatus.PUBLISHED: frozenset({
-        PublicationStatus.RESERVED,
-        PublicationStatus.PUBLICATION_PENDING,
-        PublicationStatus.PUBLISHED,
-        PublicationStatus.REJECTED,
-    }),
-    PublicationStatus.REJECTED: frozenset({
-        PublicationStatus.RESERVED,
-        PublicationStatus.PUBLISHED,
-        PublicationStatus.REJECTION_PENDING,
-    }),
-    PublicationStatus.ABORTED: frozenset(PublicationStatus) - {PublicationStatus.ABORTED},
+    PublicationStatus.RESERVED: frozenset(
+        {
+            PublicationStatus.LOCAL_ONLY,
+            PublicationStatus.RESERVATION_PENDING,
+        }
+    ),
+    PublicationStatus.PUBLISHED: frozenset(
+        {
+            PublicationStatus.RESERVED,
+            PublicationStatus.PUBLICATION_PENDING,
+            PublicationStatus.PUBLISHED,
+            PublicationStatus.REJECTED,
+        }
+    ),
+    PublicationStatus.REJECTED: frozenset(
+        {
+            PublicationStatus.RESERVED,
+            PublicationStatus.PUBLISHED,
+            PublicationStatus.REJECTION_PENDING,
+        }
+    ),
+    PublicationStatus.ABORTED: frozenset(PublicationStatus)
+    - {PublicationStatus.ABORTED},
 }
 
 

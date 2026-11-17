@@ -8,6 +8,7 @@ from flask_login import current_user
 from ..auth.permissions import admin_required, multiuser_only
 from ..extensions import db
 from ..models import User
+from ..services import two_factor
 from ..services.accounts import (
     delete_account,
     deletion_problem,
@@ -23,6 +24,7 @@ def _serialize(user: User) -> dict[str, Any]:
         "email": user.email,
         "isAdmin": user.is_admin,
         "isActive": user.is_active,
+        "twoFactorEnabled": two_factor.is_set_up(user),
         "createdAt": user.created_at.isoformat(),
     }
 
@@ -89,6 +91,22 @@ def reset_password(user_id: int) -> tuple[dict, int]:
     set_password(user, password)
 
     return {"password": password}, 200
+
+
+@api_bp.delete("/admin/users/<int:user_id>/two-factor")
+@multiuser_only
+@admin_required
+def reset_two_factor(user_id: int) -> tuple[dict, int]:
+    """Forget the user's 2FA secret (a lost device); with [server]
+    two_factor on, they set it up again at their next login."""
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        return {"message": "User not found."}, 404
+
+    two_factor.reset(user)
+
+    return _serialize(user), 200
 
 
 @api_bp.delete("/admin/users/<int:user_id>")

@@ -59,6 +59,7 @@ def load_app_config() -> dict[str, dict[str, Any]]:
             "server": {
                 "mode": "local",
                 "registration": "open",
+                "two_factor": False,
             },
             "panels": {},
             "actions": {},
@@ -72,6 +73,8 @@ def load_app_config() -> dict[str, dict[str, Any]]:
         "server": {
             "mode": data.get("server", {}).get("mode", "local"),
             "registration": data.get("server", {}).get("registration", "open"),
+            # Every account must set up two-factor authentication (TOTP).
+            "two_factor": bool(data.get("server", {}).get("two_factor", False)),
         },
         "features": {
             **DEFAULT_FEATURES,
