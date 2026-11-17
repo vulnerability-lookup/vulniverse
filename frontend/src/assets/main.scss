@@ -48,6 +48,16 @@ body {
    */
   height: 100vh;
   height: 100dvh;
+
+  /*
+   * Phones and narrow windows: the header and sidebar stack above the
+   * content there, so filling exactly one screen left the form a thin
+   * strip. The page scrolls as a whole instead.
+   */
+  @media (max-width: 768px) {
+    height: auto;
+    min-height: 100dvh;
+  }
   display: flex;
   flex-direction: column;
 }

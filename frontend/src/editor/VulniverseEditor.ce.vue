@@ -179,24 +179,30 @@ provide(
 
 const activeSection = ref("editor");
 
-// The sidebar shows only its icons; remembered in this browser.
+// The sidebar shows only its icons; the user's choice is remembered in
+// this browser. Without one, narrow screens (where the sidebar sits
+// above the content) start collapsed, to a single row of icons.
 const SIDEBAR_KEY = "vulniverse-sidebar-collapsed";
 
 function storedCollapsed(): boolean {
+  let stored: string | null = null;
+
   try {
-    return localStorage.getItem(SIDEBAR_KEY) === "true";
+    stored = localStorage.getItem(SIDEBAR_KEY);
   } catch {
-    // Storage blocked (private mode, policy): start expanded.
-    return false;
+    // Storage blocked (private mode, policy): the default below.
   }
+
+  if (stored === "true" || stored === "false") return stored === "true";
+
+  return window.matchMedia?.("(max-width: 768px)").matches ?? false;
 }
 
 const sidebarCollapsed = ref(storedCollapsed());
 
 watch(sidebarCollapsed, (collapsed) => {
   try {
-    if (collapsed) localStorage.setItem(SIDEBAR_KEY, "true");
-    else localStorage.removeItem(SIDEBAR_KEY);
+    localStorage.setItem(SIDEBAR_KEY, String(collapsed));
   } catch {
     // Not remembered then; it still holds for this visit.
   }

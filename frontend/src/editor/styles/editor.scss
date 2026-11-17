@@ -1000,6 +1000,11 @@
     border-right: 0;
     border-bottom: 1px solid var(--bs-border-color);
 
+    // Expanded, a plain list: Bootstrap's .nav wraps into columns.
+    &:not(.is-collapsed) {
+      flex-wrap: nowrap;
+    }
+
     // Stacked above the content: collapsed, the icons form one row.
     // !important against Bootstrap's .flex-column utility on the nav.
     &.is-collapsed {
@@ -1020,6 +1025,17 @@
 
   .editor-layout.is-sidebar-collapsed {
     grid-template-columns: 1fr;
+  }
+
+  // Secondary header buttons show only their icon; the label stays for
+  // screen readers, and as the button's tooltip.
+  .editor-header-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .editor-content {

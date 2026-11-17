@@ -23,6 +23,8 @@ import {
 export const downloadAction: EditorAction = {
   id: "download",
   label: "Download",
+  // Arrow into a tray.
+  icon: "M8 2v8M4.5 6.5 8 10l3.5-3.5M2.5 11v2.5h11V11",
 
   options: [
     { id: "json", label: "JSON" },

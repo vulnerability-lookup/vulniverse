@@ -152,6 +152,7 @@ function transitionButtonClass(
             type="button"
             class="btn btn-sm btn-outline-secondary"
             :disabled="loading"
+            title="Reload"
             @click="$emit('reload')"
           >
             <svg
@@ -163,7 +164,7 @@ function transitionButtonClass(
               stroke-linecap="round"
               stroke-linejoin="round"
             ><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9" /><path d="M13.5 2.5v3h-3" /></svg>
-            Reload
+            <span class="editor-header-label">Reload</span>
           </button>
 
           <button
@@ -241,6 +242,7 @@ function transitionButtonClass(
                 :disabled="loading || !action.enabled"
                 aria-haspopup="menu"
                 :aria-expanded="openMenu === action.id"
+                :title="action.label"
                 @click="openMenu = openMenu === action.id ? null : action.id"
               >
                 <svg
@@ -254,7 +256,7 @@ function transitionButtonClass(
                   stroke-linejoin="round"
                   aria-hidden="true"
                 ><path :d="action.icon" /></svg>
-                {{ action.label }}
+                <span :class="{ 'editor-header-label': action.icon }">{{ action.label }}</span>
               </button>
 
               <ul
@@ -283,6 +285,7 @@ function transitionButtonClass(
               type="button"
               class="btn btn-sm btn-outline-primary"
               :disabled="loading || !action.enabled"
+              :title="action.label"
               @click="$emit('runAction', action.id)"
             >
               <svg
@@ -296,7 +299,7 @@ function transitionButtonClass(
                 stroke-linejoin="round"
                 aria-hidden="true"
               ><path :d="action.icon" /></svg>
-              {{ action.label }}
+              <span :class="{ 'editor-header-label': action.icon }">{{ action.label }}</span>
             </button>
           </template>
         </template>
@@ -311,6 +314,7 @@ function transitionButtonClass(
             type="button"
             class="btn btn-sm btn-outline-danger"
             :disabled="loading"
+            title="Reject"
             @click="$emit('reject')"
           >
             <svg
@@ -327,7 +331,7 @@ function transitionButtonClass(
               x2="12"
               y2="12"
             /></svg>
-            Reject
+            <span class="editor-header-label">Reject</span>
           </button>
         </template>
 
@@ -341,6 +345,7 @@ function transitionButtonClass(
             type="button"
             class="btn btn-sm btn-outline-danger"
             :disabled="loading"
+            title="Delete"
             @click="$emit('delete')"
           >
             <svg
@@ -352,7 +357,7 @@ function transitionButtonClass(
               stroke-linecap="round"
               stroke-linejoin="round"
             ><path d="M3 4h10M6 4V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V4M4.5 4l.5 9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1l.5-9" /></svg>
-            Delete
+            <span class="editor-header-label">Delete</span>
           </button>
         </template>
       </div>
