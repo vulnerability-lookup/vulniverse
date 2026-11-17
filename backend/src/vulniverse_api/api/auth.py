@@ -5,7 +5,7 @@ from typing import Any
 from flask import current_app, request, session
 from flask_login import current_user, login_required, login_user, logout_user
 from flask_wtf.csrf import generate_csrf
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import generate_password_hash
 
 from ..auth.local_user import LOCAL_USER_EMAIL
 from ..auth.organisations import (
@@ -17,6 +17,13 @@ from ..auth.organisations import (
 from ..auth.permissions import multiuser_only
 from ..extensions import db
 from ..models import User
+from ..services.accounts import (
+    delete_account,
+    deletion_problem,
+    password_matches,
+    password_problem,
+    set_password,
+)
 from ..services.invitations import accept_invitation, find_invitation
 from . import api_bp
 from .organisations import invitation_error
@@ -96,10 +103,9 @@ def register() -> tuple[dict, int]:
     if not isinstance(email, str) or not email.strip():
         return {"message": "A non-empty 'email' is required."}, 400
 
-    if not isinstance(password, str) or len(password) < 8:
-        return {
-            "message": "A password of at least 8 characters is required.",
-        }, 400
+    problem = password_problem(password)
+    if problem or not isinstance(password, str):
+        return {"message": problem}, 400
 
     email = email.strip().lower()
 
@@ -146,8 +152,15 @@ def login() -> tuple[dict, int]:
 
     user = User.query.filter_by(email=email.strip().lower()).first()
 
-    if user is None or not check_password_hash(user.password_hash, password):
-        return {"message": "Invalid email or password."}, 401
+    invalid = {"message": "Invalid email or password."}, 401
+
+    if user is None:
+        # Takes as long as a wrong password, so timing reveals no accounts.
+        password_matches(None, password)
+        return invalid
+
+    if not password_matches(user, password):
+        return invalid
 
     if not user.is_active:
         return {"message": "This account has been deactivated."}, 403
@@ -155,6 +168,16 @@ def login() -> tuple[dict, int]:
     login_user(user)
 
     return _serialize(user), 200
+
+
+def confirm_password(payload: dict, key: str) -> tuple[dict, int] | None:
+    """The logged-in user's password, asked again before changing it or
+    deleting the account."""
+    password = payload.get(key)
+    if not isinstance(password, str) or not password_matches(current_user, password):
+        return {"message": "Your current password is wrong."}, 403
+
+    return None
 
 
 @api_bp.post("/auth/logout")
@@ -169,6 +192,51 @@ def logout() -> tuple[dict, int]:
 @api_bp.get("/auth/me")
 def me() -> tuple[dict, int]:
     return _serialize(current_user), 200
+
+
+@api_bp.post("/auth/password")
+@multiuser_only
+def change_password() -> tuple[dict, int]:
+    """{"currentPassword", "newPassword"}: change your own password."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return {"message": "A JSON object is required."}, 400
+
+    problem = password_problem(payload.get("newPassword"))
+    if problem:
+        return {"message": problem}, 400
+
+    error = confirm_password(payload, "currentPassword")
+    if error is not None:
+        return error
+
+    set_password(current_user, payload["newPassword"])
+
+    return {"message": "Password changed."}, 200
+
+
+@api_bp.delete("/auth/account")
+@multiuser_only
+def delete_own_account() -> tuple[dict, int]:
+    """{"password"}: delete your own account (see services/accounts.py for
+    what goes with it), and log out."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return {"message": "A JSON object is required."}, 400
+
+    error = confirm_password(payload, "password")
+    if error is not None:
+        return error
+
+    problem = deletion_problem(current_user)
+    if problem:
+        return {"message": problem}, 409
+
+    user = current_user._get_current_object()  # the User, not the proxy
+    logout_user()
+    delete_account(user)
+
+    return {"message": "Account deleted."}, 200
 
 
 @api_bp.post("/auth/organisation")

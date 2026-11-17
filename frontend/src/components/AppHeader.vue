@@ -30,6 +30,7 @@ const ICONS = {
   members: "M6 7.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.5 14c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M11 7a2 2 0 1 0 0-4M12 10c1.5.3 2.5 1.6 2.5 3.5",
   organisation: "M2.5 14.5V3.5l6-2v13M8.5 6l5 1.5v7M1.5 14.5h13M4.5 5.5h2M4.5 8h2M4.5 10.5h2M10.5 9.5h1M10.5 12h1",
   admin: "M8 1.5l5.5 2v4c0 3.5-2.4 6-5.5 7-3.1-1-5.5-3.5-5.5-7v-4L8 1.5ZM8 6v3M8 11v.01",
+  account: "M8 7.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2.5 14.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5",
   key: "M10 9.5a3.5 3.5 0 1 0-3.4-2.7L1.5 12v2.5H4V13h1.5v-1.5H7l1.1-1.1A3.5 3.5 0 0 0 10 9.5ZM11 5v.01",
   logout: "M6 14.5H2.5v-13H6M10.5 11 14 8l-3.5-3M14 8H6",
   check: "M3 8.5l3 3 7-7",
@@ -301,6 +302,24 @@ async function onLogout(): Promise<void> {
             class="dropdown-header text-truncate"
           >
             {{ auth.isLocalMode ? "Local workspace" : `Signed in as ${accountLabel}` }}
+          </li>
+
+          <li
+            v-if="!auth.isLocalMode"
+            role="none"
+          >
+            <RouterLink
+              to="/account"
+              class="dropdown-item"
+              role="menuitem"
+            >
+              <svg
+                class="app-header-svg"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              ><path :d="ICONS.account" /></svg>
+              Account settings
+            </RouterLink>
           </li>
 
           <li

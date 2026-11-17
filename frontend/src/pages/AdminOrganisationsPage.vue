@@ -57,33 +57,93 @@ async function createOrganisation(): Promise<void> {
   }
 }
 
-// Only an empty organisation can go; its members keep their accounts.
-async function deleteOrganisation(organisation: Organisation): Promise<void> {
-  const count = organisation.memberCount;
-  const members = count === 0
-    ? "It has no members"
-    : `${count === 1 ? "Its member loses" : `Its ${count} members lose`} access (their accounts stay)`;
-  if (!window.confirm(
-    `Delete ${organisation.name}? ${members}, and its open invitation links`
-    + " stop working. This can't be undone.",
-  )) {
-    return;
-  }
-
+/** Runs a change, shows its error, and keeps the page usable either way. */
+async function attempt(action: () => Promise<void>): Promise<void> {
   busy.value = true;
   error.value = null;
+  notice.value = null;
 
   try {
-    await apiRequest(`/admin/organisations/${organisation.id}`, { method: "DELETE" });
-    await loadOrganisations();
-    selectedId.value = organisations.value[0]?.id ?? null;
-    // You may have been a member, or had it as your current one.
-    await auth.fetchMe();
+    await action();
   } catch (failure) {
     error.value = failure instanceof Error ? failure.message : "That didn't work.";
   } finally {
     busy.value = false;
   }
+}
+
+const notice = ref<string | null>(null);
+const moveTargetId = ref<number | null>(null);
+
+// Other organisations the selected one's records can move to.
+const moveTargets = computed(
+  () => organisations.value.filter((organisation) => organisation.id !== selectedId.value),
+);
+
+function plural(count: number, word: string): string {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+function moveRecords(organisation: Organisation): Promise<void> {
+  const target = organisations.value.find((candidate) => candidate.id === moveTargetId.value);
+
+  if (!target || !window.confirm(
+    `Move all ${plural(organisation.recordCount, "record")} of ${organisation.name}`
+    + ` to ${target.name}? Its members then see them there, and ${organisation.name}'s`
+    + " members lose access to them.",
+  )) {
+    return Promise.resolve();
+  }
+
+  return attempt(async () => {
+    const result = await apiRequest<{ moved: number }>(
+      `/admin/organisations/${organisation.id}/move-records`,
+      { method: "POST", body: JSON.stringify({ targetOrganisationId: target.id }) },
+    );
+    moveTargetId.value = null;
+    await loadOrganisations();
+    notice.value = `Moved ${plural(result.moved, "record")} to ${target.name}.`;
+  });
+}
+
+// Members keep their accounts. With records, only unpublished drafts can
+// go along (the backend refuses otherwise), after typing the name.
+function deleteOrganisation(organisation: Organisation): Promise<void> {
+  const count = organisation.memberCount;
+  const members = count === 0
+    ? "It has no members"
+    : `${count === 1 ? "Its member loses" : `Its ${count} members lose`} access (their accounts stay)`;
+  let body: object | undefined;
+
+  if (organisation.recordCount === 0) {
+    if (!window.confirm(
+      `Delete ${organisation.name}? ${members}, and its open invitation links`
+      + " stop working. This can't be undone.",
+    )) {
+      return Promise.resolve();
+    }
+  } else {
+    const typed = window.prompt(
+      `Delete ${organisation.name} AND its ${plural(organisation.recordCount, "record")}?`
+      + ` ${members}. This can't be undone; only drafts never sent to CVE or`
+      + " Vulnerability-Lookup can be deleted this way.\n\n"
+      + `Type ${organisation.name} to confirm:`,
+    );
+    if (typed === null) return Promise.resolve();
+    body = { force: true, confirmName: typed.trim() };
+  }
+
+  return attempt(async () => {
+    await apiRequest(`/admin/organisations/${organisation.id}`, {
+      method: "DELETE",
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+    await loadOrganisations();
+    selectedId.value = organisations.value[0]?.id ?? null;
+    notice.value = `Deleted ${organisation.name}.`;
+    // You may have been a member, or had it as your current one.
+    await auth.fetchMe();
+  });
 }
 
 onMounted(async () => {
@@ -114,6 +174,14 @@ onMounted(async () => {
       role="alert"
     >
       {{ error }}
+    </div>
+
+    <div
+      v-if="notice"
+      class="alert alert-success"
+      role="status"
+    >
+      {{ notice }}
     </div>
 
     <div
@@ -197,7 +265,54 @@ onMounted(async () => {
             @changed="loadOrganisations"
           />
 
-          <div class="card border-danger-subtle mt-5">
+          <form
+            v-if="selected.recordCount > 0"
+            class="card mt-5"
+            @submit.prevent="moveRecords(selected)"
+          >
+            <div class="card-body">
+              <h2 class="h6 mb-1">
+                Move records
+              </h2>
+              <p class="text-secondary small">
+                Move all {{ plural(selected.recordCount, "record") }} to another
+                organisation, e.g. to merge the two or before deleting this one.
+                Nothing moves if the other one already has one of their IDs.
+              </p>
+              <div class="d-flex flex-wrap gap-2">
+                <label
+                  for="move-target"
+                  class="visually-hidden"
+                >Move to</label>
+                <select
+                  id="move-target"
+                  v-model="moveTargetId"
+                  class="form-select w-auto flex-grow-1"
+                  :disabled="moveTargets.length === 0"
+                >
+                  <option :value="null">
+                    {{ moveTargets.length ? "Move to…" : "No other organisation" }}
+                  </option>
+                  <option
+                    v-for="organisation in moveTargets"
+                    :key="organisation.id"
+                    :value="organisation.id"
+                  >
+                    {{ organisation.name }}
+                  </option>
+                </select>
+                <button
+                  type="submit"
+                  class="btn btn-outline-primary"
+                  :disabled="busy || moveTargetId === null"
+                >
+                  Move {{ plural(selected.recordCount, "record") }}
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <div class="card border-danger-subtle mt-3">
             <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
               <div>
                 <h2 class="h6 mb-1">
@@ -205,9 +320,9 @@ onMounted(async () => {
                 </h2>
                 <p class="text-secondary small mb-0">
                   <template v-if="selected.recordCount">
-                    {{ selected.name }} still has {{ selected.recordCount }}
-                    record{{ selected.recordCount === 1 ? "" : "s" }}; move or delete
-                    {{ selected.recordCount === 1 ? "it" : "them" }} first.
+                    Its {{ plural(selected.recordCount, "record") }} would be deleted too,
+                    which works only for drafts never sent to CVE or Vulnerability-Lookup.
+                    Move published ones first.
                   </template>
                   <template v-else>
                     Its members lose access; their accounts stay.
@@ -216,11 +331,11 @@ onMounted(async () => {
               </div>
               <button
                 type="button"
-                class="btn btn-outline-danger"
-                :disabled="busy || selected.recordCount > 0"
+                class="btn btn-outline-danger text-nowrap"
+                :disabled="busy"
                 @click="deleteOrganisation(selected)"
               >
-                Delete organisation
+                {{ selected.recordCount ? "Delete with its records" : "Delete organisation" }}
               </button>
             </div>
           </div>

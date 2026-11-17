@@ -13,7 +13,14 @@ from flask import Flask
 from test_records_api import insert_record
 
 from vulniverse_api.extensions import db
-from vulniverse_api.models import Invitation, Membership, Organisation, User
+from vulniverse_api.models import (
+    CnaPublication,
+    Invitation,
+    Membership,
+    Organisation,
+    User,
+    VulnerabilityRecord,
+)
 from vulniverse_api.services.invitations import (
     accept_invitation,
     create_invitation,
@@ -410,3 +417,131 @@ def test_a_deleted_organisation_no_longer_is_anyones_current_one(
     me = other_client.get("/api/v1/auth/me").get_json()
 
     assert me["currentOrganisationId"] == organisation.id
+
+
+# --- Moving records, and deleting an organisation with its records ----------
+
+
+def test_records_move_to_another_organisation(
+    app, admin_client, test_user, other_user, organisation, other_organisation
+) -> None:
+    insert_record(app, "CVE-2026-05001", test_user.id, is_draft=True)
+    insert_record(app, "CVE-2026-05002", test_user.id, is_draft=False)
+
+    response = admin_client.post(
+        f"/api/v1/admin/organisations/{organisation.id}/move-records",
+        json={"targetOrganisationId": other_organisation.id},
+    )
+
+    assert response.get_json() == {
+        "moved": 2,
+        "targetOrganisationId": other_organisation.id,
+    }
+    with app.app_context():
+        assert {r.organisation_id for r in VulnerabilityRecord.query} == {
+            other_organisation.id
+        }
+
+
+def test_nothing_moves_when_ids_clash(
+    app, admin_client, test_user, other_user, organisation, other_organisation
+) -> None:
+    insert_record(app, "CVE-2026-05003", test_user.id, is_draft=True)
+    insert_record(app, "CVE-2026-05004", test_user.id, is_draft=True)
+    insert_record(app, "cve-2026-05004", other_user.id, is_draft=True)
+
+    response = admin_client.post(
+        f"/api/v1/admin/organisations/{organisation.id}/move-records",
+        json={"targetOrganisationId": other_organisation.id},
+    )
+
+    assert response.status_code == 409
+    assert response.get_json()["clashes"] == ["CVE-2026-05004"]
+    with app.app_context():
+        assert (
+            VulnerabilityRecord.query.filter_by(organisation_id=organisation.id).count()
+            == 2
+        )
+
+
+def test_moving_needs_another_existing_organisation(admin_client, organisation) -> None:
+    url = f"/api/v1/admin/organisations/{organisation.id}/move-records"
+
+    assert (
+        admin_client.post(
+            url, json={"targetOrganisationId": organisation.id}
+        ).status_code
+        == 400
+    )
+    assert admin_client.post(url, json={"targetOrganisationId": 999}).status_code == 404
+    assert admin_client.post(url, json={}).status_code == 400
+
+
+def test_only_instance_admins_move_records(
+    org_admin_client, organisation, other_organisation
+) -> None:
+    response = org_admin_client.post(
+        f"/api/v1/admin/organisations/{organisation.id}/move-records",
+        json={"targetOrganisationId": other_organisation.id},
+    )
+
+    assert response.status_code == 403
+
+
+def force_delete(client, organisation, name: str | None = None):
+    return client.delete(
+        f"/api/v1/admin/organisations/{organisation.id}",
+        json={
+            "force": True,
+            "confirmName": name if name is not None else organisation.name,
+        },
+    )
+
+
+def test_force_deleting_takes_unpublished_drafts_along(
+    app, admin_client, test_user, organisation
+) -> None:
+    insert_record(app, "CVE-2026-05005", test_user.id, is_draft=True)
+    insert_record(app, "CVE-2026-05006", test_user.id, is_draft=True)
+
+    response = force_delete(admin_client, organisation)
+
+    assert response.get_json() == {"id": organisation.id, "deletedRecords": 2}
+    with app.app_context():
+        assert VulnerabilityRecord.query.count() == 0
+        assert db.session.get(Organisation, organisation.id) is None
+
+
+def test_force_deleting_needs_the_name_typed(
+    app, admin_client, test_user, organisation
+) -> None:
+    insert_record(app, "CVE-2026-05007", test_user.id, is_draft=True)
+
+    assert force_delete(admin_client, organisation, name="acme").status_code == 400
+
+
+def test_published_records_block_force_deleting(
+    app, admin_client, test_user, organisation
+) -> None:
+    insert_record(app, "CVE-2026-05008", test_user.id, is_draft=True)
+    insert_record(app, "CVE-2026-05009", test_user.id, is_draft=False)
+
+    response = force_delete(admin_client, organisation)
+
+    assert response.status_code == 409
+    assert "1 of its 2 records is published" in response.get_json()["message"]
+    with app.app_context():
+        assert VulnerabilityRecord.query.count() == 2
+
+
+def test_drafts_once_sent_to_cve_block_force_deleting(
+    app, admin_client, test_user, organisation
+) -> None:
+    rid = insert_record(app, "CVE-2026-05010", test_user.id, is_draft=True)
+    with app.app_context():
+        db.session.add(
+            CnaPublication(record_id=rid, target="cve-program", status="RESERVED")
+        )
+        db.session.commit()
+
+    assert force_delete(admin_client, organisation).status_code == 409

@@ -79,6 +79,23 @@ export const useAuthStore = defineStore("auth", () => {
     });
   }
 
+  async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await apiRequest("/auth/password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
+  /** Deletes the account (the backend also ends the session). */
+  async function deleteAccount(password: string): Promise<void> {
+    await apiRequest("/auth/account", {
+      method: "DELETE",
+      body: JSON.stringify({ password }),
+    });
+    currentUser.value = null;
+    clearCsrfToken();
+  }
+
   async function logout(): Promise<void> {
     await apiRequest("/auth/logout", { method: "POST" });
     currentUser.value = null;
@@ -93,6 +110,8 @@ export const useAuthStore = defineStore("auth", () => {
     currentOrganisation,
     fetchMe,
     switchOrganisation,
+    changePassword,
+    deleteAccount,
     login,
     register,
     logout,

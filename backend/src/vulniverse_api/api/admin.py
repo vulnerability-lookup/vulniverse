@@ -8,6 +8,12 @@ from flask_login import current_user
 from ..auth.permissions import admin_required, multiuser_only
 from ..extensions import db
 from ..models import User
+from ..services.accounts import (
+    delete_account,
+    deletion_problem,
+    generate_password,
+    set_password,
+)
 from . import api_bp
 
 
@@ -66,3 +72,43 @@ def update_user(user_id: int) -> tuple[dict, int]:
     db.session.commit()
 
     return _serialize(user), 200
+
+
+@api_bp.post("/admin/users/<int:user_id>/reset-password")
+@multiuser_only
+@admin_required
+def reset_password(user_id: int) -> tuple[dict, int]:
+    """Give the user a new random password, shown only in this response,
+    for the admin to pass on."""
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        return {"message": "User not found."}, 404
+
+    password = generate_password()
+    set_password(user, password)
+
+    return {"password": password}, 200
+
+
+@api_bp.delete("/admin/users/<int:user_id>")
+@multiuser_only
+@admin_required
+def delete_user(user_id: int) -> tuple[dict, int]:
+    """Delete an account (see services/accounts.py for what goes with it).
+    Your own is deleted from your account page, with your password."""
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        return {"message": "User not found."}, 404
+
+    if user.id == current_user.id:
+        return {"message": "Delete your own account from your account page."}, 400
+
+    problem = deletion_problem(user)
+    if problem:
+        return {"message": problem}, 409
+
+    delete_account(user)
+
+    return {"id": user_id}, 200

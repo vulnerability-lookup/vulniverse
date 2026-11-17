@@ -13,6 +13,9 @@ interface AdminUser {
   createdAt: string;
 }
 
+// A password just generated for someone, shown once.
+const newPassword = ref<{ email: string; password: string } | null>(null);
+
 const auth = useAuthStore();
 
 const users = ref<AdminUser[]>([]);
@@ -59,6 +62,49 @@ async function updateUser(
   }
 }
 
+async function resetPassword(user: AdminUser): Promise<void> {
+  if (!window.confirm(`Give ${user.email} a new random password? Their current one stops working.`)) {
+    return;
+  }
+
+  pendingUserId.value = user.id;
+  actionError.value = null;
+  newPassword.value = null;
+
+  try {
+    const { password } = await apiRequest<{ password: string }>(
+      `/admin/users/${user.id}/reset-password`,
+      { method: "POST" },
+    );
+    newPassword.value = { email: user.email, password };
+  } catch (error) {
+    actionError.value = error instanceof ApiError ? error.message : "Unable to reset the password.";
+  } finally {
+    pendingUserId.value = null;
+  }
+}
+
+async function deleteUser(user: AdminUser): Promise<void> {
+  if (!window.confirm(
+    `Delete ${user.email}? Their templates and CNA credentials are deleted;`
+    + " the records they created stay with their organisations. This can't be undone.",
+  )) {
+    return;
+  }
+
+  pendingUserId.value = user.id;
+  actionError.value = null;
+
+  try {
+    await apiRequest(`/admin/users/${user.id}`, { method: "DELETE" });
+    users.value = users.value.filter((candidate) => candidate.id !== user.id);
+  } catch (error) {
+    actionError.value = error instanceof ApiError ? error.message : "Unable to delete this user.";
+  } finally {
+    pendingUserId.value = null;
+  }
+}
+
 function formatDate(value: string): string {
   const date = new Date(value);
 
@@ -90,6 +136,12 @@ onMounted(loadUsers);
     <div v-else>
       <div v-if="actionError" class="alert alert-danger" role="alert">
         {{ actionError }}
+      </div>
+
+      <div v-if="newPassword" class="alert alert-success" role="status">
+        New password for <strong>{{ newPassword.email }}</strong>, shown only now;
+        pass it on and ask them to change it under Account settings:
+        <code class="user-select-all ms-1">{{ newPassword.password }}</code>
       </div>
 
       <table class="table align-middle">
@@ -147,6 +199,25 @@ onMounted(loadUsers);
                 @click="updateUser(user, { isActive: !user.isActive })"
               >
                 {{ user.isActive ? "Deactivate" : "Reactivate" }}
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm ms-2"
+                :disabled="pendingUserId === user.id"
+                @click="resetPassword(user)"
+              >
+                Reset password
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm ms-2"
+                :disabled="pendingUserId === user.id || user.id === auth.currentUser?.id"
+                :title="user.id === auth.currentUser?.id ? 'Delete your own account under Account settings' : undefined"
+                @click="deleteUser(user)"
+              >
+                Delete
               </button>
             </td>
           </tr>

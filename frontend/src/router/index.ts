@@ -27,6 +27,9 @@ import RegisterPage from
 import CnaCredentialsPage from
   "@/pages/CnaCredentialsPage.vue";
 
+import AccountPage from
+  "@/pages/AccountPage.vue";
+
 import InvitePage from
   "@/pages/InvitePage.vue";
 
@@ -86,6 +89,12 @@ export const router = createRouter({
       name: "admin-users",
       component: AdminUsersPage,
       meta: { adminOnly: true },
+    },
+    {
+      // Your own account: password, deletion.
+      path: "/account",
+      name: "account",
+      component: AccountPage,
     },
     {
       // The current organisation, for its admins.

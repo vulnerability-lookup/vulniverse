@@ -7,8 +7,9 @@
 - Anyone with a valid invitation link joins with its role
   (/invitations/<token>); an organisation always keeps one admin.
 
-Only an empty organisation can be deleted (by instance admins): its
-records would otherwise need a new home first.
+Instance admins can move an organisation's records to another one, and
+delete an organisation: an empty one, or one whose records are all
+drafts never sent to CVE or VL (published ones must be moved).
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from ..auth.permissions import admin_required, multiuser_only
 from ..extensions import db
 from ..models import (
     MEMBERSHIP_ROLES,
+    CnaPublication,
     Invitation,
     Membership,
     Organisation,
@@ -192,29 +194,117 @@ def create_organisation() -> ApiResponse:
 @multiuser_only
 @admin_required
 def delete_organisation(organisation_id: int) -> ApiResponse:
-    """Only an empty organisation: its records would otherwise need a new
-    home. Its memberships and invitations go with it; the accounts stay,
-    and whoever had it as their current organisation falls back to
-    their next one."""
+    """Delete an organisation; its memberships and invitations go with it,
+    the accounts stay, and whoever had it as their current organisation
+    falls back to their next one.
+
+    With records it needs {"force": true, "confirmName": <its name>}, and
+    even then only drafts that never went to CVE or VL are deleted with it:
+    published records live on elsewhere (CVE.org, Vulnerability-Lookup),
+    so losing the copy here would leave them without anyone able to update
+    or reject them. Those must be moved instead (move-records).
+    """
     organisation = db.session.get(Organisation, organisation_id)
     if organisation is None:
         return {"message": "Organisation not found."}, 404
 
-    records = VulnerabilityRecord.query.filter_by(
-        organisation_id=organisation_id
-    ).count()
-    if records:
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
+    records = VulnerabilityRecord.query.filter_by(organisation_id=organisation_id)
+    count = records.count()
+
+    if count and payload.get("force") is not True:
         return {
-            "message": f"{organisation.name} still has {records} record(s);"
-            " move or delete them first.",
+            "message": f"{organisation.name} still has {count} record(s);"
+            " move them, or delete it with its records.",
         }, 409
+
+    if count:
+        if payload.get("confirmName") != organisation.name:
+            return {"message": "Type the organisation's name to confirm."}, 400
+
+        kept = records.filter(
+            (VulnerabilityRecord.is_draft.is_(False))
+            | VulnerabilityRecord.id.in_(db.session.query(CnaPublication.record_id)),
+        ).count()
+        if kept:
+            return {
+                "message": f"{kept} of its {count} records"
+                f" {'is' if kept == 1 else 'are'} published or went to CVE or"
+                " Vulnerability-Lookup; move the records to another"
+                " organisation instead of deleting them.",
+            }, 409
+
+        records.delete(synchronize_session=False)
 
     Invitation.query.filter_by(organisation_id=organisation_id).delete()
     Membership.query.filter_by(organisation_id=organisation_id).delete()
     db.session.delete(organisation)
     db.session.commit()
 
-    return {"id": organisation_id}, 200
+    return {"id": organisation_id, "deletedRecords": count}, 200
+
+
+@api_bp.post("/admin/organisations/<int:organisation_id>/move-records")
+@multiuser_only
+@admin_required
+def move_records(organisation_id: int) -> ApiResponse:
+    """Move all of an organisation's records to another one, e.g. to merge
+    two organisations or before deleting one. All or nothing: if the
+    target already has a record with one of the IDs (unique per
+    organisation), nothing moves and the clashing IDs are listed."""
+    source = db.session.get(Organisation, organisation_id)
+    if source is None:
+        return {"message": "Organisation not found."}, 404
+
+    payload = request.get_json(silent=True)
+    target_id = (
+        payload.get("targetOrganisationId") if isinstance(payload, dict) else None
+    )
+    if not isinstance(target_id, int) or isinstance(target_id, bool):
+        return {"message": "An integer 'targetOrganisationId' is required."}, 400
+    if target_id == organisation_id:
+        return {
+            "message": "Choose a different organisation to move the records to."
+        }, 400
+    target = db.session.get(Organisation, target_id)
+    if target is None:
+        return {"message": "Target organisation not found."}, 404
+
+    target_ids = (
+        db.session.query(func.lower(VulnerabilityRecord.identifier))
+        .filter(
+            VulnerabilityRecord.organisation_id == target_id,
+            VulnerabilityRecord.identifier.is_not(None),
+        )
+        .scalar_subquery()
+    )
+    clashes = sorted(
+        identifier
+        for (identifier,) in db.session.query(VulnerabilityRecord.identifier).filter(
+            VulnerabilityRecord.organisation_id == organisation_id,
+            func.lower(VulnerabilityRecord.identifier).in_(target_ids),
+        )
+    )
+    if clashes:
+        return {
+            "message": f"{target.name} already has records with these IDs, so"
+            f" nothing was moved: {', '.join(clashes)}.",
+            "clashes": clashes,
+        }, 409
+
+    moved = VulnerabilityRecord.query.filter_by(organisation_id=organisation_id).update(
+        {"organisation_id": target_id},
+        synchronize_session=False,
+    )
+    try:
+        db.session.commit()
+    except IntegrityError:
+        # A clashing record was created in the target meanwhile.
+        db.session.rollback()
+        return {"message": "An ID now exists in both; try again."}, 409
+
+    return {"moved": moved, "targetOrganisationId": target_id}, 200
 
 
 def managed_organisation(organisation_id: int) -> Organisation | ApiResponse:
