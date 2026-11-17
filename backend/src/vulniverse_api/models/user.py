@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from datetime import datetime
 
 from flask_login import UserMixin
@@ -54,6 +55,18 @@ class User(
         nullable=False,
         default=True,
     )
+
+    # Part of the session's user ID (get_id). A new one ends every session
+    # of the account and every half-finished login: on deactivation, a
+    # password change or reset and a 2FA reset (services/accounts.py's
+    # end_sessions). Random, so a deleted account's cookie can't match a
+    # new account that gets its ID (SQLite reuses the highest one).
+    session_token: Mapped[str] = mapped_column(
+        String(32), nullable=False, default=lambda: secrets.token_hex(16)
+    )
+
+    def get_id(self) -> str:
+        return f"{self.id}:{self.session_token}"
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

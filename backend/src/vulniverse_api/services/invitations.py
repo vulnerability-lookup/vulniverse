@@ -9,7 +9,9 @@ from __future__ import annotations
 import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
-from typing import Literal
+from typing import Any, Literal, cast
+
+from sqlalchemy import CursorResult, update
 
 from ..extensions import db
 from ..models import Invitation, Membership, Organisation, User
@@ -61,17 +63,38 @@ def invitation_state(invitation: Invitation) -> InvitationState:
     return "expired" if expires_at <= datetime.now(UTC) else "valid"
 
 
-def accept_invitation(invitation: Invitation, user: User) -> Membership:
-    """Make the user a member with the invitation's role and use it up.
-    The caller checks that it's valid and the user not yet a member."""
+def accept_invitation(invitation: Invitation, user: User) -> Membership | None:
+    """Make the user a member with the invitation's role and use it up,
+    committing both together with whatever else is pending (a new
+    account). None, and everything pending rolled back, if the invitation
+    is no longer valid: used by a parallel request meanwhile. The caller
+    checks that the user isn't a member yet."""
+    now = datetime.now(UTC)
+    db.session.flush()  # a new account gets its id
+
+    # Only if still valid, in one UPDATE: two requests can't both use it.
+    used = db.session.execute(
+        update(Invitation)
+        .where(
+            Invitation.id == invitation.id,
+            Invitation.accepted_at.is_(None),
+            Invitation.revoked_at.is_(None),
+            Invitation.expires_at > now,
+        )
+        .values(accepted_by_id=user.id, accepted_at=now),
+        execution_options={"synchronize_session": False},
+    )
+    if cast(CursorResult[Any], used).rowcount != 1:
+        db.session.rollback()
+        return None
+
     membership = Membership(
         user_id=user.id,
         organisation_id=invitation.organisation_id,
         role=invitation.role,
     )
-    invitation.accepted_by_id = user.id
-    invitation.accepted_at = datetime.now(UTC)
     db.session.add(membership)
     db.session.commit()
+    db.session.refresh(invitation)
 
     return membership

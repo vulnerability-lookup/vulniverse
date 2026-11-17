@@ -11,13 +11,26 @@ import secrets
 import struct
 import time
 from datetime import UTC, datetime, timedelta
+from typing import Any, Literal, cast
 from urllib.parse import quote
 
 from flask import current_app
+from sqlalchemy import CursorResult, Result, case, or_, update
 
 from ..extensions import db
 from ..models import User
+from .accounts import end_sessions
 from .cna_credentials import fernet
+
+# Session keys. PASSED: this session entered a code or set 2FA up; with
+# 2FA required, nothing else counts (api/__init__.py's require_login).
+PASSED_KEY = "two_factor_passed"
+# Between the password and the code: {userId, sessionToken, at}.
+PENDING_KEY = "two_factor_pending"
+PENDING_SECONDS = 300
+# A secret being set up: {secret, userId, at}.
+SETUP_KEY = "two_factor_setup"
+SETUP_SECONDS = 600
 
 STEP_SECONDS = 30
 DIGITS = 6
@@ -71,59 +84,98 @@ def is_set_up(user: User) -> bool:
 
 
 def enable(user: User, secret: str, code: str) -> bool:
-    """Store the secret once the user proves their app has it."""
+    """Store the secret once the user proves their app has it. False for
+    a wrong code, or when another session set one up meanwhile."""
     step = matching_step(secret, code)
     if step is None:
         return False
 
-    user.two_factor_secret_encrypted = fernet().encrypt(secret.encode()).decode()
-    user.two_factor_last_step = step
-    user.two_factor_failures = 0
+    # Only if there's still no secret: two setups at once can't both win.
+    stored = db.session.execute(
+        update(User)
+        .where(User.id == user.id, User.two_factor_secret_encrypted.is_(None))
+        .values(
+            two_factor_secret_encrypted=fernet().encrypt(secret.encode()).decode(),
+            two_factor_last_step=step,
+            two_factor_failures=0,
+            two_factor_failed_at=None,
+        ),
+        execution_options={"synchronize_session": False},
+    )
     db.session.commit()
-    return True
+    return _changed(stored)
 
 
 def reset(user: User) -> None:
-    """Forget the secret (a lost device); the user sets it up again."""
+    """Forget the secret (a lost device) and end the account's sessions;
+    the user logs in again and sets it up anew."""
     user.two_factor_secret_encrypted = None
     user.two_factor_last_step = None
     user.two_factor_failures = 0
     user.two_factor_failed_at = None
+    end_sessions(user)
     db.session.commit()
 
 
-def paused(user: User) -> bool:
-    """Too many wrong codes lately: refuse codes for a while, so they
-    can't be guessed (a million of them, three valid at a time)."""
-    return (
-        user.two_factor_failures >= MAX_FAILURES
-        and user.two_factor_failed_at is not None
-        and datetime.now(UTC) - _aware(user.two_factor_failed_at) < FAILURE_PAUSE
+def check_code(user: User, code: str) -> Literal["ok", "wrong", "paused"]:
+    """Check a login code. Each code works once, and after MAX_FAILURES
+    wrong ones codes are refused for FAILURE_PAUSE, so they can't be
+    guessed (a million of them, three valid at a time).
+
+    Both happen in single UPDATEs, so parallel requests can't each get
+    their own count of guesses or use the same code twice."""
+    now = datetime.now(UTC)
+
+    # Count the attempt before checking it; a right code resets the count.
+    counted = db.session.execute(
+        update(User)
+        .where(
+            User.id == user.id,
+            or_(
+                User.two_factor_failures < MAX_FAILURES,
+                User.two_factor_failed_at.is_(None),
+                User.two_factor_failed_at < now - FAILURE_PAUSE,
+            ),
+        )
+        .values(
+            # After a pause, counting starts over.
+            two_factor_failures=case(
+                (User.two_factor_failures >= MAX_FAILURES, 1),
+                else_=User.two_factor_failures + 1,
+            ),
+            two_factor_failed_at=now,
+        ),
+        execution_options={"synchronize_session": False},
     )
+    db.session.commit()
+    if not _changed(counted):
+        return "paused"
 
-
-def verify(user: User, code: str) -> bool:
-    """Check a login code; each code works once. The caller checks
-    paused() first."""
     assert user.two_factor_secret_encrypted is not None
     secret = fernet().decrypt(user.two_factor_secret_encrypted.encode()).decode()
     step = matching_step(secret, code)
+    if step is None:
+        return "wrong"
 
-    if step is None or step <= (user.two_factor_last_step or -1):
-        if user.two_factor_failures >= MAX_FAILURES:
-            user.two_factor_failures = 0  # the pause is over: a fresh count
-        user.two_factor_failures += 1
-        user.two_factor_failed_at = datetime.now(UTC)
-        db.session.commit()
-        return False
-
-    user.two_factor_last_step = step
-    user.two_factor_failures = 0
-    user.two_factor_failed_at = None
+    accepted = db.session.execute(
+        update(User)
+        .where(
+            User.id == user.id,
+            or_(
+                User.two_factor_last_step.is_(None),
+                User.two_factor_last_step < step,
+            ),
+        )
+        .values(
+            two_factor_last_step=step,
+            two_factor_failures=0,
+            two_factor_failed_at=None,
+        ),
+        execution_options={"synchronize_session": False},
+    )
     db.session.commit()
-    return True
+    return "ok" if _changed(accepted) else "wrong"
 
 
-def _aware(moment: datetime) -> datetime:
-    # SQLite gives naive datetimes back; they are UTC.
-    return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
+def _changed(result: Result[Any]) -> bool:
+    return cast(CursorResult[Any], result).rowcount == 1

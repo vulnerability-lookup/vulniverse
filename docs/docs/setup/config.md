@@ -62,6 +62,17 @@ Organisation admins create invitation links on their organisation's
 page; a link works once, for seven days, and can be revoked. Any other
 value stops the backend from starting.
 
+Create the first instance admin on the server; it asks for a password:
+
+```bash
+uv run flask --app vulniverse_api create-admin admin@example.com
+```
+
+Email addresses aren't verified, so the command creates the account
+itself rather than promoting one somebody registered through the web.
+For an address that already has an account, it asks before promoting
+it. Until the admin exists, keep `registration` on `invite` or `closed`.
+
 `two_factor = true` makes every account set up two-factor
 authentication: after the next login, a user can do nothing else until
 they have scanned a QR code with an authenticator app (TOTP, such as
@@ -80,6 +91,10 @@ uv run flask --app vulniverse_api reset-two-factor admin@example.com
 
 With `two_factor = false` (the default), logins never ask for a code,
 even for accounts that set it up earlier.
+
+A password change, a password reset, a 2FA reset and deactivation log
+the account out everywhere else, including logins that are waiting for
+their code; reactivating an account doesn't bring those sessions back.
 
 ### `[features]`
 

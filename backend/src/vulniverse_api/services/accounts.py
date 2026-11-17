@@ -40,12 +40,62 @@ def password_problem(password: object) -> str | None:
 
 
 def set_password(user: User, password: str) -> None:
+    """Also ends the account's sessions; the caller logs the current one
+    in again if it's the user's own (refresh_session in api/auth.py)."""
     user.password_hash = generate_password_hash(password)
+    end_sessions(user)
     db.session.commit()
+
+
+def end_sessions(user: User) -> None:
+    """Log the account out everywhere, half-finished logins included
+    (User.session_token). The caller commits."""
+    user.session_token = secrets.token_hex(16)
 
 
 def generate_password() -> str:
     return secrets.token_urlsafe(12)
+
+
+def is_last_active_admin(membership: Membership) -> bool:
+    """Whether the organisation would have no active admin without this
+    one. An already deactivated admin counts as gone either way, so
+    changing them is always fine."""
+    if membership.role != "admin" or not membership.user.is_active:
+        return False
+
+    others = (
+        Membership.query.join(User, User.id == Membership.user_id)
+        .filter(
+            Membership.organisation_id == membership.organisation_id,
+            Membership.role == "admin",
+            Membership.user_id != membership.user_id,
+            User.is_active.is_(True),
+        )
+        .count()
+    )
+    return others == 0
+
+
+def stranding_problem(user: User) -> str | None:
+    """Why the user can't go away (deletion, deactivation): they're the
+    last active admin of an organisation with other members."""
+    stranded = []
+    for membership in Membership.query.filter_by(user_id=user.id, role="admin"):
+        members = Membership.query.filter_by(
+            organisation_id=membership.organisation_id
+        ).count()
+
+        if members > 1 and is_last_active_admin(membership):
+            stranded.append(membership.organisation.name)
+
+    if stranded:
+        return (
+            f"This is the last admin of {', '.join(sorted(stranded))};"
+            " make another member an admin first."
+        )
+
+    return None
 
 
 def deletion_problem(user: User) -> str | None:
@@ -56,24 +106,7 @@ def deletion_problem(user: User) -> str | None:
     ):
         return "This is the last instance admin; make someone else an admin first."
 
-    stranded = []
-    for membership in Membership.query.filter_by(user_id=user.id, role="admin"):
-        organisation_id = membership.organisation_id
-        admins = Membership.query.filter_by(
-            organisation_id=organisation_id, role="admin"
-        ).count()
-        members = Membership.query.filter_by(organisation_id=organisation_id).count()
-
-        if admins == 1 and members > 1:
-            stranded.append(membership.organisation.name)
-
-    if stranded:
-        return (
-            f"This is the last admin of {', '.join(sorted(stranded))};"
-            " make another member an admin first."
-        )
-
-    return None
+    return stranding_problem(user)
 
 
 def delete_account(user: User) -> None:

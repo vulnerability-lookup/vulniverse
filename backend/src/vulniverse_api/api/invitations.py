@@ -12,6 +12,7 @@ from typing import Any
 
 from flask import request, session
 from flask_login import current_user
+from sqlalchemy.exc import IntegrityError
 
 from ..auth.organisations import SESSION_KEY, is_member
 from ..auth.permissions import multiuser_only
@@ -122,10 +123,23 @@ def accept_organisation_invitation(token: str) -> ApiResponse:
     if is_member(current_user, invitation.organisation_id):
         return {"message": "You're already a member of this organisation."}, 409
 
-    membership = accept_invitation(invitation, current_user)
+    try:
+        membership = accept_invitation(invitation, current_user)
+    except IntegrityError:
+        # Joined at the same moment through another link.
+        db.session.rollback()
+        return {"message": "You're already a member of this organisation."}, 409
+    if membership is None:
+        return USED_MEANWHILE
     session[SESSION_KEY] = membership.organisation_id
 
     return {"organisationId": membership.organisation_id, "role": membership.role}, 200
+
+
+USED_MEANWHILE: ApiResponse = (
+    {"message": "This invitation was just used or revoked; ask for a new one."},
+    410,
+)
 
 
 def invitation_error(invitation: Invitation | None) -> ApiResponse | None:

@@ -9,6 +9,8 @@ import time
 
 import pytest
 from conftest import logged_in_client
+from flask import g
+from sqlalchemy.orm import Session
 
 from vulniverse_api.extensions import db
 from vulniverse_api.models import User
@@ -128,9 +130,25 @@ def test_too_many_wrong_codes_pause_the_code_step(
     assert paused.status_code == 429
 
 
-def test_admins_reset_it(app, required, admin_client, admin_user, test_user) -> None:
+def switching():
+    """Before a request from another client in the same test: the app
+    fixture's context caches the last request's user on g (see
+    insert_record in test_records_api.py)."""
+    g.pop("_login_user", None)
+
+
+def passed_client(app, user):
+    """A session that entered its 2FA code."""
+    client = logged_in_client(app, user)
+    with client.session_transaction() as session:
+        session[two_factor.PASSED_KEY] = True
+    return client
+
+
+def test_admins_reset_it(app, required, admin_user, test_user) -> None:
     set_up(app, admin_user.id)
     set_up(app, test_user.id)
+    admin_client = passed_client(app, admin_user)
 
     response = admin_client.delete(f"/api/v1/admin/users/{test_user.id}/two-factor")
 
@@ -152,3 +170,125 @@ def test_the_secret_is_stored_encrypted(app, test_user) -> None:
 def test_setup_is_refused_when_off(app, test_user) -> None:
     client = logged_in_client(app, test_user)
     assert client.post("/api/v1/auth/two-factor/setup").status_code == 404
+
+
+# --- Sessions: 2FA is per session, and resets end them -----------------------
+
+
+def test_setting_up_in_one_session_does_not_unlock_another(
+    app, required, test_user
+) -> None:
+    password_only = logged_in_client(app, test_user)
+    set_up(app, test_user.id)  # in another session
+    switching()
+
+    assert password_only.get("/api/v1/records").status_code == 401
+    assert password_only.get("/api/v1/auth/me").status_code == 401
+
+
+def test_a_password_change_ends_the_other_sessions_only(app, test_user) -> None:
+    mine = logged_in_client(app, test_user)
+    other = logged_in_client(app, test_user)
+
+    response = mine.post(
+        "/api/v1/auth/password",
+        json={"currentPassword": "password123", "newPassword": "new-password-456"},
+    )
+
+    assert response.status_code == 200
+    switching()
+    assert mine.get("/api/v1/auth/me").status_code == 200
+    switching()
+    assert other.get("/api/v1/auth/me").status_code == 401
+
+
+def test_an_admin_password_reset_ends_sessions_and_logins_halfway(
+    app, required, admin_user, test_user, anon_client
+) -> None:
+    set_up(app, admin_user.id)
+    set_up(app, test_user.id)
+    session = passed_client(app, test_user)
+    login(anon_client)  # password done, code not yet
+    switching()
+
+    passed_client(app, admin_user).post(
+        f"/api/v1/admin/users/{test_user.id}/reset-password"
+    )
+
+    switching()
+    assert session.get("/api/v1/auth/me").status_code == 401
+    switching()
+    halfway = anon_client.post(
+        "/api/v1/auth/login/two-factor", json={"code": now_code()}
+    )
+    assert halfway.status_code == 401
+
+
+def test_a_two_factor_reset_ends_sessions(app, required, admin_user, test_user) -> None:
+    set_up(app, admin_user.id)
+    set_up(app, test_user.id)
+    session = passed_client(app, test_user)
+
+    passed_client(app, admin_user).delete(
+        f"/api/v1/admin/users/{test_user.id}/two-factor"
+    )
+
+    switching()
+    assert session.get("/api/v1/auth/me").status_code == 401
+
+
+def test_logout_drops_a_setup_in_progress(app, required, client) -> None:
+    client.post("/api/v1/auth/two-factor/setup")
+    client.post("/api/v1/auth/logout")
+
+    with client.session_transaction() as session:
+        assert two_factor.SETUP_KEY not in session
+
+
+def test_a_setup_expires(app, required, client) -> None:
+    secret = client.post("/api/v1/auth/two-factor/setup").get_json()["secret"]
+    with client.session_transaction() as session:
+        setup = session[two_factor.SETUP_KEY]
+        # Reassigned: the session doesn't notice changes inside the dict.
+        session[two_factor.SETUP_KEY] = {
+            **setup,
+            "at": setup["at"] - two_factor.SETUP_SECONDS - 1,
+        }
+
+    response = client.post("/api/v1/auth/two-factor", json={"code": now_code(secret)})
+    assert response.status_code == 409
+
+
+# --- Parallel requests -------------------------------------------------------
+
+
+def copies(app, user_id: int, count: int) -> list[User]:
+    """The user as several requests at once each loaded it."""
+    loaded = []
+    for _ in range(count):
+        with Session(db.engine) as session:
+            user = session.get(User, user_id)
+            assert user is not None
+            session.expunge(user)
+            loaded.append(user)
+    return loaded
+
+
+def test_a_code_works_once_even_in_parallel(app, test_user) -> None:
+    set_up(app, test_user.id)
+    with app.app_context():
+        first, second = copies(app, test_user.id, 2)
+        code = now_code()
+
+        assert two_factor.check_code(first, code) == "ok"
+        assert two_factor.check_code(second, code) == "wrong"
+
+
+def test_parallel_wrong_codes_all_count(app, test_user) -> None:
+    set_up(app, test_user.id)
+    with app.app_context():
+        loaded = copies(app, test_user.id, two_factor.MAX_FAILURES + 1)
+
+        for user in loaded[:-1]:
+            assert two_factor.check_code(user, "000000") == "wrong"
+        assert two_factor.check_code(loaded[-1], now_code()) == "paused"

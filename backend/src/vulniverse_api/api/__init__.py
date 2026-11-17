@@ -2,8 +2,8 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, TypeVar
 
-from flask import Blueprint, request
-from flask_login import current_user
+from flask import Blueprint, request, session
+from flask_login import current_user, logout_user
 
 from ..app_config import load_app_config
 from ..services import two_factor
@@ -57,15 +57,17 @@ def require_login() -> tuple[dict, int] | None:
     # A deactivated account's existing session loses access immediately,
     # not just on its next login attempt (see api/auth.py's login()).
     if current_user.is_authenticated and current_user.is_active:
-        if (
-            two_factor.required()
-            and not two_factor.is_set_up(current_user)
-            and request.endpoint not in TWO_FACTOR_SETUP_ENDPOINTS
-        ):
-            return {
-                "message": "Set up two-factor authentication first.",
-                "code": "TWO_FACTOR_SETUP_REQUIRED",
-            }, 403
+        # Whether this session passed 2FA, not whether the account has it:
+        # a password-only session must not profit from another one's setup.
+        if two_factor.required() and not session.get(two_factor.PASSED_KEY):
+            if two_factor.is_set_up(current_user):
+                logout_user()
+                return {"message": "Authentication required."}, 401
+            if request.endpoint not in TWO_FACTOR_SETUP_ENDPOINTS:
+                return {
+                    "message": "Set up two-factor authentication first.",
+                    "code": "TWO_FACTOR_SETUP_REQUIRED",
+                }, 403
         return None
 
     return {"message": "Authentication required."}, 401

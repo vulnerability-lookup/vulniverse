@@ -12,10 +12,13 @@ from ..services import two_factor
 from ..services.accounts import (
     delete_account,
     deletion_problem,
+    end_sessions,
     generate_password,
     set_password,
+    stranding_problem,
 )
 from . import api_bp
+from .auth import refresh_session
 
 
 def _serialize(user: User) -> dict[str, Any]:
@@ -69,6 +72,13 @@ def update_user(user_id: int) -> tuple[dict, int]:
         if not isinstance(payload["isActive"], bool):
             return {"message": "'isActive' must be a boolean."}, 400
 
+        if user.is_active and not payload["isActive"]:
+            problem = stranding_problem(user)
+            if problem:
+                return {"message": problem}, 409
+            # Its sessions stay ended even if it's reactivated later.
+            end_sessions(user)
+
         user.is_active = payload["isActive"]
 
     db.session.commit()
@@ -89,6 +99,8 @@ def reset_password(user_id: int) -> tuple[dict, int]:
 
     password = generate_password()
     set_password(user, password)
+    if user.id == current_user.id:
+        refresh_session(user)
 
     return {"password": password}, 200
 

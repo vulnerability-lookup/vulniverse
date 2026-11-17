@@ -6,6 +6,7 @@ from typing import Any
 from flask import current_app, request, session
 from flask_login import current_user, login_required, login_user, logout_user
 from flask_wtf.csrf import generate_csrf
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
 
 from ..auth.local_user import LOCAL_USER_EMAIL
@@ -28,7 +29,7 @@ from ..services.accounts import (
 )
 from ..services.invitations import accept_invitation, find_invitation
 from . import api_bp
-from .invitations import invitation_error
+from .invitations import USED_MEANWHILE, invitation_error
 
 
 @api_bp.get("/auth/csrf-token")
@@ -64,11 +65,27 @@ def _serialize(user: User) -> dict[str, Any]:
     }
 
 
-# Between the password and the code: who, and since when (the session
-# cookie is signed, so neither can be forged).
-PENDING_KEY = "two_factor_pending"
-PENDING_SECONDS = 300
-SETUP_KEY = "two_factor_setup"
+TWO_FACTOR_KEYS = (
+    two_factor.PASSED_KEY,
+    two_factor.PENDING_KEY,
+    two_factor.SETUP_KEY,
+)
+
+
+def start_session(user: User, *, passed_two_factor: bool = False) -> None:
+    """Log the user in, with no 2FA state left from an earlier login in
+    this browser."""
+    for key in TWO_FACTOR_KEYS:
+        session.pop(key, None)
+    login_user(user)
+    if passed_two_factor:
+        session[two_factor.PASSED_KEY] = True
+
+
+def end_session() -> None:
+    logout_user()
+    for key in TWO_FACTOR_KEYS:
+        session.pop(key, None)
 
 
 @api_bp.get("/auth/registration")
@@ -134,14 +151,25 @@ def register() -> tuple[dict, int]:
         email=email,
         password_hash=generate_password_hash(password),
     )
-
     db.session.add(user)
-    db.session.commit()
 
-    login_user(user)
+    # With an invitation, the account and its membership are saved
+    # together, or neither (the link was used meanwhile).
+    membership = None
+    try:
+        if invitation is not None:
+            membership = accept_invitation(invitation, user)
+            if membership is None:
+                return USED_MEANWHILE
+        else:
+            db.session.commit()
+    except IntegrityError:
+        # The same address registered at the same moment.
+        db.session.rollback()
+        return {"message": "An account with this email already exists."}, 409
 
-    if invitation is not None:
-        membership = accept_invitation(invitation, user)
+    start_session(user)
+    if membership is not None:
         session[SESSION_KEY] = membership.organisation_id
 
     return _serialize(user), 201
@@ -177,11 +205,18 @@ def login() -> tuple[dict, int]:
         return {"message": "This account has been deactivated."}, 403
 
     if two_factor.required() and two_factor.is_set_up(user):
-        session[PENDING_KEY] = {"userId": user.id, "at": time.time()}
+        end_session()
+        # The session cookie is signed, so this can't be forged; the
+        # session token ends it on a password or 2FA reset meanwhile.
+        session[two_factor.PENDING_KEY] = {
+            "userId": user.id,
+            "sessionToken": user.session_token,
+            "at": time.time(),
+        }
         return {"twoFactorRequired": True}, 200
 
     # Without 2FA set up yet, the session can only set it up (require_login).
-    login_user(user)
+    start_session(user)
 
     return _serialize(user), 200
 
@@ -190,31 +225,42 @@ def login() -> tuple[dict, int]:
 @multiuser_only
 def login_two_factor() -> tuple[dict, int]:
     """{"code"}: the second login step, after the password."""
-    pending = session.get(PENDING_KEY)
+    pending = session.get(two_factor.PENDING_KEY)
+    if not isinstance(pending, dict):
+        pending = {}
+    user = None
+    if time.time() - pending.get("at", 0) <= two_factor.PENDING_SECONDS:
+        user = db.session.get(User, pending.get("userId"), populate_existing=True)
+
     if (
-        not isinstance(pending, dict)
-        or time.time() - pending.get("at", 0) > PENDING_SECONDS
+        user is None
+        or user.session_token != pending.get("sessionToken")
+        or not user.is_active
+        or not two_factor.is_set_up(user)
     ):
-        session.pop(PENDING_KEY, None)
+        session.pop(two_factor.PENDING_KEY, None)
         return {"message": "Log in again with your password."}, 401
-
-    user = db.session.get(User, pending.get("userId"))
-    if user is None or not user.is_active or not two_factor.is_set_up(user):
-        session.pop(PENDING_KEY, None)
-        return {"message": "Log in again with your password."}, 401
-
-    if two_factor.paused(user):
-        return {"message": "Too many wrong codes; wait 15 minutes."}, 429
 
     payload = request.get_json(silent=True)
     code = payload.get("code") if isinstance(payload, dict) else None
-    if not isinstance(code, str) or not two_factor.verify(user, code):
+    if not isinstance(code, str):
+        return {"message": "A 'code' is required."}, 400
+
+    outcome = two_factor.check_code(user, code)
+    if outcome == "paused":
+        return {"message": "Too many wrong codes; wait 15 minutes."}, 429
+    if outcome == "wrong":
         return {"message": "That code is wrong or was already used."}, 400
 
-    session.pop(PENDING_KEY, None)
-    login_user(user)
+    start_session(user, passed_two_factor=True)
 
     return _serialize(user), 200
+
+
+def refresh_session(user: User) -> None:
+    """After the user's own password change (which ends all their
+    sessions): keep this one, with the new session token."""
+    login_user(user)
 
 
 def confirm_password(payload: dict, key: str) -> tuple[dict, int] | None:
@@ -231,7 +277,7 @@ def confirm_password(payload: dict, key: str) -> tuple[dict, int] | None:
 @multiuser_only
 @login_required
 def logout() -> tuple[dict, int]:
-    logout_user()
+    end_session()
 
     return {"message": "Logged out."}, 200
 
@@ -258,6 +304,7 @@ def change_password() -> tuple[dict, int]:
         return error
 
     set_password(current_user, payload["newPassword"])
+    refresh_session(current_user._get_current_object())  # the User, not the proxy
 
     return {"message": "Password changed."}, 200
 
@@ -280,7 +327,7 @@ def delete_own_account() -> tuple[dict, int]:
         return {"message": problem}, 409
 
     user = current_user._get_current_object()  # the User, not the proxy
-    logout_user()
+    end_session()
     delete_account(user)
 
     return {"message": "Account deleted."}, 200
@@ -298,7 +345,11 @@ def start_two_factor_setup() -> tuple[dict, int]:
         return {"message": "Two-factor authentication is already set up."}, 409
 
     secret = two_factor.generate_secret()
-    session[SETUP_KEY] = secret
+    session[two_factor.SETUP_KEY] = {
+        "secret": secret,
+        "userId": current_user.id,
+        "at": time.time(),
+    }
 
     return {
         "secret": secret,
@@ -310,16 +361,26 @@ def start_two_factor_setup() -> tuple[dict, int]:
 @multiuser_only
 def finish_two_factor_setup() -> tuple[dict, int]:
     """{"code"}: a code from the app, proving it has the secret."""
-    secret = session.get(SETUP_KEY)
-    if not isinstance(secret, str) or two_factor.is_set_up(current_user):
+    setup = session.get(two_factor.SETUP_KEY)
+    if (
+        not isinstance(setup, dict)
+        or setup.get("userId") != current_user.id
+        or time.time() - setup.get("at", 0) > two_factor.SETUP_SECONDS
+        or two_factor.is_set_up(current_user)
+    ):
+        session.pop(two_factor.SETUP_KEY, None)
         return {"message": "Start the setup again."}, 409
 
     payload = request.get_json(silent=True)
     code = payload.get("code") if isinstance(payload, dict) else None
-    if not isinstance(code, str) or not two_factor.enable(current_user, secret, code):
+    if not isinstance(code, str) or not two_factor.enable(
+        current_user, setup["secret"], code
+    ):
         return {"message": "That code is wrong; check the time on your device."}, 400
 
-    session.pop(SETUP_KEY, None)
+    session.pop(two_factor.SETUP_KEY, None)
+    session[two_factor.PASSED_KEY] = True
+    db.session.refresh(current_user)
 
     return _serialize(current_user), 200
 

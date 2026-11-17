@@ -32,6 +32,7 @@ from ..models import (
     User,
     VulnerabilityRecord,
 )
+from ..services.accounts import is_last_active_admin
 from . import api_bp
 
 type ApiResponse = tuple[dict[str, Any], int]
@@ -310,12 +311,6 @@ def managed_organisation(organisation_id: int) -> Organisation | ApiResponse:
     return organisation
 
 
-def admin_count(organisation_id: int) -> int:
-    return Membership.query.filter_by(
-        organisation_id=organisation_id, role="admin"
-    ).count()
-
-
 LAST_ADMIN: ApiResponse = (
     {
         "message": "An organisation needs at least one admin."
@@ -411,11 +406,7 @@ def set_member(organisation_id: int, user_id: int) -> ApiResponse:
             return {"message": "Invite new members with an invitation link."}, 403
         membership = Membership(organisation_id=organisation_id, user_id=user_id)
         db.session.add(membership)
-    elif (
-        membership.role == "admin"
-        and role != "admin"
-        and admin_count(organisation_id) == 1
-    ):
+    elif role != "admin" and is_last_active_admin(membership):
         return LAST_ADMIN
 
     membership.role = role
@@ -445,7 +436,7 @@ def remove_member(organisation_id: int, user_id: int) -> ApiResponse:
     ).first()
     if membership is None:
         return {"message": "Membership not found."}, 404
-    if membership.role == "admin" and admin_count(organisation_id) == 1:
+    if is_last_active_admin(membership):
         return LAST_ADMIN
 
     db.session.delete(membership)

@@ -90,7 +90,7 @@ def _decode_job_token(token: str) -> str:
     if (
         not isinstance(payload, dict)
         or not isinstance(payload.get("id"), str)
-        or payload.get("owner") != str(current_user.get_id())
+        or payload.get("owner") != str(current_user.id)
     ):
         raise LookupError("Job not found")
 
@@ -182,7 +182,7 @@ def create_patch2vuln_job():
     except RuntimeError as exc:
         return {"message": str(exc)}, 502
 
-    token = _encode_job_token(job["jobId"], str(current_user.get_id()))
+    token = _encode_job_token(job["jobId"], str(current_user.id))
 
     return {
         "jobId": token,

@@ -94,7 +94,7 @@ def logged_in_client(app: Flask, user: User) -> FlaskClient:
     test_client = app.test_client()
 
     with test_client.session_transaction() as session:
-        session["_user_id"] = str(user.id)
+        session["_user_id"] = user.get_id()
 
     return test_client
 
