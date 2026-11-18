@@ -15,6 +15,11 @@ import type {
 } from "../../contracts";
 
 import {
+  stopBackgroundWatch,
+  watchInBackground,
+} from "./background-watch";
+
+import {
   useEditorContext,
   useEditorRepository,
 } from "../../core/context";
@@ -620,6 +625,8 @@ function applyResult(): void {
 // Resume polling when reopening the panel.
 onMounted(() => {
   mounted = true;
+  // The panel watches its job itself again.
+  stopBackgroundWatch(editor);
 
   const savedJobId = recallJob(editor, props.context.identifier);
 
@@ -639,6 +646,15 @@ onBeforeUnmount(() => {
   clearTimeout(longOutageTimer);
   //stopPolling();
   stopWatchingJob();
+
+  // Still running: keep an eye on it, so the editor can say when it's done
+  // while another panel or section is open.
+  const running = job.value?.status === "queued" || job.value?.status === "running";
+  const getJob = repository.value?.getPatch2VulnJob?.bind(repository.value);
+
+  if (running && job.value && getJob) {
+    watchInBackground(editor, job.value.jobId, getJob);
+  }
 });
 </script>
 
