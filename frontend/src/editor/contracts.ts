@@ -413,6 +413,27 @@ export interface EditorRepository {
     recordIdentifier: string,
   ): Promise<CnaPublication>;
 
+  /**
+   * Stops tracking: removes the record's link to upstream entirely (the
+   * ID stays there), so it can reserve or link anew. Optional: without
+   * it, the panels offer abortCna instead.
+   */
+  unlinkCna?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CnaPublication>;
+
+  /**
+   * Links the record to an existing upstream ID and takes over its state; `record` is the upstream record, null while
+   * the ID is only reserved. Optional on its own: the panels offer it only
+   * when present.
+   */
+  pullCna?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+    cveId: string,
+  ): Promise<{ publication: CnaPublication; record: CveRecord | null }>;
+
 
   // Scoreboard
   scoreRecordQuality?(

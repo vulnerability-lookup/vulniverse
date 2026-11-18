@@ -183,7 +183,10 @@ The credentials themselves are **not** configured here. Each registered
 user sets their own under the standalone app's `/cna-credentials` page:
 which of the listed servers, and their CNA identity and API key. They're
 stored per user, encrypted at rest using `CNA_CREDENTIAL_ENCRYPTION_KEY`
-(see below). Changing the server requires entering the API key again.
+(see below). Changing the server requires entering the API key again. For Vulnerability-Lookup,
+"Short name" and "Org ID" are optional and simply not sent when empty:
+reserved IDs then have no owning CNA at VL, and the published record's
+`providerMetadata` carries only what is set.
 
 When upgrading, stored credentials whose URL matches a listed server are
 assigned to it automatically; the others have to pick a server (and

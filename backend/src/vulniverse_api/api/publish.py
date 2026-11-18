@@ -8,13 +8,15 @@ from flask import request
 from flask_login import current_user
 
 from ..app_config import load_app_config
-from ..auth.organisations import can_modify_record
-from ..models import CnaPublication
+from ..auth.organisations import can_modify_record, can_read_record
+from ..extensions import db
+from ..models import CnaPublication, VulnerabilityRecord
 from ..services.cna_credentials import is_credential_configured
 from ..services.cna_publication import (
     KNOWN_TARGETS,
     CnaPublicationService,
     IntegrationNotConfiguredError,
+    LinkedElsewhereError,
 )
 from . import api_bp
 from .records import find_record, stale_version_error, validation_failure
@@ -137,6 +139,42 @@ def reserve_cve_id(
     return _serialize(publication), 200
 
 
+@api_bp.post("/publish/<string:target>/<int:record_id>/pull")
+def pull_from_upstream(
+    target: str,
+    record_id: int,
+) -> tuple[dict, int]:
+    """{"cveId"}: link the record to that upstream ID and take over its
+    state. Answers {"publication", "record"}, the upstream record being
+    null while the ID is only reserved."""
+    service, error = _resolve_service(target, record_id, modify=True)
+
+    if error:
+        return error
+
+    assert service is not None
+
+    payload = request.get_json(silent=True)
+    cve_id = payload.get("cveId") if isinstance(payload, dict) else None
+
+    if not isinstance(cve_id, str) or not cve_id.strip():
+        return {"message": "A 'cveId' is required."}, 400
+
+    try:
+        publication, record = service.pull(record_id, cve_id)
+    except LinkedElsewhereError as exc:
+        return linked_elsewhere(exc), 400
+    except LookupError as exc:
+        return {"message": str(exc)}, 404
+    except ValueError as exc:
+        return {"message": str(exc)}, 400
+    except httpx.HTTPError as exc:
+        # The key travels in headers, which httpx errors don't include.
+        return {"message": f"Upstream didn't answer: {exc}"}, 502
+
+    return {"publication": _serialize(publication), "record": record}, 200
+
+
 @api_bp.post("/publish/<string:target>/<int:record_id>/publish")
 def publish_record(
     target: str,
@@ -170,6 +208,38 @@ def publish_record(
         return {"message": str(exc)}, 400
 
     return _serialize(publication), 200
+
+
+def linked_elsewhere(error: LinkedElsewhereError) -> dict[str, Any]:
+    """Names the other record if the user may see it; drafts of other
+    organisations stay unnamed."""
+    other = db.session.get(VulnerabilityRecord, error.record_id)
+    if other is None or not can_read_record(other):
+        return {
+            "message": f"{error.cve_id} is already linked to a record you can't see."
+        }
+
+    name = other.identifier or f"record #{other.id}"
+    return {
+        "message": f"{error.cve_id} is already linked to {name}. Stop tracking it"
+        " there first, or link this record to another ID."
+    }
+
+
+@api_bp.delete("/publish/<string:target>/<int:record_id>")
+def unlink_record(
+    target: str,
+    record_id: int,
+) -> tuple[dict, int]:
+    """Stop tracking: remove the link to upstream (the ID stays there)."""
+    service, error = _resolve_service(target, record_id, modify=True)
+
+    if error:
+        return error
+
+    assert service is not None
+
+    return _serialize(service.unlink(record_id)), 200
 
 
 @api_bp.post("/publish/<string:target>/<int:record_id>/reject")

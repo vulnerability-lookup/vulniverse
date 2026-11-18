@@ -73,6 +73,12 @@ function urlOf(target: PublicationTarget): string | undefined {
   return instancesOf(target).find((instance) => instance.id === forms[target].instance)?.url;
 }
 
+// Vulnerability-Lookup needs neither short name nor org ID (see the
+// backend's OPTIONAL_FIELDS).
+function isVl(target: PublicationTarget): boolean {
+  return target === "vl";
+}
+
 // The stored key only goes to the instance it was entered for.
 function needsKey(target: PublicationTarget): boolean {
   return configured[target]?.instance !== forms[target].instance;
@@ -246,8 +252,14 @@ onMounted(load);
                   v-model="forms[target.id].shortName"
                   type="text"
                   class="form-control"
-                  required
+                  :required="!isVl(target.id)"
                 >
+                <div
+                  v-if="isVl(target.id)"
+                  class="form-text"
+                >
+                  Optional; not sent when empty.
+                </div>
               </div>
 
               <div class="col-md-6 mb-2">
@@ -256,8 +268,14 @@ onMounted(load);
                   v-model="forms[target.id].orgId"
                   type="text"
                   class="form-control"
-                  required
+                  :required="!isVl(target.id)"
                 >
+                <div
+                  v-if="isVl(target.id)"
+                  class="form-text"
+                >
+                  Optional; not sent when empty.
+                </div>
               </div>
 
               <div class="col-md-6 mb-2">

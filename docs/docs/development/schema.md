@@ -16,7 +16,7 @@ The Editor supports both CVE and GCVE record editing. The relevant schemas are p
 
     These BCP extensions do not have official schemas, rather than generic field definitions on the corresponding website. Therefore custom schemas based on these generic field definitions were created in `schemas/extensions`. Which extensions are included in the generated GCVE profile, and whether each is `published` or still `draft`, is defined in `schemas/extensions/gcve/registry.json`.
 
-The `schemas/manifest.json` file contains the definitions of all available profiles which can be used to build the editor UI and their corresponding schema files. Each profile entry can define, among other things: `baseSchema`/`baseProfile` (the upstream schema it builds on, and the profile it extends), `extensionSchemas` (additional schemas merged in, e.g. the GCVE extension), `schemaOverlay` (a patch applied on top of the base schema), `semanticValidator` (a named validator run beyond plain JSON Schema), and an `editor` block (`layout`, `layoutExtras`, `augmenters`) controlling how the profile renders in the UI. See the `gcve-bcp-05-1.7` entry in `schemas/manifest.json` for a profile using all of these.
+The `schemas/manifest.json` file contains the definitions of all available profiles which can be used to build the editor UI and their corresponding schema files. Each profile entry can define, among other things: `baseSchema`/`baseProfile` (the upstream schema it builds on, and the profile it extends), `extensionSchemas` (additional schemas merged in, e.g. the GCVE extension), `schemaOverlay` (a patch applied on top of the base schema), `semanticValidator` (a named validator run beyond plain JSON Schema), `validation.notRequired` (dotted paths of fields the base schema requires but the profile doesn't, e.g. `cveMetadata.cveId` for GCVE records; a value that is present is still checked), and an `editor` block (`layout`, `layoutExtras`, `augmenters`) controlling how the profile renders in the UI. See the `gcve-bcp-05-1.7` entry in `schemas/manifest.json` for a profile using all of these.
 
 ## Pull Upstream Schema Files
 
@@ -50,7 +50,7 @@ python3 scripts/generate_editor_schemas.py --profile cve-5.2.0 --strict
 python3 scripts/generate_editor_schemas.py --profile gcve-bcp-05-1.7 --strict
 ```
 
-The script writes four files per profile under `schemas/generated/<profile>/`:
+The script writes four files per profile under `frontend/src/generated/schemas/<profile>/`:
 
 - `authoring.schema.json` — the schema the editor's form validation is built from.
 - `ui.schema.json` — the layout/field-ordering schema consumed by the form renderer.

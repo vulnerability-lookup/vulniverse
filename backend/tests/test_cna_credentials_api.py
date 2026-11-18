@@ -182,3 +182,27 @@ def test_the_config_check_catches_bad_instances() -> None:
     assert "id, name and api_url" in str(problem([{"id": "a", "name": "A"}]))
     assert "http(s)" in str(problem([dict(good, api_url="file:///etc/passwd")]))
     assert "used twice" in str(problem([good, good]))
+
+
+# --- Short name and org ID: optional for Vulnerability-Lookup ------------------
+
+
+def without_identity() -> dict[str, str]:
+    return {k: v for k, v in VALID_PAYLOAD.items() if k not in ("shortName", "orgId")}
+
+
+def test_vl_needs_no_short_name_or_org_id(client, test_user) -> None:
+    response = client.put("/api/v1/cna-credentials/vl", json=without_identity())
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["shortName"] == ""
+    assert response.get_json()["orgId"] == ""
+
+
+def test_the_cve_program_still_needs_them(client) -> None:
+    response = client.put(
+        "/api/v1/cna-credentials/cve-program", json=without_identity()
+    )
+
+    assert response.status_code == 400
+    assert "short_name" in response.get_json()["message"]

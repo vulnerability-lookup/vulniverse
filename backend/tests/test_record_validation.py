@@ -223,3 +223,48 @@ def test_missing_required_field_is_reported_at_the_field() -> None:
 
     assert ["cveMetadata", "cveId"] in paths
     assert ["containers", "cna", "references", 0, "url"] in paths
+
+
+# --- GCVE records don't need the CVE Program's IDs (validation.notRequired) ---
+
+
+def gcve_only_record() -> dict[str, Any]:
+    """A GCVE record as a GNA writes it: no CVE ID, no CVE Program org."""
+    record = minimal_gcve_record(vulnId="GCVE-1-2026-0007", recordType="advisory")
+    del record["cveMetadata"]["cveId"]
+    del record["cveMetadata"]["assignerOrgId"]
+    del record["containers"]["cna"]["providerMetadata"]
+    return record
+
+
+def test_a_gcve_record_needs_no_cve_id_assigner_or_provider() -> None:
+    errors = validate_record(gcve_only_record(), "gcve-bcp-05-1.7")
+
+    assert [e for e in errors if e.get("severity", "error") == "error"] == []
+
+
+def test_a_gcve_record_still_needs_its_content() -> None:
+    record = gcve_only_record()
+    del record["containers"]["cna"]["affected"]
+
+    errors = validate_record(record, "gcve-bcp-05-1.7")
+
+    assert ["containers", "cna", "affected"] in error_paths(errors)
+
+
+def test_a_cve_id_that_is_there_is_still_checked() -> None:
+    record = gcve_only_record()
+    record["cveMetadata"]["cveId"] = "not-a-cve-id"
+
+    errors = validate_record(record, "gcve-bcp-05-1.7")
+
+    assert ["cveMetadata", "cveId"] in error_paths(errors)
+
+
+def test_cve_records_still_need_a_cve_id() -> None:
+    record = minimal_cve_record()
+    del record["cveMetadata"]["cveId"]
+
+    errors = validate_record(record, "cve-5.2.0")
+
+    assert ["cveMetadata", "cveId"] in error_paths(errors)

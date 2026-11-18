@@ -19,6 +19,7 @@ import {
 
 import type {
   CnaPublication,
+  CveRecord,
   EditorContext,
   EditorRepository,
   PublicationTarget,
@@ -42,6 +43,8 @@ export function useCnaPublication(
   const editor = useEditorContext();
 
   const supported = computed(() => Boolean(repository.value?.getCnaPublication));
+  const pullSupported = computed(() => Boolean(repository.value?.pullCna));
+  const unlinkSupported = computed(() => Boolean(repository.value?.unlinkCna));
 
   const publication = ref<CnaPublication | null>(null);
   const loading = ref(false);
@@ -167,8 +170,42 @@ export function useCnaPublication(
     }
   }
 
+  /**
+   * Links the record to an upstream ID and takes over its state (saving
+   * a never-saved record first). The upstream record, null while only
+   * reserved; undefined if it failed (the error is shown).
+   */
+  async function pull(cveId: string): Promise<CveRecord | null | undefined> {
+    if (!repository.value?.pullCna) {
+      return undefined;
+    }
+
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const identifier = await ensureIdentifier();
+
+      if (!identifier) {
+        return undefined;
+      }
+
+      const result = await repository.value.pullCna(target, identifier, cveId);
+      publication.value = result.publication;
+      return result.record;
+    } catch (err) {
+      applyError(err, "Pulling from upstream failed.");
+      return undefined;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     supported,
+    pullSupported,
+    unlinkSupported,
+    pull,
     publication,
     loading,
     error,
@@ -178,5 +215,6 @@ export function useCnaPublication(
     publish: () => runAction((repo, id) => repo.publishCna!(target, id), savedIdentifier),
     reject: (reason: string) => runAction((repo, id) => repo.rejectCna!(target, id, reason)),
     abort: () => runAction((repo, id) => repo.abortCna!(target, id)),
+    unlink: () => runAction((repo, id) => repo.unlinkCna!(target, id)),
   };
 }

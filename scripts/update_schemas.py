@@ -530,6 +530,15 @@ def update_gcve_profile(
     profile.setdefault(
         "validation",
         {
+            # CVE requirements a GCVE record doesn't have to meet: its ID
+            # is x_gcve[].vulnId, and the CVE Program's assigner and
+            # provider IDs don't apply (GCVE-BCP-05). See notRequired in
+            # backend/.../record_validation.py and generate_editor_schemas.py.
+            "notRequired": [
+                "cveMetadata.cveId",
+                "cveMetadata.assignerOrgId",
+                "containers.cna.providerMetadata",
+            ],
             "preferredRootBranch": {
                 "keyword": "oneOf",
                 "index": 0,

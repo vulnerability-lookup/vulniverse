@@ -257,6 +257,8 @@ def test_publish_success(
         identifier="GCVE-0-2026-00004",
         profile="gcve-bcp-05-1.7",
         document={
+            # The ID the publication gets linked to below.
+            "cveMetadata": {"cveId": "CVE-2026-00004"},
             "containers": {
                 "cna": {"descriptions": [{"lang": "en", "value": "A bug."}]},
             },
@@ -300,6 +302,7 @@ def test_publish_does_not_override_existing_provider_metadata(
         identifier="GCVE-0-2026-00009",
         profile="gcve-bcp-05-1.7",
         document={
+            "cveMetadata": {"cveId": "CVE-2026-00009"},
             "containers": {
                 "cna": {
                     "descriptions": [{"lang": "en", "value": "A bug."}],

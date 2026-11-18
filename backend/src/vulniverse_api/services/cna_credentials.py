@@ -33,6 +33,14 @@ def fernet() -> Fernet:
     return Fernet(key.encode() if isinstance(key, str) else key)
 
 
+# Fields a target can do without. Vulnerability-Lookup: an empty short
+# name or org ID is simply not sent (reservations then have no owning
+# CNA; providerMetadata has only what's configured), see cna_publication.py.
+OPTIONAL_FIELDS: dict[str, frozenset[str]] = {
+    "vl": frozenset({"short_name", "org_id"}),
+}
+
+
 def configured_instances(target: str) -> list[dict[str, str]]:
     """The operator's [[panels.<target>.instances]]: {id, name, api_url}."""
     instances = current_app.config.get("VULNIVERSE_PUBLISH_INSTANCES", {})
@@ -111,7 +119,10 @@ def set_credential(
     """
     row = UserCnaCredential.query.filter_by(user_id=user_id, target=target).first()
 
-    required_fields = [key for key in CREDENTIAL_FIELDS if key != "cve_api_key"]
+    optional = OPTIONAL_FIELDS.get(target, frozenset())
+    required_fields = [
+        key for key in CREDENTIAL_FIELDS if key != "cve_api_key" and key not in optional
+    ]
     missing = [key for key in required_fields if not fields.get(key)]
 
     if row is None and not fields.get("cve_api_key"):
@@ -136,8 +147,8 @@ def set_credential(
         row = UserCnaCredential(user_id=user_id, target=target)
 
     row.instance = fields["instance"]
-    row.short_name = fields["short_name"]
-    row.org_id = fields["org_id"]
+    row.short_name = fields["short_name"] or ""
+    row.org_id = fields["org_id"] or ""
     row.cve_api_org = fields["cve_api_org"]
     row.cve_api_user = fields["cve_api_user"]
 

@@ -1,5 +1,6 @@
 import type {
   CnaPublication,
+  CveRecord,
   EditorDocument,
   EditorRepository,
   LoadedRecord,
@@ -676,6 +677,30 @@ export class HttpRepository
         // The version this editor shows: the backend refuses to publish
         // if the stored record is another one (see updateRecord).
         body: JSON.stringify({ version: this.versions.get(recordIdentifier) }),
+      },
+    );
+  }
+
+  async unlinkCna(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CnaPublication> {
+    return this.request<CnaPublication>(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}`,
+      { method: "DELETE" },
+    );
+  }
+
+  async pullCna(
+    target: PublicationTarget,
+    recordIdentifier: string,
+    cveId: string,
+  ): Promise<{ publication: CnaPublication; record: CveRecord | null }> {
+    return this.request(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}/pull`,
+      {
+        method: "POST",
+        body: JSON.stringify({ cveId }),
       },
     );
   }

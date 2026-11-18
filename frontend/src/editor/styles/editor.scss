@@ -1118,3 +1118,11 @@
   border: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color);
   border-radius: 0.375rem;
 }
+
+// CNA publication panels: the dot before the record's status there.
+.cna-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+}

@@ -741,6 +741,36 @@ def frontend_path_catalog(
     ]
 
 
+def drop_not_required(
+    schema: JsonObject,
+    profile: JsonObject,
+) -> None:
+    """validation.notRequired in the manifest: dotted paths of fields the
+    base schema requires but this profile doesn't (GCVE records have no
+    CVE ID). Removed from the editor schema's required lists here; the
+    backend drops their errors the same way (record_validation.py)."""
+    validation = profile.get("validation")
+    paths = validation.get("notRequired", []) if isinstance(validation, dict) else []
+
+    for dotted in paths:
+        *parents, field = str(dotted).split(".")
+        node: object = schema
+
+        for part in parents:
+            properties = node.get("properties") if isinstance(node, dict) else None
+            node = properties.get(part) if isinstance(properties, dict) else None
+
+        if not isinstance(node, dict):
+            raise GenerationError(
+                f"validation.notRequired: {dotted!r} isn't in the editor schema."
+            )
+
+        required = node.get("required")
+
+        if isinstance(required, list):
+            node["required"] = [name for name in required if name != field]
+
+
 def deep_merge(
     base: JsonObject,
     overlay: JsonObject,
@@ -966,6 +996,11 @@ def create_authoring_schema(
             authoring_schema,
             overlay,
         )
+
+    drop_not_required(
+        authoring_schema,
+        profile,
+    )
 
     augmenter_ids = editor_config.get(
         "augmenters",
