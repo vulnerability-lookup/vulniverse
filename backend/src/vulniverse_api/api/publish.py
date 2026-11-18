@@ -47,6 +47,9 @@ def _serialize(
         "rejectedAt": publication.rejected_at.isoformat()
         if publication.rejected_at
         else None,
+        "lastSentAt": publication.last_sent_at.isoformat()
+        if publication.last_sent_at
+        else None,
         "lastError": publication.last_error,
         "createdAt": publication.created_at.isoformat(),
         "updatedAt": publication.updated_at.isoformat(),

@@ -690,3 +690,109 @@ def test_an_id_another_record_carries_is_not_linked(
     assert asked == []
     status = client.get(f"/api/v1/publish/vl/{record}").get_json()
     assert status["cveId"] is None
+
+
+# --- Timeline: published_at means published; posted and last_sent_at -----------
+
+
+def methods_and_bodies(monkeypatch) -> list[str]:
+    calls: list[str] = []
+
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        if url.endswith("/cve-id"):
+            return FakeResponse({"cve_ids": [{"cve_id": "CVE-2026-00001"}]})
+        calls.append(f"{method} {url.rsplit('/', 1)[-1]}")
+        return FakeResponse({"state": "ok"})
+
+    monkeypatch.setattr(service_module.httpx, "request", fake_request)
+    return calls
+
+
+def test_rejecting_unpublished_is_not_publishing(
+    client: FlaskClient,
+    valid_record: dict[str, Any],
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = methods_and_bodies(monkeypatch)
+    record = valid_record["id"]
+    client.post(f"/api/v1/publish/vl/{record}/reserve", json={"year": 2026})
+
+    rejected = client.post(
+        f"/api/v1/publish/vl/{record}/reject", json={"reason": "dup"}
+    )
+
+    body = rejected.get_json()
+    assert body["publishedAt"] is None
+    assert body["rejectedAt"] is not None
+    assert body["lastSentAt"] == body["rejectedAt"]
+    # Upstream has seen a POST: publishing now is a PUT.
+    client.post(f"/api/v1/publish/vl/{record}/publish")
+    assert calls == ["POST reject", "PUT cna"]
+
+
+def test_an_update_keeps_the_first_publication_date(
+    client: FlaskClient,
+    valid_record: dict[str, Any],
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    methods_and_bodies(monkeypatch)
+    record = valid_record["id"]
+    client.post(f"/api/v1/publish/vl/{record}/reserve", json={"year": 2026})
+    first = client.post(f"/api/v1/publish/vl/{record}/publish").get_json()
+
+    update = client.post(f"/api/v1/publish/vl/{record}/publish").get_json()
+
+    assert update["publishedAt"] == first["publishedAt"]
+    assert update["lastSentAt"] > first["lastSentAt"]
+
+
+def test_a_pulled_rejected_id_without_publication_has_no_publish_date(
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    upstream(
+        monkeypatch,
+        "REJECTED",
+        record={
+            "cveMetadata": {"state": "REJECTED", "dateRejected": "2026-03-01T00:00:00"},
+            "containers": {"cna": {}},
+        },
+    )
+
+    body = pull(client, record).get_json()["publication"]
+
+    assert body["publishedAt"] is None
+    assert body["rejectedAt"].startswith("2026-03-01")
+    assert body["lastSentAt"].startswith("2026-03-01")
+
+
+def test_a_rejection_carries_provider_metadata(
+    client: FlaskClient,
+    valid_record: dict[str, Any],
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """VL's reject handler sets providerMetadata.dateUpdated and fails
+    (HTTP 500) when the container has none."""
+    sent: list[dict[str, Any]] = []
+
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
+        if url.endswith("/cve-id"):
+            return FakeResponse({"cve_ids": [{"cve_id": "CVE-2026-00001"}]})
+        sent.append(kwargs["json"])
+        return FakeResponse({})
+
+    monkeypatch.setattr(service_module.httpx, "request", fake_request)
+    record = valid_record["id"]
+    client.post(f"/api/v1/publish/vl/{record}/reserve", json={"year": 2026})
+
+    client.post(f"/api/v1/publish/vl/{record}/reject", json={"reason": "dup"})
+
+    assert sent[0]["cnaContainer"] == {
+        "rejectedReasons": [{"lang": "en", "value": "dup"}],
+        "providerMetadata": {"orgId": "TEST-ORG", "shortName": "test-cna"},
+    }

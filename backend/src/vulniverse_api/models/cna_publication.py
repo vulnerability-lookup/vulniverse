@@ -8,6 +8,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
     func,
 )
 from sqlalchemy.orm import (
@@ -73,6 +74,20 @@ class CnaPublication(
     )
 
     rejected_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    # Whether upstream has seen a POST for this ID (publish or reject):
+    # the cveawg-shaped API takes one POST per ID, then PUTs.
+    posted: Mapped[bool] = mapped_column(
+        nullable=False,
+        default=False,
+        server_default=false(),
+    )
+
+    # The last successful publish, update or reject sent upstream.
+    last_sent_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )

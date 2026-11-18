@@ -167,11 +167,49 @@ function formatDate(value: string | null | undefined): string | null {
     : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-const dates = computed(() => [
-  ["Reserved", formatDate(publication.value?.reservedAt)],
-  ["Published", formatDate(publication.value?.publishedAt)],
-  ["Rejected", formatDate(publication.value?.rejectedAt)],
-].filter((entry): entry is [string, string] => Boolean(entry[1])));
+/*
+ * The ID's way through upstream: Reserved → Published → Rejected. A step
+ * is done (with its date), the one the last attempt failed at, skipped
+ * (rejected without being published), or still ahead.
+ */
+interface TimelineStep {
+  label: string;
+  state: "done" | "failed" | "skipped" | "ahead";
+  date: string | null;
+}
+
+const timeline = computed<TimelineStep[]>(() => {
+  const entry = publication.value;
+  const now = status.value;
+  const rejected = now === "REJECTED";
+
+  const step = (
+    label: string,
+    date: string | null | undefined,
+    done: boolean,
+    failedAt: string,
+  ): TimelineStep => ({
+    label,
+    date: formatDate(date),
+    state: now === failedAt ? "failed" : done ? "done" : "ahead",
+  });
+
+  const published = step("Published", entry?.publishedAt, Boolean(entry?.publishedAt), "PUBLICATION_PENDING");
+
+  return [
+    step("Reserved", entry?.reservedAt, Boolean(entry?.cveId), "RESERVATION_PENDING"),
+    rejected && !entry?.publishedAt ? { ...published, state: "skipped" } : published,
+    step("Rejected", entry?.rejectedAt, rejected, "REJECTION_PENDING"),
+  ];
+});
+
+// After the first publication: when the last update went out.
+const lastUpdate = computed(() => {
+  const entry = publication.value;
+  return status.value === "PUBLISHED" && entry?.lastSentAt && entry.lastSentAt !== entry.publishedAt
+    ? formatDate(entry.lastSentAt)
+    : null;
+});
 
 /*
  * Where an ID like `id` lives on the record: a GCVE ID from "vl" in
@@ -379,14 +417,28 @@ async function submitReject(): Promise<void> {
             class="small"
           >{{ linkedId }}</code>
         </div>
-        <div
-          v-if="dates.length"
-          class="small text-secondary mt-1"
+        <ol
+          v-if="isLinked"
+          class="cna-timeline mt-3 mb-2"
+          :aria-label="`${linkedId} on ${label}`"
         >
-          <span
-            v-for="([what, when], index) in dates"
-            :key="what"
-          >{{ index ? " · " : "" }}{{ what }} {{ when }}</span>
+          <li
+            v-for="step in timeline"
+            :key="step.label"
+            :class="`cna-timeline-${step.state}`"
+          >
+            <span class="cna-timeline-mark" />
+            <span class="cna-timeline-label">{{ step.label }}</span>
+            <span class="cna-timeline-date">
+              {{ step.state === "failed" ? "didn't complete" : step.state === "skipped" ? "skipped" : step.date }}
+            </span>
+          </li>
+        </ol>
+        <div
+          v-if="lastUpdate"
+          class="small text-secondary"
+        >
+          Last update sent {{ lastUpdate }}
         </div>
         <div
           v-if="stateText.detail"

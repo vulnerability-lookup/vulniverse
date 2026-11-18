@@ -260,8 +260,7 @@ class CnaPublicationService:
         cna_container = self._with_default_provider_metadata(cna_container)
 
         body = {"cnaContainer": cna_container}
-        use_put = publication.published_at is not None
-        method = "PUT" if use_put else "POST"
+        method = "PUT" if publication.posted else "POST"
 
         response = self._do_request(
             publication,
@@ -273,9 +272,12 @@ class CnaPublicationService:
 
         data = response.json()
 
+        now = datetime.now(UTC)
         publication.status = PublicationStatus.PUBLISHED.value
-        if not use_put:
-            publication.published_at = datetime.now(UTC)
+        publication.posted = True
+        # First publication; later ones are updates (last_sent_at).
+        publication.published_at = publication.published_at or now
+        publication.last_sent_at = now
         publication.last_response = self._scrub(json.dumps(data))
         publication.last_error = None
         self._save(publication)
@@ -292,13 +294,14 @@ class CnaPublicationService:
         if not publication.cve_id:
             raise ValueError("Publication has no reserved CVE ID.")
 
+        # providerMetadata as in publish(): the CVE schema's rejected
+        # container requires it, and VL's reject handler fails without it.
         body = {
-            "cnaContainer": {
-                "rejectedReasons": [{"lang": "en", "value": reason.strip()}],
-            },
+            "cnaContainer": self._with_default_provider_metadata(
+                {"rejectedReasons": [{"lang": "en", "value": reason.strip()}]}
+            ),
         }
-        use_put = publication.published_at is not None
-        method = "PUT" if use_put else "POST"
+        method = "PUT" if publication.posted else "POST"
 
         response = self._do_request(
             publication,
@@ -310,14 +313,11 @@ class CnaPublicationService:
 
         data = response.json()
 
+        now = datetime.now(UTC)
         publication.status = PublicationStatus.REJECTED.value
-        # published_at doubles as "has this CVE ID had any prior POST" for
-        # the use_put decision above (matching the cveawg-shaped API's
-        # per-CVE-ID POST-once-then-PUT semantics) — rejected_at is the
-        # separate, purely informational timestamp shown in the UI.
-        if not use_put:
-            publication.published_at = datetime.now(UTC)
-        publication.rejected_at = datetime.now(UTC)
+        publication.posted = True
+        publication.rejected_at = now
+        publication.last_sent_at = now
         publication.last_response = self._scrub(json.dumps(data))
         publication.last_error = None
         self._save(publication)
@@ -385,19 +385,30 @@ class CnaPublicationService:
         publication.reserved_at = (
             _timestamp(entry.get("reserved")) or publication.reserved_at
         )
-        if state != "RESERVED":
-            # Also "has upstream seen a POST" (see publish()): next is a PUT.
+        # Upstream's dates win: it's the record of what happened there.
+        # Published or rejected, upstream has the record: next is a PUT.
+        publication.posted = state != "RESERVED"
+        published = _timestamp(metadata.get("datePublished"))
+        if state == "PUBLISHED":
             publication.published_at = (
-                publication.published_at
-                or _timestamp(metadata.get("datePublished"))
-                or datetime.now(UTC)
+                published or publication.published_at or datetime.now(UTC)
             )
+        else:
+            # A rejected ID may never have been published.
+            publication.published_at = published
         if state == "REJECTED":
             publication.rejected_at = (
-                publication.rejected_at
-                or _timestamp(metadata.get("dateRejected"))
+                _timestamp(metadata.get("dateRejected"))
+                or publication.rejected_at
                 or datetime.now(UTC)
             )
+        publication.last_sent_at = (
+            _timestamp(metadata.get("dateUpdated"))
+            or publication.rejected_at
+            or publication.published_at
+            if state != "RESERVED"
+            else None
+        )
         publication.last_response = self._scrub(json.dumps(entry))
         publication.last_error = None
         self._save(publication)

@@ -171,6 +171,7 @@ export interface CnaPublication {
   reservedAt: string | null;
   publishedAt: string | null;
   rejectedAt: string | null;
+  lastSentAt?: string | null;
   lastError: string | null;
   createdAt: string;
   updatedAt: string;
