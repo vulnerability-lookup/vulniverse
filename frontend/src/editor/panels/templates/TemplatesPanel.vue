@@ -22,6 +22,17 @@ import {
   suggestPaths,
 } from "./path-catalog";
 
+import {
+  exportTemplate,
+  freeName,
+  parseTemplateFile,
+  templateFileName,
+} from "./transfer";
+
+import {
+  saveFile,
+} from "../../actions/download";
+
 import type {
   PathSuggestion,
 } from "./path-catalog";
@@ -286,6 +297,66 @@ function applyTemplate(
   statusMessage.value = `Applied "${template.name}" to the current record.`;
 }
 
+// --- Export and import (see transfer.ts for the file format) ---
+
+const currentProfile = computed(() => editor.profile.value ?? DEFAULT_PROFILE_ID);
+const importInput = ref<HTMLInputElement | null>(null);
+const importing = ref(false);
+
+function exportOne(template: Template): void {
+  saveFile(exportTemplate(template), "application/json", templateFileName(template));
+}
+
+/*
+ * Creates the file's template for the current profile. Skipped if an
+ * identical one (same name and fields) exists, so importing a file
+ * twice adds nothing; with a taken name, it's saved as "name (2)".
+ */
+async function importFile(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = "";
+
+  if (!file || !repository.value?.saveTemplate) {
+    return;
+  }
+
+  importing.value = true;
+  actionError.value = null;
+  statusMessage.value = null;
+  let failure: string | null = null;
+  let done: string | null = null;
+
+  try {
+    const incoming = parseTemplateFile(await file.text(), currentProfile.value);
+    const same = templates.value.find((template) =>
+      template.name.toLowerCase() === incoming.name.toLowerCase()
+      && JSON.stringify(template.fields) === JSON.stringify(incoming.fields));
+
+    if (same) {
+      done = `"${same.name}" is already here.`;
+    } else {
+      const name = freeName(
+        incoming.name,
+        new Set(templates.value.map((template) => template.name.toLowerCase())),
+      );
+      await repository.value.saveTemplate(currentProfile.value, name, incoming.fields);
+      done = name === incoming.name
+        ? `Imported "${name}".`
+        : `Imported as "${name}", as "${incoming.name}" was taken.`;
+    }
+  } catch (error) {
+    failure = error instanceof Error ? error.message : "Importing failed.";
+  } finally {
+    importing.value = false;
+    await loadTemplates();
+  }
+
+  // After the reload, which clears earlier messages.
+  actionError.value = failure;
+  statusMessage.value = done;
+}
+
 async function deleteTemplate(
   template: Template,
 ): Promise<void> {
@@ -364,8 +435,27 @@ async function deleteTemplate(
       </div>
 
       <div class="card mb-4">
-        <div class="card-header">
-          Saved templates
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Saved templates</span>
+
+          <div class="d-flex gap-1">
+            <input
+              ref="importInput"
+              type="file"
+              accept="application/json,.json"
+              class="d-none"
+              aria-label="Template file to import"
+              @change="importFile"
+            >
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              :disabled="importing || !repository?.saveTemplate"
+              @click="importInput?.click()"
+            >
+              {{ importing ? "Importing…" : "Import template…" }}
+            </button>
+          </div>
         </div>
 
         <div class="card-body">
@@ -412,6 +502,15 @@ async function deleteTemplate(
                   @click="startEdit(template)"
                 >
                   Edit
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  :title="`Save ${template.name} as a file`"
+                  @click="exportOne(template)"
+                >
+                  Export
                 </button>
 
                 <button

@@ -64,7 +64,7 @@ export function recordName(context: EditorContext): string {
   return name ? name.replace(/[^\w.-]+/g, "_") : "record";
 }
 
-function saveFile(content: string, type: string, name: string): void {
+export function saveFile(content: string, type: string, name: string): void {
   const url = URL.createObjectURL(new Blob([content], { type }));
 
   try {
