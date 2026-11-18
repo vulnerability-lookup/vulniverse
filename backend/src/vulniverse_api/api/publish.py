@@ -18,8 +18,15 @@ from ..services.cna_publication import (
     IntegrationNotConfiguredError,
     LinkedElsewhereError,
 )
+from ..services.identifiers import canonical_id
 from . import api_bp
-from .records import find_record, stale_version_error, validation_failure
+from .records import (
+    find_record,
+    id_taken_message,
+    record_with_identifier,
+    stale_version_error,
+    validation_failure,
+)
 
 
 def _serialize(
@@ -159,6 +166,20 @@ def pull_from_upstream(
 
     if not isinstance(cve_id, str) or not cve_id.strip():
         return {"message": "A 'cveId' is required."}, 400
+
+    # The ID may already be another record's own ID (in its content) even
+    # without a link, e.g. after Stop tracking there: linking it here
+    # would leave this record unable to take the ID.
+    linking = find_record(record_id)
+    assert linking is not None
+    holder = record_with_identifier(
+        canonical_id(cve_id.strip()), linking.organisation_id, exclude_id=record_id
+    )
+    if holder is not None:
+        return {
+            "message": id_taken_message(canonical_id(cve_id.strip()), holder)
+            + " Link that record instead, or remove the ID from it first."
+        }, 400
 
     try:
         publication, record = service.pull(record_id, cve_id)

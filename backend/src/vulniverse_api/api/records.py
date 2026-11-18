@@ -97,13 +97,13 @@ def validation_failure(document: dict[str, Any], profile: str) -> ApiResponse | 
 # ---------------------------------------------------------------------------
 
 
-def record_identifier_taken(
+def record_with_identifier(
     identifier: str,
     organisation_id: int,
     *,
     exclude_id: int | None = None,
-) -> bool:
-    """Whether the organisation already has a record with this ID. Other
+) -> VulnerabilityRecord | None:
+    """The organisation's record with this ID, if any. Other
     organisations' records don't count (and mustn't be revealed)."""
     query = VulnerabilityRecord.query.filter(
         VulnerabilityRecord.organisation_id == organisation_id,
@@ -112,7 +112,18 @@ def record_identifier_taken(
     if exclude_id is not None:
         query = query.filter(VulnerabilityRecord.id != exclude_id)
 
-    return bool(db.session.query(query.exists()).scalar())
+    return query.first()
+
+
+def id_taken_message(identifier: str, holder: VulnerabilityRecord) -> str:
+    """Which record already has the ID: its title, as the ID is the same."""
+    cna = (holder.document.get("containers") or {}).get("cna")
+    title = cna.get("title") if isinstance(cna, dict) else None
+    named = f' ("{title}")' if isinstance(title, str) and title.strip() else ""
+    state = "draft" if holder.is_draft else "record"
+    return (
+        f"Another {state} in this organisation already has the ID {identifier}{named}."
+    )
 
 
 def identifier_error(
@@ -138,12 +149,17 @@ def identifier_error(
             return {"message": "The record identifier cannot be changed."}, 400
         return None
 
-    if identifier and record_identifier_taken(
-        identifier,
-        organisation_id,
-        exclude_id=existing_record.id if existing_record is not None else None,
-    ):
-        return {"message": "The record already exists."}, 409
+    holder = (
+        record_with_identifier(
+            identifier,
+            organisation_id,
+            exclude_id=existing_record.id if existing_record is not None else None,
+        )
+        if identifier
+        else None
+    )
+    if identifier and holder is not None:
+        return {"message": id_taken_message(identifier, holder)}, 409
 
     return None
 

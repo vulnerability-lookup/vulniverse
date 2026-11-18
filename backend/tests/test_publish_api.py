@@ -663,3 +663,30 @@ def test_stop_tracking_also_frees_an_aborted_record(
     status = client.get(f"/api/v1/publish/vl/{record}").get_json()
     assert status["status"] == "RESERVED"
     assert calls == []
+
+
+def test_an_id_another_record_carries_is_not_linked(
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """E.g. after Stop tracking there: the link is gone, the ID isn't."""
+    document = gcve_only_record()
+    document["containers"]["cna"]["title"] = "The other one"
+    client.post(
+        "/api/v1/records",
+        json={"record": document, "profile": "gcve-bcp-05-1.7", "isDraft": True},
+    )
+    asked = upstream(monkeypatch, "RESERVED")
+
+    response = pull(client, record, "gcve-1-2026-0007")
+
+    assert response.status_code == 400
+    assert response.get_json()["message"].startswith(
+        "Another draft in this organisation already has the ID GCVE-1-2026-0007"
+        ' ("The other one"). Link that record instead'
+    )
+    assert asked == []
+    status = client.get(f"/api/v1/publish/vl/{record}").get_json()
+    assert status["cveId"] is None

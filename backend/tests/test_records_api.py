@@ -590,6 +590,10 @@ def test_assigning_an_identifier_conflicts_when_already_taken(client) -> None:
     )
 
     assert response.status_code == 409
+    # Says which record holds it: same ID, so by kind (and title, if any).
+    assert response.get_json()["message"] == (
+        "Another draft in this organisation already has the ID CVE-2026-00020."
+    )
 
 
 def test_publication_rows_stay_attached_when_an_identifier_is_assigned(
