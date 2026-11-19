@@ -101,7 +101,11 @@ export function useEditorController(
   );
 
   async function load(): Promise<void> {
-    if (mode.value === "create") {
+    const identifier = mode.value === "create"
+      ? state.identifier.value
+      : recordId.value;
+
+    if (mode.value === "create" && !identifier) {
       state.clear();
 
       state.replaceRecord(
@@ -112,7 +116,7 @@ export function useEditorController(
       return;
     }
 
-    if (!recordId.value) {
+    if (!identifier) {
       const error = new Error(
         "Edit mode requires a record identifier.",
       );
@@ -140,7 +144,7 @@ export function useEditorController(
     try {
       const loaded =
         await repository.value.loadRecord(
-          recordId.value,
+          identifier,
         );
 
       state.replaceRecord(loaded);
