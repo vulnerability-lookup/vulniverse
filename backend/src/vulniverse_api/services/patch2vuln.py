@@ -127,6 +127,8 @@ def _build_job_body(
         "versionType": "version_type",
         "packageUrl": "package_url",
         "osvEcosystem": "osv_ecosystem",
+        # The user's additional instructions for the model.
+        "prompt": "prompt",
     }
 
     for context_key, remote_key in field_names.items():

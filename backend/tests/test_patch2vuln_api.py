@@ -399,3 +399,53 @@ def test_disabled_panel_404s_every_route(
     )
     assert client.get(f"/api/v1/patch2vuln/jobs/{token}").status_code == 404
     assert client.get(f"/api/v1/patch2vuln/jobs/{token}/events").status_code == 404
+
+
+def test_create_job_forwards_the_users_instructions(
+    client: FlaskClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict = {}
+
+    def fake_submit(sources, patches, context):
+        captured.update(context)
+        return {"jobId": "real-job-id", "status": "queued"}
+
+    monkeypatch.setattr(patch2vuln_api, "submit_job", fake_submit)
+
+    response = client.post(
+        "/api/v1/patch2vuln/jobs",
+        data={
+            "commitUrls": '["https://github.com/o/r/commit/abcdef1.patch"]',
+            "prompt": "  Treat the session cookie as attacker-controlled.\n",
+        },
+    )
+
+    assert response.status_code == 202
+    assert captured == {"prompt": "Treat the session cookie as attacker-controlled."}
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    ["x" * (patch2vuln_api.PROMPT_MAX_LENGTH + 1), "before\x00after"],
+)
+def test_create_job_refuses_instructions_patch2vuln_would_refuse(
+    client: FlaskClient,
+    monkeypatch: pytest.MonkeyPatch,
+    prompt: str,
+) -> None:
+    monkeypatch.setattr(
+        patch2vuln_api,
+        "submit_job",
+        lambda *_: pytest.fail("must not be submitted"),
+    )
+
+    response = client.post(
+        "/api/v1/patch2vuln/jobs",
+        data={
+            "commitUrls": '["https://github.com/o/r/commit/abcdef1.patch"]',
+            "prompt": prompt,
+        },
+    )
+
+    assert response.status_code == 400

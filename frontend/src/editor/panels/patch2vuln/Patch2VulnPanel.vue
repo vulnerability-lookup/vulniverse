@@ -57,6 +57,8 @@ const product = ref("");
 const affectedVersion = ref("");
 const fixedVersion = ref("");
 const versionType = ref("");
+// Added to the model's instructions, e.g. what to focus on.
+const prompt = ref("");
 const packageUrl = ref("");
 
 // OSV records apply patch2vuln's OSV output instead of its CVE record.
@@ -454,6 +456,7 @@ async function submit(): Promise<void> {
           osvEcosystem: isOsv.value ? osvEcosystem.value : "",
           fixedVersion: fixedVersion.value,
           versionType: versionType.value,
+          prompt: prompt.value.trim(),
         },
       });
 
@@ -827,6 +830,34 @@ onBeforeUnmount(() => {
           <option value="semver">SemVer</option>
           <option value="custom">Custom</option>
         </select>
+      </div>
+
+      <div class="mb-3">
+        <label
+          for="patch2vuln-prompt"
+          class="form-label"
+        >
+          Additional instructions <span class="text-secondary">(optional)</span>
+        </label>
+
+        <textarea
+          id="patch2vuln-prompt"
+          v-model="prompt"
+          class="form-control"
+          rows="3"
+          maxlength="16000"
+          placeholder="e.g. The session cookie is attacker-controlled. Focus on the authentication impact."
+          aria-describedby="patch2vuln-prompt-help"
+          :disabled="isRunning"
+        />
+
+        <div
+          id="patch2vuln-prompt-help"
+          class="form-text"
+        >
+          Added to the model's instructions: context the patch doesn't show,
+          or what to focus on. The generated record still needs review.
+        </div>
       </div>
 
       <button

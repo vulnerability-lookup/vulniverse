@@ -97,6 +97,10 @@ def _decode_job_token(token: str) -> str:
     return payload["id"]
 
 
+# patch2vuln's own limit for its optional prompt.
+PROMPT_MAX_LENGTH = 16_000
+
+
 @api_bp.post("/patch2vuln/jobs")
 @require_panel("patch2vuln")
 def create_patch2vuln_job():
@@ -174,6 +178,19 @@ def create_patch2vuln_job():
 
         if value:
             context[field] = value
+
+    # Free-text guidance for the model; patch2vuln appends it to its own
+    # instructions ("Additional analyst instructions"). Its limits.
+    prompt = request.form.get("prompt", "").strip()
+
+    if len(prompt) > PROMPT_MAX_LENGTH:
+        return {"message": f"prompt is longer than {PROMPT_MAX_LENGTH} characters"}, 400
+
+    if "\x00" in prompt:
+        return {"message": "prompt contains a null character"}, 400
+
+    if prompt:
+        context["prompt"] = prompt
 
     try:
         job = submit_job(sources, patches, context)

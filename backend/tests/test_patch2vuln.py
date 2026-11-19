@@ -100,6 +100,7 @@ def test_submit_job_builds_request_and_returns_job_id(
             "versionType": "semver",
             "packageUrl": "pkg:pypi/widget",
             "osvEcosystem": "PyPI",
+            "prompt": "Focus on the session handling.",
         },
     )
 
@@ -118,6 +119,7 @@ def test_submit_job_builds_request_and_returns_job_id(
         "version_type": "semver",
         "package_url": "pkg:pypi/widget",
         "osv_ecosystem": "PyPI",
+        "prompt": "Focus on the session handling.",
         "models": ["qwen3.8:27b"],
     }
 

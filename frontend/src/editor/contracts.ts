@@ -250,6 +250,9 @@ export interface Patch2VulnContext {
   packageUrl?: string;
   // Only fills in the OSV output's package ecosystem.
   osvEcosystem?: string;
+  // Free-text instructions, added to the model's own (at most 16000
+  // characters).
+  prompt?: string;
 }
 
 export interface Patch2VulnInput {
