@@ -895,6 +895,16 @@
     overflow: hidden;
   }
 
+  // Read-only fields (e.g. dataType/dataVersion, set by the profile):
+  // Bootstrap's disabled look, which the white background above hid.
+  .control > .wrapper .input:disabled,
+  .control > .wrapper .select:disabled,
+  .control > .wrapper .text-area:disabled {
+    color: var(--bs-secondary-color);
+    background: var(--bs-secondary-bg);
+    opacity: 1;
+  }
+
   .control > .wrapper .input:focus,
   .control > .wrapper .select:focus,
   .control > .wrapper .text-area:focus {
