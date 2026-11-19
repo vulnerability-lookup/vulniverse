@@ -796,3 +796,35 @@ def test_a_rejection_carries_provider_metadata(
         "rejectedReasons": [{"lang": "en", "value": "dup"}],
         "providerMetadata": {"orgId": "TEST-ORG", "shortName": "test-cna"},
     }
+
+
+# --- The upstream record, for comparing --------------------------------------
+
+
+def test_the_upstream_record_is_read_without_changing_anything(
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    published = {"containers": {"cna": {"title": "As published"}}}
+    upstream(monkeypatch, "PUBLISHED", record=published)
+    pull(client, record)
+    before = client.get(f"/api/v1/publish/vl/{record}").get_json()
+
+    response = client.get(f"/api/v1/publish/vl/{record}/upstream")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"record": published}
+    assert client.get(f"/api/v1/publish/vl/{record}").get_json() == before
+
+
+def test_no_upstream_record_without_a_linked_id(
+    client: FlaskClient,
+    record: int,
+    configured_vl: None,
+) -> None:
+    response = client.get(f"/api/v1/publish/vl/{record}/upstream")
+
+    assert response.status_code == 400
+    assert "isn't linked" in response.get_json()["message"]

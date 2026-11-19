@@ -250,6 +250,30 @@ def linked_elsewhere(error: LinkedElsewhereError) -> dict[str, Any]:
     }
 
 
+@api_bp.get("/publish/<string:target>/<int:record_id>/upstream")
+def upstream_record(
+    target: str,
+    record_id: int,
+) -> tuple[dict, int]:
+    """{"record"}: the record upstream has for the linked ID, for the panel
+    to compare with the local one."""
+    service, error = _resolve_service(target, record_id)
+
+    if error:
+        return error
+
+    assert service is not None
+
+    try:
+        return {"record": service.upstream_record(record_id)}, 200
+    except LookupError as exc:
+        return {"message": str(exc)}, 404
+    except ValueError as exc:
+        return {"message": str(exc)}, 400
+    except httpx.HTTPError as exc:
+        return {"message": f"Upstream didn't answer: {exc}"}, 502
+
+
 @api_bp.delete("/publish/<string:target>/<int:record_id>")
 def unlink_record(
     target: str,

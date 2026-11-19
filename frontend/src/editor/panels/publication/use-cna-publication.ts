@@ -45,6 +45,20 @@ export function useCnaPublication(
   const supported = computed(() => Boolean(repository.value?.getCnaPublication));
   const pullSupported = computed(() => Boolean(repository.value?.pullCna));
   const unlinkSupported = computed(() => Boolean(repository.value?.unlinkCna));
+  const upstreamSupported = computed(() => Boolean(repository.value?.getUpstreamCna));
+
+  /** The record upstream has, or why it couldn't be read. */
+  async function fetchUpstream(): Promise<CveRecord | string> {
+    if (!context.identifier || !repository.value?.getUpstreamCna) {
+      return "not supported here";
+    }
+
+    try {
+      return await repository.value.getUpstreamCna(target, context.identifier);
+    } catch (err) {
+      return err instanceof Error ? err.message : "the request failed";
+    }
+  }
 
   const publication = ref<CnaPublication | null>(null);
   const loading = ref(false);
@@ -205,6 +219,8 @@ export function useCnaPublication(
     supported,
     pullSupported,
     unlinkSupported,
+    upstreamSupported,
+    fetchUpstream,
     pull,
     publication,
     loading,

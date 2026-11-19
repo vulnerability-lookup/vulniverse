@@ -681,6 +681,16 @@ export class HttpRepository
     );
   }
 
+  async getUpstreamCna(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CveRecord> {
+    const { record } = await this.request<{ record: CveRecord }>(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}/upstream`,
+    );
+    return record;
+  }
+
   async unlinkCna(
     target: PublicationTarget,
     recordIdentifier: string,

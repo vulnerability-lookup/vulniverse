@@ -1196,3 +1196,8 @@
 .cna-timeline-failed .cna-timeline-date {
   color: var(--bs-warning-text-emphasis);
 }
+
+// The comparison table in the CNA publication panels: long paths wrap.
+.cna-diff-path {
+  word-break: break-all;
+}

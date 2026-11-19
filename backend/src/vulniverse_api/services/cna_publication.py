@@ -415,6 +415,16 @@ class CnaPublicationService:
 
         return publication, record
 
+    def upstream_record(self, record_id: int) -> dict[str, Any]:
+        """The record upstream has for the linked ID, to compare with the
+        local one. Read only: no status or date changes."""
+        publication = self.get_or_create(record_id)
+
+        if not publication.cve_id:
+            raise ValueError("This record isn't linked to an upstream ID.")
+
+        return self._get(f"/cve/{publication.cve_id}")
+
     # ----- internals -----
 
     def _get(self, path: str) -> dict[str, Any]:

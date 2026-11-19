@@ -415,6 +415,15 @@ export interface EditorRepository {
   ): Promise<CnaPublication>;
 
   /**
+   * The record upstream has for the linked ID, read only, so the panel
+   * can show how the local record differs from what's published.
+   */
+  getUpstreamCna?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CveRecord>;
+
+  /**
    * Stops tracking: removes the record's link to upstream entirely (the
    * ID stays there), so it can reserve or link anew. Optional: without
    * it, the panels offer abortCna instead.

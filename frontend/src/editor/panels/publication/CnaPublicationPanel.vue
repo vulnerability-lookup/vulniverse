@@ -3,7 +3,7 @@ import {
   computed,
   onMounted,
   ref,
-  toRaw,
+  shallowRef,
   watch,
 } from "vue";
 
@@ -16,6 +16,15 @@ import type {
 import {
   useCnaPublication,
 } from "./use-cna-publication";
+
+import {
+  setAtPath,
+  upstreamDifferences,
+} from "./upstream-diff";
+
+import type {
+  UpstreamDifference,
+} from "./upstream-diff";
 
 import {
   getGcveVulnId,
@@ -48,6 +57,8 @@ const {
   supported,
   pullSupported,
   unlinkSupported,
+  upstreamSupported,
+  fetchUpstream,
   pull,
   publication,
   loading,
@@ -74,6 +85,7 @@ const requestSave = useEditorSave();
 onMounted(async () => {
   if (supported.value && props.context.identifier) {
     await refresh();
+    await compareWithUpstream();
   }
 });
 
@@ -312,15 +324,14 @@ async function handlePull(): Promise<void> {
   }
 
   const linked = linkedId.value;
-  // toRaw: structuredClone can't copy Vue's reactive proxy.
-  const record = structuredClone(toRaw(editor.record.value)) as CveRecord;
+  const record = plainCopy(editor.record.value) as CveRecord;
 
   if (upstream?.containers?.cna && window.confirm(
     `Replace this record's content with ${linked} as published on ${props.label}?`
     + " You can review the changes before saving.",
   )) {
     record.containers ??= {};
-    record.containers.cna = structuredClone(upstream.containers.cna);
+    record.containers.cna = plainCopy(upstream.containers.cna);
     const state = upstream.cveMetadata?.state;
     if (state === "PUBLISHED" || state === "REJECTED") {
       record.cveMetadata ??= {};
@@ -345,6 +356,86 @@ watch(
 );
 
 /** Asks upstream for the linked ID's state; the content stays as it is. */
+/*
+ * The published record, read when the panel opens, after publishing and
+ * on Check; the comparison follows local edits live from it.
+ */
+const published = shallowRef<CveRecord | null>(null);
+const compareError = ref<string | null>(null);
+const showDifferences = ref(false);
+
+async function compareWithUpstream(): Promise<void> {
+  published.value = null;
+  compareError.value = null;
+
+  if (!upstreamSupported.value || status.value !== "PUBLISHED") {
+    return;
+  }
+
+  const result = await fetchUpstream();
+
+  if (typeof result === "string") {
+    compareError.value = result;
+  } else {
+    published.value = result;
+  }
+}
+
+const differences = computed(() =>
+  published.value && editor.record.value && status.value === "PUBLISHED"
+    ? upstreamDifferences(editor.record.value as CveRecord, published.value)
+    : null);
+
+/** A value as text: in full for the tooltip, shortened for the table. */
+function full(value: unknown): string {
+  return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function shown(value: unknown): string {
+  const text = full(value);
+  return text.length > 80 ? `${text.slice(0, 79)}…` : text;
+}
+
+// For buttons: "Use VL's", "Use CVE's".
+const shortLabel = computed(() => props.target === "vl" ? "VL" : "CVE");
+
+// Records are plain JSON, but after form edits they hold nested Vue
+// proxies, which structuredClone (even after toRaw) can't copy.
+function plainCopy<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+/*
+ * Taking over upstream's version: it lands in the editor as unsaved
+ * changes (marked like any edit), so nothing changes until Save.
+ */
+function useUpstreamValue(difference: UpstreamDifference): void {
+  if (!editor.record.value) {
+    return;
+  }
+
+  const record = plainCopy(editor.record.value) as Record<string, unknown>;
+  setAtPath(record, difference.path, difference.published);
+  editor.record.value = record as CveRecord;
+}
+
+function useUpstreamRecord(): void {
+  if (!published.value || !window.confirm(
+    `Replace the whole record with the version published on ${props.label}?`
+    + " Your other unsaved changes are replaced too; nothing is saved until you click Save.",
+  )) {
+    return;
+  }
+
+  editor.record.value = plainCopy(published.value);
+  notice.value = `Took over the version from ${props.label}. Review the changes and save.`;
+}
+
+async function handlePublish(): Promise<void> {
+  await publish();
+  await compareWithUpstream();
+}
+
 async function handleCheck(): Promise<void> {
   if (!linkedId.value) {
     return;
@@ -355,6 +446,8 @@ async function handleCheck(): Promise<void> {
   if (await pull(linkedId.value) !== undefined) {
     notice.value = `${props.label}: ${stateText.value.title.toLowerCase()}.`;
   }
+
+  await compareWithUpstream();
 }
 
 async function handleStopTracking(): Promise<void> {
@@ -439,6 +532,118 @@ async function submitReject(): Promise<void> {
           class="small text-secondary"
         >
           Last update sent {{ lastUpdate }}
+        </div>
+        <div
+          v-if="differences"
+          class="mt-3"
+        >
+          <p
+            v-if="!differences.length"
+            class="small text-success mb-0"
+          >
+            Matches the published version on {{ label }}.
+          </p>
+          <template v-else>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="small fw-semibold text-warning-emphasis">
+                Differs from the published version:
+                {{ differences.length }} {{ differences.length === 1 ? "field" : "fields" }}
+              </span>
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                :aria-expanded="showDifferences"
+                aria-controls="cna-differences"
+                @click="showDifferences = !showDifferences"
+              >
+                {{ showDifferences ? "Hide" : "Show" }} differences
+              </button>
+              <button
+                v-if="showDifferences"
+                type="button"
+                class="btn btn-outline-secondary btn-sm ms-auto"
+                @click="useUpstreamRecord()"
+              >
+                Use all from {{ shortLabel }}
+              </button>
+            </div>
+            <div
+              v-if="showDifferences"
+              id="cna-differences"
+              class="table-responsive mt-2"
+            >
+              <table class="table table-sm small align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th scope="col">
+                      Field
+                    </th>
+                    <th scope="col">
+                      This record
+                    </th>
+                    <th scope="col">
+                      {{ label }}
+                    </th>
+                    <th scope="col">
+                      <span class="visually-hidden">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="difference in differences"
+                    :key="difference.path"
+                  >
+                    <td>
+                      <code class="cna-diff-path">{{ difference.path }}</code>
+                    </td>
+                    <td :title="difference.local === undefined ? 'Not set' : full(difference.local)">
+                      <span
+                        v-if="difference.local === undefined"
+                        class="text-secondary"
+                      >—</span>
+                      <template v-else>
+                        {{ shown(difference.local) }}
+                      </template>
+                    </td>
+                    <td :title="difference.published === undefined ? 'Not set' : full(difference.published)">
+                      <span
+                        v-if="difference.published === undefined"
+                        class="text-secondary"
+                      >—</span>
+                      <template v-else>
+                        {{ shown(difference.published) }}
+                      </template>
+                    </td>
+                    <td class="text-end text-nowrap">
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        :aria-label="`Show ${difference.path} in the editor`"
+                        @click="editor.revealPath(difference.path)"
+                      >
+                        Show
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-outline-primary btn-sm ms-1"
+                        :aria-label="`Use ${shortLabel}'s value for ${difference.path}`"
+                        @click="useUpstreamValue(difference)"
+                      >
+                        Use {{ shortLabel }}'s
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </template>
+        </div>
+        <div
+          v-else-if="compareError"
+          class="small text-secondary mt-2"
+        >
+          Couldn't compare with {{ label }}: {{ compareError }}
         </div>
         <div
           v-if="stateText.detail"
@@ -557,7 +762,7 @@ async function submitReject(): Promise<void> {
             type="button"
             class="btn btn-primary btn-sm"
             :disabled="loading"
-            @click="publish()"
+            @click="handlePublish()"
           >
             {{ publishLabel }}
           </button>
