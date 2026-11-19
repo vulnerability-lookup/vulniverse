@@ -6,53 +6,24 @@
 </p>
 
 
-Vulniverse is a web-based editor for authoring, reviewing, validating, and
-storing vulnerability records. It is intended as a modern replacement for
-[Vulnogram](https://github.com/Vulnogram/Vulnogram), with integration as a
-first-class goal: use the complete standalone application, embed the editor in
-[Vulnerability-Lookup](https://github.com/vulnerability-lookup/vulnerability-lookup),
-or connect it to any software that works with the CVE Record Format.
-
-Vulniverse currently supports:
-
-- CVE Record Format 5.2.0
-- GCVE BCP-05 1.7
-- Guided and schema-driven editing
-- CVSS 2.0, 3.x and 4.0
-- CVE/GCVE schema validation
-- Draft records
-- Embedding through a framework-independent Web Component
-- Host-specific extensions through repositories, panels, and modules
-
-> [!NOTE]
-> Vulniverse is under active development. Public interfaces may change
-> before the first stable release.
+Vulniverse is a web-based editor for authoring, reviewing, and validating
+vulnerability records. It supports CVE Record Format 5.2.0, GCVE BCP-05 1.7,
+and OSV 1.9.2. Use guided forms to edit a record, navigate it in a collapsible
+tree, and inspect the generated JSON.
 
 <p align="center">
-  <img src="docs/docs/images/editor-overview.png"
-       alt="Vulniverse vulnerability editor">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/docs/images/editor-demo-dark.webp">
+    <img src="docs/docs/images/editor-demo-light.webp" width="900"
+         alt="Creating a GCVE record in Vulniverse: analysing a patch with Patch2Vuln, reserving a GCVE ID, applying the generated fields, editing a field picked in the tree, previewing the record and publishing it to Vulnerability-Lookup">
+  </picture>
 </p>
 
-## Use Vulniverse
-You can try the editor [here](https://vulnerability-lookup.github.io/vulniverse/).
+Vulniverse runs as a standalone application with its own backend or as
+an embeddable Web Component. It is the vulnerability editor in
+[Vulnerability-Lookup](https://github.com/vulnerability-lookup/vulnerability-lookup).
 
-### Standalone
+[Try the live demo](https://vulnerability-lookup.github.io/vulniverse/) ·
+[Run standalone](#run-standalone) ·
+[Embed the editor](#embed-the-editor)
 
-Run the Vue frontend together with the included Flask API for a complete
-vulnerability-authoring application.
-
-### Embedded
-
-Build `<vulniverse-editor>` and integrate it into an existing application.
-The host provides an `EditorRepository`, allowing Vulniverse to work with
-the host application's existing API, storage, authentication and
-authorization.
-
-## Documentation
-
-- [Getting started](docs/docs/setup/setup.md)
-- [Production deployment](docs/docs/setup/production.md)
-- [Configuration](docs/docs/setup/config.md)
-- [Architecture](docs/docs/development/architecture.md)
-- [Embedding Vulniverse](docs/docs/embedding/element.md)
-- [Vulnerability-Lookup integration](docs/docs/embedding/vl.md)
