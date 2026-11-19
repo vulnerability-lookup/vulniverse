@@ -16,6 +16,7 @@ frontend/coverage/
 docs/.venv/
 docs/.cache/
 docs/site/
+frontend/scripts/videos/
 
 # Environment
 .env
