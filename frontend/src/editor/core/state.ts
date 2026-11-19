@@ -4,7 +4,7 @@ import {
 } from "vue";
 
 import {
-  changedPaths as findChangedPaths,
+  diffPaths,
 } from "./changes";
 
 import type {
@@ -73,11 +73,14 @@ export function useEditorState() {
   });
 
   // Paths that differ from the last load or save (core/changes.ts).
-  const changedPaths = computed(() => (
+  const diff = computed(() => (
     record.value && originalRecord.value
-      ? findChangedPaths(record.value, originalRecord.value)
-      : new Set<string>()
+      ? diffPaths(record.value, originalRecord.value)
+      : { changed: new Set<string>(), added: new Set<string>() }
   ));
+  const changedPaths = computed(() => diff.value.changed);
+  // New objects and lists, e.g. an added card.
+  const addedPaths = computed(() => diff.value.added);
 
   function replaceRecord(
     loaded: LoadedRecord,
@@ -116,6 +119,7 @@ export function useEditorState() {
     record,
     originalRecord,
     changedPaths,
+    addedPaths,
     identifier,
     vulnerabilityId,
     profile,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { changedPaths } from "../changes";
+import { changedPaths, countChanges, diffPaths } from "../changes";
 
 describe("changedPaths", () => {
   const original = {
@@ -48,5 +48,23 @@ describe("changedPaths", () => {
 
       expect(paths(edited)).toEqual(["refs", "refs.3", "refs.3.url"]);
     });
+  });
+});
+
+describe("diffPaths", () => {
+  it("lists new cards as added, not edited ones", () => {
+    const original = { items: [{ name: "a", tags: ["x"] }] };
+    const current = { items: [{ name: "b", tags: ["x"] }, { name: "c", tags: [] }] };
+
+    expect([...diffPaths(current, original).added].sort()).toEqual(["items.1", "items.1.tags"]);
+  });
+});
+
+describe("countChanges", () => {
+  it("counts the changed fields inside a card, not their parents", () => {
+    const original = { card: { a: 1, nested: { b: 2, c: 3 } }, other: 1 };
+    const current = { card: { a: 9, nested: { b: 8, c: 3 } }, other: 2 };
+
+    expect(countChanges(changedPaths(current, original), "card")).toBe(2);
   });
 });

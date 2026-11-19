@@ -116,6 +116,11 @@ const isChanged = useIsChanged();
           :renderers="layout.renderers"
           :cells="layout.cells"
         />
+
+        <span
+          v-if="paths[index] && isChanged(paths[index])"
+          class="visually-hidden"
+        >(changed since the last save)</span>
       </div>
     </div>
   </component>

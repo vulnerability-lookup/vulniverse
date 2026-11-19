@@ -126,8 +126,8 @@ watch(
             <span
               v-if="tabChanged(index)"
               class="editor-changed-dot"
-              title="Changed since the last save"
-            ><span class="visually-hidden">(changed)</span></span>
+              title="Has unsaved changes"
+            ><span class="visually-hidden">(has unsaved changes)</span></span>
           </button>
         </div>
       </template>

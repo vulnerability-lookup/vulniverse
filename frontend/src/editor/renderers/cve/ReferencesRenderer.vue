@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import {
-  useIsChanged,
+  useChangeClass,
 } from "../../core/changes";
+import ChangeBadge from "../common/ChangeBadge.vue";
+import ChangedField from "../common/ChangedField.vue";
 
 import {
   computed,
@@ -175,7 +177,7 @@ function addReference(): void {
 }
 
 // Marks what differs from the last save (core/changes.ts).
-const isChanged = useIsChanged();
+const changeClass = useChangeClass();
 </script>
 
 <template>
@@ -207,7 +209,7 @@ const isChanged = useIsChanged();
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
       :data-path="`${control.path}.${index}`"
-      :class="{ 'editor-changed': isChanged(`${control.path}.${index}`) }"
+      :class="changeClass(`${control.path}.${index}`)"
       class="card mb-3"
     >
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -216,6 +218,11 @@ const isChanged = useIsChanged();
         </span>
 
         <div class="d-flex gap-1">
+          <ChangeBadge
+            :path="`${control.path}.${index}`"
+            :expanded="isExpanded(index)"
+          />
+
           <button
             type="button"
             class="btn btn-outline-secondary btn-sm"
@@ -240,7 +247,10 @@ const isChanged = useIsChanged();
         class="card-body"
       >
         <div class="row g-3 mb-3">
-          <div class="col-md-8">
+          <ChangedField
+            class="col-md-8"
+            :path="`${itemPath(index)}.url`"
+          >
             <dispatch-renderer
               :schema="control.schema"
               :uischema="controlFor('url')"
@@ -249,9 +259,12 @@ const isChanged = useIsChanged();
               :renderers="control.renderers"
               :cells="control.cells"
             />
-          </div>
+          </ChangedField>
 
-          <div class="col-md-4">
+          <ChangedField
+            class="col-md-4"
+            :path="`${itemPath(index)}.name`"
+          >
             <dispatch-renderer
               :schema="control.schema"
               :uischema="controlFor('name')"
@@ -260,7 +273,7 @@ const isChanged = useIsChanged();
               :renderers="control.renderers"
               :cells="control.cells"
             />
-          </div>
+          </ChangedField>
         </div>
 
         <label class="form-label">Tags</label>

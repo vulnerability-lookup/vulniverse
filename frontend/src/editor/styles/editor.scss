@@ -210,6 +210,22 @@
   }
 }
 
+// Only the innermost marker shows: an open card's changed fields carry
+// the bar, not the whole card. A closed card has nothing inside, so it
+// keeps its bar (and its header says how many fields changed).
+.editor-changed:has(.editor-changed)::before {
+  content: none;
+}
+
+// A new card says "New" in its header instead of a bar on every field;
+// a new card inside it doesn't repeat it.
+.editor-added::before,
+.editor-added .editor-changed::before,
+.editor-added .editor-added > .card-header .editor-change-badge {
+  content: none;
+  display: none;
+}
+
 .editor-changed-dot {
   display: inline-block;
   width: 0.4rem;

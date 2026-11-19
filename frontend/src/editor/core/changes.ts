@@ -20,7 +20,19 @@ function isContainer(value: unknown): value is Record<string, unknown> {
 }
 
 export function changedPaths(current: unknown, original: unknown): Set<string> {
+  return diffPaths(current, original).changed;
+}
+
+/**
+ * changedPaths, plus `added`: the objects and lists that are new (no
+ * counterpart in the original), e.g. an added card, for its "New" badge.
+ */
+export function diffPaths(
+  current: unknown,
+  original: unknown,
+): { changed: Set<string>; added: Set<string> } {
   const changed = new Set<string>();
+  const added = new Set<string>();
   const join = (path: string, key: string | number) => (path ? `${path}.${key}` : String(key));
 
   // An added or removed object or list compares against an empty one,
@@ -31,6 +43,7 @@ export function changedPaths(current: unknown, original: unknown): Set<string> {
 
   function walk(a: unknown, b: unknown, path: string): boolean {
     if (a === b) return false;
+    if (path && b === undefined && isContainer(a)) added.add(path);
 
     const left = emptyLike(a, b);
     const right = emptyLike(b, a);
@@ -88,7 +101,7 @@ export function changedPaths(current: unknown, original: unknown): Set<string> {
 
   walk(current, original, "");
 
-  return changed;
+  return { changed, added };
 }
 
 
@@ -98,4 +111,24 @@ export function useIsChanged(): (path: string) => boolean {
   const state = inject(editorStateKey, null);
 
   return (path) => state?.changedPaths.value.has(path) ?? false;
+}
+
+/** A card's change classes: `editor-changed`, and `editor-added` if it's new. */
+export function useChangeClass(): (path: string) => Record<string, boolean> {
+  const state = inject(editorStateKey, null);
+
+  return (path) => ({
+    "editor-changed": state?.changedPaths.value.has(path) ?? false,
+    "editor-added": state?.addedPaths.value.has(path) ?? false,
+  });
+}
+
+/**
+ * How many fields changed inside `path`: the innermost changed paths
+ * under it, as a closed card's summary.
+ */
+export function countChanges(changed: Set<string>, path: string): number {
+  const inside = [...changed].filter((other) => other.startsWith(`${path}.`));
+
+  return inside.filter((other) => !inside.some((deeper) => deeper.startsWith(`${other}.`))).length;
 }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import {
-  useIsChanged,
+  useChangeClass,
 } from "../../../core/changes";
+import ChangeBadge from "../../common/ChangeBadge.vue";
 
 import {
   computed,
@@ -387,7 +388,7 @@ function statementLabel(
 }
 
 // Marks what differs from the last save (core/changes.ts).
-const isChanged = useIsChanged();
+const changeClass = useChangeClass();
 </script>
 
 <template>
@@ -459,7 +460,7 @@ const isChanged = useIsChanged();
       v-for="(statement, sIndex) in statements"
       :key="`${control.path}-${sIndex}`"
       :data-path="`${control.path}.${sIndex}`"
-      :class="{ 'editor-changed': isChanged(`${control.path}.${sIndex}`) }"
+      :class="changeClass(`${control.path}.${sIndex}`)"
       class="card mb-2"
     >
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -468,6 +469,11 @@ const isChanged = useIsChanged();
         </span>
 
         <div class="d-flex gap-1">
+          <ChangeBadge
+            :path="`${control.path}.${sIndex}`"
+            :expanded="isExpanded(sIndex)"
+          />
+
           <button
             type="button"
             class="btn btn-outline-secondary btn-sm"

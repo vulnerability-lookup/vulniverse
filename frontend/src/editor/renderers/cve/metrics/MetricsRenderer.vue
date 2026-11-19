@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import {
-  useIsChanged,
+  useChangeClass,
 } from "../../../core/changes";
+import ChangeBadge from "../../common/ChangeBadge.vue";
+import ChangedField from "../../common/ChangedField.vue";
 
 import {
   computed,
@@ -268,7 +270,7 @@ function applyCalculatorResult(
 }
 
 // Marks what differs from the last save (core/changes.ts).
-const isChanged = useIsChanged();
+const changeClass = useChangeClass();
 </script>
 
 <template>
@@ -300,7 +302,7 @@ const isChanged = useIsChanged();
       v-for="(item, index) in items"
       :key="`${control.path}-${index}`"
       :data-path="`${control.path}.${index}`"
-      :class="{ 'editor-changed': isChanged(`${control.path}.${index}`) }"
+      :class="changeClass(`${control.path}.${index}`)"
       class="card mb-3"
     >
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -309,6 +311,11 @@ const isChanged = useIsChanged();
         </span>
 
         <div class="d-flex gap-1">
+          <ChangeBadge
+            :path="`${control.path}.${index}`"
+            :expanded="isExpanded(index)"
+          />
+
           <button
             type="button"
             class="btn btn-outline-secondary btn-sm"
@@ -358,7 +365,10 @@ const isChanged = useIsChanged();
 
         <template v-if="formatOf(index) && formatOf(index)?.key !== 'other'">
           <div class="row g-3">
-            <div class="col-12">
+            <ChangedField
+              class="col-12"
+              :path="`${itemPath(index)}.${formatOf(index)!.key}.vectorString`"
+            >
               <dispatch-renderer
                 :schema="control.schema"
                 :uischema="controlFor(formatOf(index)!.key, 'vectorString')"
@@ -376,9 +386,12 @@ const isChanged = useIsChanged();
               >
                 Calculate
               </button>
-            </div>
+            </ChangedField>
 
-            <div class="col-md-6">
+            <ChangedField
+              class="col-md-6"
+              :path="`${itemPath(index)}.${formatOf(index)!.key}.baseScore`"
+            >
               <dispatch-renderer
                 :schema="control.schema"
                 :uischema="controlFor(formatOf(index)!.key, 'baseScore')"
@@ -387,11 +400,12 @@ const isChanged = useIsChanged();
                 :renderers="control.renderers"
                 :cells="control.cells"
               />
-            </div>
+            </ChangedField>
 
-            <div
+            <ChangedField
               v-if="formatOf(index)?.hasSeverity"
               class="col-md-6"
+              :path="`${itemPath(index)}.${formatOf(index)!.key}.baseSeverity`"
             >
               <dispatch-renderer
                 :schema="control.schema"
@@ -401,12 +415,15 @@ const isChanged = useIsChanged();
                 :renderers="control.renderers"
                 :cells="control.cells"
               />
-            </div>
+            </ChangedField>
           </div>
         </template>
 
         <template v-else-if="formatOf(index)?.key === 'other'">
-          <div class="mb-3">
+          <ChangedField
+            class="mb-3"
+            :path="`${itemPath(index)}.other.type`"
+          >
             <label class="form-label">Type</label>
 
             <dispatch-renderer
@@ -417,9 +434,11 @@ const isChanged = useIsChanged();
               :renderers="control.renderers"
               :cells="control.cells"
             />
-          </div>
+          </ChangedField>
 
-          <div>
+          <ChangedField
+            :path="`${itemPath(index)}.other.content`"
+          >
             <label class="form-label">Content</label>
 
             <textarea
@@ -434,7 +453,7 @@ const isChanged = useIsChanged();
                 )
               "
             />
-          </div>
+          </ChangedField>
         </template>
       </div>
     </div>

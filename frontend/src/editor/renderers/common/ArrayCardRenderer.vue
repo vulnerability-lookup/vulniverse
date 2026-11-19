@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import {
-  useIsChanged,
+  useChangeClass,
 } from "../../core/changes";
+import ChangeBadge from "./ChangeBadge.vue";
 
 import {
   computed,
@@ -252,7 +253,7 @@ function deleteEntry(
 }
 
 // Marks what differs from the last save (core/changes.ts).
-const isChanged = useIsChanged();
+const changeClass = useChangeClass();
 </script>
 
 <template>
@@ -285,7 +286,7 @@ const isChanged = useIsChanged();
       :key="`${control.path}-${index}`"
       :data-path="`${control.path}.${index}`"
       class="card mb-2"
-      :class="[cardBackgroundClass, { 'editor-changed': isChanged(`${control.path}.${index}`) }]"
+      :class="[cardBackgroundClass, changeClass(`${control.path}.${index}`)]"
     >
       <div class="card-header d-flex justify-content-between align-items-center py-2">
         <span class="fw-semibold small">
@@ -293,6 +294,11 @@ const isChanged = useIsChanged();
         </span>
 
         <div class="d-flex gap-1">
+          <ChangeBadge
+            :path="`${control.path}.${index}`"
+            :expanded="isExpanded(index)"
+          />
+
           <button
             type="button"
             class="btn btn-outline-secondary btn-sm"
