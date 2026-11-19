@@ -69,12 +69,16 @@ def list_templates() -> tuple[dict, int]:
     if error:
         return {"message": error}, 400
 
-    templates = Template.query.filter_by(
-        profile=profile,
-        created_by_id=current_user.id,
-    ).order_by(
-        Template.name.asc(),
-    ).all()
+    templates = (
+        Template.query.filter_by(
+            profile=profile,
+            created_by_id=current_user.id,
+        )
+        .order_by(
+            Template.name.asc(),
+        )
+        .all()
+    )
 
     return {
         "templates": [_serialize(template) for template in templates],

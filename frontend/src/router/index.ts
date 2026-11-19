@@ -18,6 +18,9 @@ import EditorPage from
 import NewRecordPage from
   "@/pages/NewRecordPage.vue";
 
+import TwoFactorSetupPage from
+  "@/pages/TwoFactorSetupPage.vue";
+
 import LoginPage from
   "@/pages/LoginPage.vue";
 
@@ -26,6 +29,18 @@ import RegisterPage from
 
 import CnaCredentialsPage from
   "@/pages/CnaCredentialsPage.vue";
+
+import AccountPage from
+  "@/pages/AccountPage.vue";
+
+import InvitePage from
+  "@/pages/InvitePage.vue";
+
+import OrganisationPage from
+  "@/pages/OrganisationPage.vue";
+
+import AdminOrganisationsPage from
+  "@/pages/AdminOrganisationsPage.vue";
 
 import AdminUsersPage from
   "@/pages/AdminUsersPage.vue";
@@ -76,6 +91,37 @@ export const router = createRouter({
       path: "/admin/users",
       name: "admin-users",
       component: AdminUsersPage,
+      meta: { adminOnly: true },
+    },
+    {
+      // Your own account: password, deletion.
+      path: "/account",
+      name: "account",
+      component: AccountPage,
+    },
+    {
+      // Required first when [server] two_factor is on (see the guard).
+      path: "/two-factor",
+      name: "two-factor",
+      component: TwoFactorSetupPage,
+    },
+    {
+      // The current organisation, for its admins.
+      path: "/organisation",
+      name: "organisation",
+      component: OrganisationPage,
+    },
+    {
+      // Where invitation links lead; works logged in or out.
+      path: "/invite/:token",
+      name: "invite",
+      component: InvitePage,
+      meta: { public: true },
+    },
+    {
+      path: "/admin/organisations",
+      name: "admin-organisations",
+      component: AdminOrganisationsPage,
       meta: { adminOnly: true },
     },
     {
@@ -133,6 +179,10 @@ router.beforeEach(async (to) => {
   // once you're already signed in.
   if (to.meta.guestOnly && auth.isAuthenticated) {
     return { name: "records" };
+  }
+
+  if (auth.needsTwoFactorSetup && !to.meta.public && to.name !== "two-factor") {
+    return { name: "two-factor" };
   }
 
   if (to.meta.adminOnly && !auth.currentUser?.isAdmin) {

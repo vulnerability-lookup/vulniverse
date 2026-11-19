@@ -10,8 +10,12 @@ interface AdminUser {
   email: string;
   isAdmin: boolean;
   isActive: boolean;
+  twoFactorEnabled: boolean;
   createdAt: string;
 }
+
+// A password just generated for someone, shown once.
+const newPassword = ref<{ email: string; password: string } | null>(null);
 
 const auth = useAuthStore();
 
@@ -59,6 +63,66 @@ async function updateUser(
   }
 }
 
+async function resetPassword(user: AdminUser): Promise<void> {
+  if (!window.confirm(`Give ${user.email} a new random password? Their current one stops working.`)) {
+    return;
+  }
+
+  pendingUserId.value = user.id;
+  actionError.value = null;
+  newPassword.value = null;
+
+  try {
+    const { password } = await apiRequest<{ password: string }>(
+      `/admin/users/${user.id}/reset-password`,
+      { method: "POST" },
+    );
+    newPassword.value = { email: user.email, password };
+  } catch (error) {
+    actionError.value = error instanceof ApiError ? error.message : "Unable to reset the password.";
+  } finally {
+    pendingUserId.value = null;
+  }
+}
+
+async function resetTwoFactor(user: AdminUser): Promise<void> {
+  if (!window.confirm(`Reset two-factor authentication for ${user.email}? They set it up again at their next login.`)) {
+    return;
+  }
+
+  pendingUserId.value = user.id;
+  actionError.value = null;
+
+  try {
+    Object.assign(user, await apiRequest<AdminUser>(`/admin/users/${user.id}/two-factor`, { method: "DELETE" }));
+  } catch (error) {
+    actionError.value = error instanceof ApiError ? error.message : "Unable to reset two-factor authentication.";
+  } finally {
+    pendingUserId.value = null;
+  }
+}
+
+async function deleteUser(user: AdminUser): Promise<void> {
+  if (!window.confirm(
+    `Delete ${user.email}? Their templates and CNA credentials are deleted;`
+    + " the records they created stay with their organisations. This can't be undone.",
+  )) {
+    return;
+  }
+
+  pendingUserId.value = user.id;
+  actionError.value = null;
+
+  try {
+    await apiRequest(`/admin/users/${user.id}`, { method: "DELETE" });
+    users.value = users.value.filter((candidate) => candidate.id !== user.id);
+  } catch (error) {
+    actionError.value = error instanceof ApiError ? error.message : "Unable to delete this user.";
+  } finally {
+    pendingUserId.value = null;
+  }
+}
+
 function formatDate(value: string): string {
   const date = new Date(value);
 
@@ -92,6 +156,12 @@ onMounted(loadUsers);
         {{ actionError }}
       </div>
 
+      <div v-if="newPassword" class="alert alert-success" role="status">
+        New password for <strong>{{ newPassword.email }}</strong>, shown only now;
+        pass it on and ask them to change it under Account settings:
+        <code class="user-select-all ms-1">{{ newPassword.password }}</code>
+      </div>
+
       <table class="table align-middle">
         <thead>
           <tr>
@@ -99,6 +169,9 @@ onMounted(loadUsers);
             <th>Created</th>
             <th>Status</th>
             <th>Role</th>
+            <th v-if="auth.currentUser?.twoFactor.required">
+              2FA
+            </th>
             <th></th>
           </tr>
         </thead>
@@ -130,6 +203,14 @@ onMounted(loadUsers);
                 {{ user.isAdmin ? "Admin" : "User" }}
               </span>
             </td>
+            <td v-if="auth.currentUser?.twoFactor.required">
+              <span
+                class="badge"
+                :class="user.twoFactorEnabled ? 'text-bg-success' : 'text-bg-warning'"
+              >
+                {{ user.twoFactorEnabled ? "Set up" : "Not yet" }}
+              </span>
+            </td>
             <td class="text-end">
               <button
                 type="button"
@@ -147,6 +228,35 @@ onMounted(loadUsers);
                 @click="updateUser(user, { isActive: !user.isActive })"
               >
                 {{ user.isActive ? "Deactivate" : "Reactivate" }}
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm ms-2"
+                :disabled="pendingUserId === user.id"
+                @click="resetPassword(user)"
+              >
+                Reset password
+              </button>
+
+              <button
+                v-if="user.twoFactorEnabled"
+                type="button"
+                class="btn btn-outline-secondary btn-sm ms-2"
+                :disabled="pendingUserId === user.id"
+                @click="resetTwoFactor(user)"
+              >
+                Reset 2FA
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm ms-2"
+                :disabled="pendingUserId === user.id || user.id === auth.currentUser?.id"
+                :title="user.id === auth.currentUser?.id ? 'Delete your own account under Account settings' : undefined"
+                @click="deleteUser(user)"
+              >
+                Delete
               </button>
             </td>
           </tr>

@@ -8,6 +8,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
     func,
 )
 from sqlalchemy.orm import (
@@ -27,10 +28,7 @@ class CnaPublication(
         UniqueConstraint(
             "record_id",
             "target",
-            name=(
-                "uq_cna_publication_"
-                "record_target"
-            ),
+            name=("uq_cna_publication_record_target"),
         ),
     )
 
@@ -60,67 +58,63 @@ class CnaPublication(
         nullable=False,
     )
 
-    cve_id: Mapped[
-        str | None
-    ] = mapped_column(
+    cve_id: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
     )
 
-    reserved_at: Mapped[
-        datetime | None
-    ] = mapped_column(
+    reserved_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
 
-    published_at: Mapped[
-        datetime | None
-    ] = mapped_column(
+    published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
 
-    rejected_at: Mapped[
-        datetime | None
-    ] = mapped_column(
+    rejected_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    # Whether upstream has seen a POST for this ID (publish or reject):
+    # the cveawg-shaped API takes one POST per ID, then PUTs.
+    posted: Mapped[bool] = mapped_column(
+        nullable=False,
+        default=False,
+        server_default=false(),
+    )
+
+    # The last successful publish, update or reject sent upstream.
+    last_sent_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
 
     # Credential-scrubbed before storage.
-    last_error: Mapped[
-        str | None
-    ] = mapped_column(
+    last_error: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
-    last_request: Mapped[
-        str | None
-    ] = mapped_column(
+    last_request: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
-    last_response: Mapped[
-        str | None
-    ] = mapped_column(
+    last_response: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
-    created_at: Mapped[
-        datetime
-    ] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
     )
 
-    updated_at: Mapped[
-        datetime
-    ] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),

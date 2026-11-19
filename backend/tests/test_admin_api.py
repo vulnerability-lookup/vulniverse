@@ -91,7 +91,9 @@ def test_deactivated_user_cannot_login(client, test_user: User, app) -> None:
 
 
 def test_deactivating_a_user_ends_their_existing_session(
-    app, client, test_user: User,
+    app,
+    client,
+    test_user: User,
 ) -> None:
     # client is already logged in as test_user; deactivate the row
     # directly (the admin endpoint's own behavior is covered by

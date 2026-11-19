@@ -142,7 +142,7 @@ def cpe_entries() -> tuple[
     # Full CPE-identifier suggestions are temporarily disabled: unlike
     # vendor/product search, mirroring this catalog locally would mean
     # syncing the much larger /cpes/export dataset, which is out of
-    # scope for now. 
+    # scope for now.
     return {
         "message": "CPE identifier recommendations are temporarily disabled.",
     }, 503

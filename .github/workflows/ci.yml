@@ -33,7 +33,7 @@ jobs:
         run: uv sync
 
       - name: ruff
-        run: uv run ruff check .
+        run: uv run ruff check . && uv run ruff format --check .
 
       - name: mypy
         run: uv run mypy .

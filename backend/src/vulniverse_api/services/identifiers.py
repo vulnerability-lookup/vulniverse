@@ -71,9 +71,7 @@ def extract_identifier(
     strategy = profile.get("identifier", {}).get("strategy")
 
     if strategy not in IDENTIFIER_STRATEGIES:
-        raise ValueError(
-            f"Unsupported identifier strategy: {strategy}"
-        )
+        raise ValueError(f"Unsupported identifier strategy: {strategy}")
 
     return IDENTIFIER_STRATEGIES[strategy](document)
 

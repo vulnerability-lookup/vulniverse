@@ -171,6 +171,7 @@ export interface CnaPublication {
   reservedAt: string | null;
   publishedAt: string | null;
   rejectedAt: string | null;
+  lastSentAt?: string | null;
   lastError: string | null;
   createdAt: string;
   updatedAt: string;
@@ -412,6 +413,36 @@ export interface EditorRepository {
     target: PublicationTarget,
     recordIdentifier: string,
   ): Promise<CnaPublication>;
+
+  /**
+   * The record upstream has for the linked ID, read only, so the panel
+   * can show how the local record differs from what's published.
+   */
+  getUpstreamCna?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CveRecord>;
+
+  /**
+   * Stops tracking: removes the record's link to upstream entirely (the
+   * ID stays there), so it can reserve or link anew. Optional: without
+   * it, the panels offer abortCna instead.
+   */
+  unlinkCna?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CnaPublication>;
+
+  /**
+   * Links the record to an existing upstream ID and takes over its state; `record` is the upstream record, null while
+   * the ID is only reserved. Optional on its own: the panels offer it only
+   * when present.
+   */
+  pullCna?(
+    target: PublicationTarget,
+    recordIdentifier: string,
+    cveId: string,
+  ): Promise<{ publication: CnaPublication; record: CveRecord | null }>;
 
 
   // Scoreboard

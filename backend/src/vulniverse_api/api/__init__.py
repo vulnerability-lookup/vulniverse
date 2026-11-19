@@ -2,10 +2,11 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, TypeVar
 
-from flask import Blueprint, request
-from flask_login import current_user
+from flask import Blueprint, request, session
+from flask_login import current_user, logout_user
 
 from ..app_config import load_app_config
+from ..services import two_factor
 from ..services.profiles import load_manifest
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -19,13 +20,33 @@ api_bp = Blueprint("api_v1", __name__)
 # posted to it (nothing stored, nothing user-specific) — exempt so the
 # anonymous sandbox editor (frontend/src/pages/TryEditorPage.vue) can
 # use real schema validation without requiring an account.
-EXEMPT_ENDPOINTS = frozenset({
-    "api_v1.health",
-    "api_v1.register",
-    "api_v1.login",
-    "api_v1.csrf_token",
-    "api_v1.validate",
-})
+EXEMPT_ENDPOINTS = frozenset(
+    {
+        "api_v1.health",
+        "api_v1.register",
+        "api_v1.login",
+        "api_v1.csrf_token",
+        "api_v1.validate",
+        # An invitation link's landing page and the register form need these
+        # before an account exists; the invitation token is the secret.
+        "api_v1.invitation_info",
+        "api_v1.registration_mode",
+        # The code step comes before the session is logged in.
+        "api_v1.login_two_factor",
+    }
+)
+
+# With [server] two_factor on, an account without 2FA set up can only do
+# this much until it has.
+TWO_FACTOR_SETUP_ENDPOINTS = frozenset(
+    {
+        "api_v1.me",
+        "api_v1.logout",
+        "api_v1.capabilities",
+        "api_v1.start_two_factor_setup",
+        "api_v1.finish_two_factor_setup",
+    }
+)
 
 
 @api_bp.before_request
@@ -36,6 +57,17 @@ def require_login() -> tuple[dict, int] | None:
     # A deactivated account's existing session loses access immediately,
     # not just on its next login attempt (see api/auth.py's login()).
     if current_user.is_authenticated and current_user.is_active:
+        # Whether this session passed 2FA, not whether the account has it:
+        # a password-only session must not profit from another one's setup.
+        if two_factor.required() and not session.get(two_factor.PASSED_KEY):
+            if two_factor.is_set_up(current_user):
+                logout_user()
+                return {"message": "Authentication required."}, 401
+            if request.endpoint not in TWO_FACTOR_SETUP_ENDPOINTS:
+                return {
+                    "message": "Set up two-factor authentication first.",
+                    "code": "TWO_FACTOR_SETUP_REQUIRED",
+                }, 403
         return None
 
     return {"message": "Authentication required."}, 401
@@ -53,6 +85,7 @@ def require_panel(panel_id: str) -> Callable[[F], F]:
     frontend/src/editor/enabled-extensions.ts) and capabilities' own
     "no config = everything on" behavior.
     """
+
     def decorator(func: F) -> F:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -102,6 +135,8 @@ from . import (  # noqa: F401
     auth,
     cna_credentials,
     cpe_search,
+    invitations,
+    organisations,
     patch2vuln,
     publish,
     record_quality,

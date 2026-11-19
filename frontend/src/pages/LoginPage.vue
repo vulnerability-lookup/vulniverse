@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
+import { ApiError } from "@/shared/errors";
 import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
@@ -12,13 +13,21 @@ const email = ref("");
 const password = ref("");
 const submitting = ref(false);
 const error = ref<string | null>(null);
+// After a right password, with two-factor authentication set up.
+const askCode = ref(false);
+const code = ref("");
 
 async function onSubmit(): Promise<void> {
   submitting.value = true;
   error.value = null;
 
   try {
-    await auth.login(email.value, password.value);
+    if (askCode.value) {
+      await auth.loginCode(code.value);
+    } else if (await auth.login(email.value, password.value) === "code") {
+      askCode.value = true;
+      return;
+    }
 
     const redirect = typeof route.query.redirect === "string"
       ? route.query.redirect
@@ -26,6 +35,11 @@ async function onSubmit(): Promise<void> {
 
     await router.replace(redirect);
   } catch (err) {
+    // 401 at the code step: it took too long; the password again.
+    if (askCode.value && err instanceof ApiError && err.status === 401) {
+      askCode.value = false;
+      code.value = "";
+    }
     error.value = err instanceof Error
       ? err.message
       : "Unable to log in.";
@@ -40,6 +54,28 @@ async function onSubmit(): Promise<void> {
     <h1 class="h3 mb-4">Log in</h1>
 
     <form @submit.prevent="onSubmit">
+      <div
+        v-if="askCode"
+        class="mb-3"
+      >
+        <label
+          for="login-code"
+          class="form-label"
+        >Code from your authenticator app</label>
+        <!-- autofocus: the field appears after the password step. -->
+        <input
+          id="login-code"
+          v-model="code"
+          class="form-control"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          pattern="[0-9 ]{6,7}"
+          required
+          autofocus
+        >
+      </div>
+
+      <template v-else>
       <div class="mb-3">
         <label for="login-email" class="form-label">Email</label>
         <input
@@ -63,6 +99,7 @@ async function onSubmit(): Promise<void> {
           autocomplete="current-password"
         >
       </div>
+      </template>
 
       <div
         v-if="error"

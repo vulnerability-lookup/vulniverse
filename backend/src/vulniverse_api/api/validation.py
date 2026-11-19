@@ -16,19 +16,14 @@ def validate() -> tuple[dict, int]:
     profile = payload.get("profile", "cve-5.2.0")
 
     if not isinstance(record, dict):
-        return {
-            "message": "The 'record' property must be an object."
-        }, 400
+        return {"message": "The 'record' property must be an object."}, 400
 
     if profile not in known_profiles():
         return {"message": f"Unknown profile: {profile!r}"}, 400
 
     errors = validate_record(record, profile)
 
-    valid = not any(
-        error.get("severity", "error") == "error"
-        for error in errors
-    )
+    valid = not any(error.get("severity", "error") == "error" for error in errors)
 
     return {
         "valid": valid,

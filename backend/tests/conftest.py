@@ -11,7 +11,7 @@ from werkzeug.security import generate_password_hash
 
 from vulniverse_api import app_config, create_app
 from vulniverse_api.extensions import db
-from vulniverse_api.models import User
+from vulniverse_api.models import Membership, Organisation, User
 
 
 @pytest.fixture
@@ -20,25 +20,38 @@ def app(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Flask]:
     # defaults (every panel enabled) instead of whatever this checkout's
     # config/vulniverse.toml(.sample) happens to say.
     monkeypatch.setattr(app_config, "CONFIG_PATH", tmp_path / "vulniverse.toml")
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    monkeypatch.setattr(
+        app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample"
+    )
     app_config.load_app_config.cache_clear()
 
-    application = create_app({
-        "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-        # Flask-WTF's own documented testing convention — the test client
-        # doesn't do the browser-side CSRF-token dance the real frontend
-        # does, so mutating requests would otherwise all 400.
-        "WTF_CSRF_ENABLED": False,
-        # A fresh, real key per test run — tests that exercise per-user
-        # CNA credential encryption need this to actually round-trip.
-        "CNA_CREDENTIAL_ENCRYPTION_KEY": Fernet.generate_key().decode(),
-        # The test suite exercises register/login/logout/admin routes,
-        # which are @multiuser_only (404 in local mode) — overrides
-        # whatever config/vulniverse.toml(.sample) says, same mechanism
-        # as every other setting above.
-        "VULNIVERSE_MODE": "multiuser",
-    })
+    application = create_app(
+        {
+            "TESTING": True,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            # Flask-WTF's own documented testing convention — the test client
+            # doesn't do the browser-side CSRF-token dance the real frontend
+            # does, so mutating requests would otherwise all 400.
+            "WTF_CSRF_ENABLED": False,
+            # A fresh, real key per test run — tests that exercise per-user
+            # CNA credential encryption need this to actually round-trip.
+            "CNA_CREDENTIAL_ENCRYPTION_KEY": Fernet.generate_key().decode(),
+            # The test suite exercises register/login/logout/admin routes,
+            # which are @multiuser_only (404 in local mode) — overrides
+            # whatever config/vulniverse.toml(.sample) says, same mechanism
+            # as every other setting above.
+            "VULNIVERSE_MODE": "multiuser",
+            # The one server publishing may go to ([[panels.vl.instances]]).
+            "VULNIVERSE_PUBLISH_INSTANCES": {
+                "vl": [
+                    {"id": "test", "name": "Test VL", "api_url": "http://test/api/cna"}
+                ],
+                "cve-program": [
+                    {"id": "test", "name": "Test CVE", "api_url": "http://test/api"}
+                ],
+            },
+        }
+    )
 
     with application.app_context():
         db.create_all()
@@ -49,31 +62,74 @@ def app(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Flask]:
     app_config.load_app_config.cache_clear()
 
 
-@pytest.fixture
-def test_user(app: Flask) -> User:
+def make_organisation(app: Flask, name: str, slug: str) -> Organisation:
+    with app.app_context():
+        organisation = Organisation(name=name, slug=slug)
+        db.session.add(organisation)
+        db.session.commit()
+        db.session.refresh(organisation)
+        return organisation
+
+
+def make_user(
+    app: Flask,
+    email: str,
+    organisation: Organisation | None,
+    *,
+    is_admin: bool = False,
+    role: str = "editor",
+) -> User:
+    """A user, a member of `organisation` with `role` unless that's None."""
     with app.app_context():
         user = User(
-            email="test@example.com",
+            email=email,
             password_hash=generate_password_hash("password123"),
+            is_admin=is_admin,
         )
         db.session.add(user)
         db.session.commit()
+
+        if organisation is not None:
+            db.session.add(
+                Membership(user_id=user.id, organisation_id=organisation.id, role=role)
+            )
+            db.session.commit()
+
         db.session.refresh(user)
         return user
 
 
+def logged_in_client(app: Flask, user: User) -> FlaskClient:
+    test_client = app.test_client()
+
+    with test_client.session_transaction() as session:
+        session["_user_id"] = user.get_id()
+
+    return test_client
+
+
 @pytest.fixture
-def admin_user(app: Flask) -> User:
-    with app.app_context():
-        user = User(
-            email="admin@example.com",
-            password_hash=generate_password_hash("password123"),
-            is_admin=True,
-        )
-        db.session.add(user)
-        db.session.commit()
-        db.session.refresh(user)
-        return user
+def organisation(app: Flask) -> Organisation:
+    """The organisation test_user, colleague_user and admin_user work in."""
+    return make_organisation(app, "Acme", "acme")
+
+
+@pytest.fixture
+def other_organisation(app: Flask) -> Organisation:
+    """other_user's organisation: other_user is an outsider to Acme."""
+    return make_organisation(app, "Other", "other")
+
+
+@pytest.fixture
+def test_user(app: Flask, organisation: Organisation) -> User:
+    return make_user(app, "test@example.com", organisation)
+
+
+@pytest.fixture
+def admin_user(app: Flask, organisation: Organisation) -> User:
+    return make_user(
+        app, "admin@example.com", organisation, is_admin=True, role="admin"
+    )
 
 
 @pytest.fixture
@@ -83,42 +139,30 @@ def anon_client(app: Flask) -> FlaskClient:
 
 @pytest.fixture
 def client(app: Flask, test_user: User) -> FlaskClient:
-    test_client = app.test_client()
-
-    with test_client.session_transaction() as session:
-        session["_user_id"] = str(test_user.id)
-
-    return test_client
+    return logged_in_client(app, test_user)
 
 
 @pytest.fixture
 def admin_client(app: Flask, admin_user: User) -> FlaskClient:
-    test_client = app.test_client()
-
-    with test_client.session_transaction() as session:
-        session["_user_id"] = str(admin_user.id)
-
-    return test_client
+    return logged_in_client(app, admin_user)
 
 
 @pytest.fixture
-def other_user(app: Flask) -> User:
-    with app.app_context():
-        user = User(
-            email="other@example.com",
-            password_hash=generate_password_hash("password123"),
-        )
-        db.session.add(user)
-        db.session.commit()
-        db.session.refresh(user)
-        return user
+def other_user(app: Flask, other_organisation: Organisation) -> User:
+    return make_user(app, "other@example.com", other_organisation)
 
 
 @pytest.fixture
 def other_client(app: Flask, other_user: User) -> FlaskClient:
-    test_client = app.test_client()
+    return logged_in_client(app, other_user)
 
-    with test_client.session_transaction() as session:
-        session["_user_id"] = str(other_user.id)
 
-    return test_client
+@pytest.fixture
+def colleague_user(app: Flask, organisation: Organisation) -> User:
+    """test_user's colleague in Acme."""
+    return make_user(app, "colleague@example.com", organisation)
+
+
+@pytest.fixture
+def colleague_client(app: Flask, colleague_user: User) -> FlaskClient:
+    return logged_in_client(app, colleague_user)

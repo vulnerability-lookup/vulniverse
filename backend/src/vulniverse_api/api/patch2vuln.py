@@ -53,10 +53,7 @@ def normalize_commit_url(value: str) -> str:
 
     owner, repo, commit = match.groups()
 
-    return (
-        f"https://github.com/{owner}/{repo}"
-        f"/commit/{commit}.patch"
-    )
+    return f"https://github.com/{owner}/{repo}/commit/{commit}.patch"
 
 
 def _serializer() -> URLSafeSerializer:
@@ -93,7 +90,7 @@ def _decode_job_token(token: str) -> str:
     if (
         not isinstance(payload, dict)
         or not isinstance(payload.get("id"), str)
-        or payload.get("owner") != str(current_user.get_id())
+        or payload.get("owner") != str(current_user.id)
     ):
         raise LookupError("Job not found")
 
@@ -115,23 +112,17 @@ def create_patch2vuln_job():
         return {"message": "Request too large"}, 413
 
     try:
-        commit_urls = json.loads(
-            request.form.get("commitUrls", "[]")
-        )
+        commit_urls = json.loads(request.form.get("commitUrls", "[]"))
     except json.JSONDecodeError:
         return {"message": "Invalid commitUrls"}, 400
 
-    if (
-        not isinstance(commit_urls, list)
-        or not all(isinstance(url, str) for url in commit_urls)
+    if not isinstance(commit_urls, list) or not all(
+        isinstance(url, str) for url in commit_urls
     ):
         return {"message": "commitUrls must be an array of strings"}, 400
 
     try:
-        sources = [
-            normalize_commit_url(url)
-            for url in commit_urls
-        ]
+        sources = [normalize_commit_url(url) for url in commit_urls]
     except ValueError as exc:
         return {"message": str(exc)}, 400
 
@@ -191,7 +182,7 @@ def create_patch2vuln_job():
     except RuntimeError as exc:
         return {"message": str(exc)}, 502
 
-    token = _encode_job_token(job["jobId"], str(current_user.get_id()))
+    token = _encode_job_token(job["jobId"], str(current_user.id))
 
     return {
         "jobId": token,
@@ -248,7 +239,11 @@ def get_patch2vuln_job(token: str):
         "jobId": token,
         "status": status,
         # Only present for queued/running jobs; false = no worker running.
-        **({"workerAvailable": state["workerAvailable"]} if "workerAvailable" in state else {}),
+        **(
+            {"workerAvailable": state["workerAvailable"]}
+            if "workerAvailable" in state
+            else {}
+        ),
     }, 200
 
 

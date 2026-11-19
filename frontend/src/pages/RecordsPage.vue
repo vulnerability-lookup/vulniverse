@@ -3,7 +3,12 @@ import {
   computed,
   onMounted,
   ref,
+  watch,
 } from "vue";
+
+import {
+  useAuthStore,
+} from "@/stores/auth";
 
 import {
   HttpRepository,
@@ -22,6 +27,15 @@ import {
 } from "@/editor/identifier";
 
 const repository = new HttpRepository("/api/v1");
+const auth = useAuthStore();
+
+// Multi-user mode only: records belong to organisations there.
+const organisationName = computed(() => (
+  auth.isLocalMode ? null : auth.currentOrganisation?.name ?? null
+));
+const withoutOrganisation = computed(() => (
+  !auth.isLocalMode && auth.currentUser?.organisations.length === 0
+));
 
 function kindLabelFor(
   profileId: string,
@@ -69,6 +83,11 @@ async function loadRecords(): Promise<void> {
 }
 
 onMounted(loadRecords);
+
+// The list is the current organisation's.
+watch(() => auth.currentUser?.currentOrganisationId, (now, before) => {
+  if (now !== before) void loadRecords();
+});
 
 const usedProfiles = computed(() => {
   const ids = new Set(records.value.map((record) => record.profile));
@@ -120,9 +139,18 @@ const filteredRecords = computed(() => {
 <template>
   <main class="container py-5">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-      <h1>Overview</h1>
+      <div>
+        <h1 class="mb-0">Overview</h1>
+        <p
+          v-if="organisationName"
+          class="text-secondary mb-0"
+        >
+          Records of {{ organisationName }}
+        </p>
+      </div>
 
       <RouterLink
+        v-if="!withoutOrganisation"
         to="/editor/new"
         class="btn btn-primary"
       >
@@ -131,7 +159,17 @@ const filteredRecords = computed(() => {
     </div>
 
     <div
-      v-if="!loading && !loadError"
+      v-if="withoutOrganisation"
+      class="alert alert-info mt-4"
+      role="status"
+    >
+      You're not a member of any organisation yet, so you can't create
+      records. Ask an administrator to add you to one. Published records
+      others share with you by link still open.
+    </div>
+
+    <div
+      v-if="!loading && !loadError && !withoutOrganisation"
       class="row g-3 my-4"
     >
       <div class="col-6 col-md-3">
@@ -232,6 +270,9 @@ const filteredRecords = computed(() => {
         Retry
       </button>
     </div>
+
+    <!-- Nothing to list: the notice above says why. -->
+    <template v-else-if="withoutOrganisation" />
 
     <p
       v-else-if="records.length === 0"

@@ -321,6 +321,7 @@ onMounted(controller.load);
       :is-rejected="controller.isRejected.value"
       :dirty="state.dirty.value"
       :loading="state.loading.value || state.saving.value"
+      :load-failed="Boolean(state.loadError.value)"
       :actions="visibleActions"
       :lifecycle-transitions="visibleLifecycleTransitions"
       :can-delete="controller.canDelete.value"

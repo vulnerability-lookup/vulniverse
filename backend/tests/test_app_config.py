@@ -31,10 +31,11 @@ def test_falls_back_to_sample_file_when_real_config_absent(
     result = app_config.load_app_config()
 
     assert result == {
-        "server": {"mode": "local"},
+        "server": {"mode": "local", "registration": "open", "two_factor": False},
         "features": dict(app_config.DEFAULT_FEATURES),
         "panels": {"stats": True},
         "actions": {"download": False},
+        "publish_instances": {},
     }
 
 
@@ -63,7 +64,9 @@ def test_features_default_when_not_configured(
     real_path.write_text('[panels]\n"vl" = false\n')
 
     monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    monkeypatch.setattr(
+        app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample"
+    )
 
     result = app_config.load_app_config()
 
@@ -78,7 +81,9 @@ def test_features_override_defaults(
     real_path.write_text("[features]\ncwe = false\ncpeProducts = false\n")
 
     monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    monkeypatch.setattr(
+        app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample"
+    )
 
     result = app_config.load_app_config()
 
@@ -97,7 +102,9 @@ def test_unknown_feature_keys_are_ignored(
     real_path.write_text("[features]\nmadeUpFeature = true\n")
 
     monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    monkeypatch.setattr(
+        app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample"
+    )
 
     result = app_config.load_app_config()
 
@@ -115,7 +122,9 @@ def test_panel_table_with_enabled_key_is_flattened_to_bool(
     )
 
     monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    monkeypatch.setattr(
+        app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample"
+    )
 
     result = app_config.load_app_config()
 
@@ -132,7 +141,9 @@ def test_panel_table_without_enabled_key_defaults_to_true(
     real_path.write_text('[panels.stats]\nnote = "no enabled key here"\n')
 
     monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    monkeypatch.setattr(
+        app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample"
+    )
 
     result = app_config.load_app_config()
 
@@ -147,7 +158,9 @@ def test_legacy_flat_bool_panels_still_supported(
     real_path.write_text('[panels]\n"vl" = false\n"stats" = true\n')
 
     monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    monkeypatch.setattr(
+        app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample"
+    )
 
     result = app_config.load_app_config()
 
@@ -159,14 +172,17 @@ def test_empty_tables_when_neither_file_exists(
     tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(app_config, "CONFIG_PATH", tmp_path / "vulniverse.toml")
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    monkeypatch.setattr(
+        app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample"
+    )
 
     result = app_config.load_app_config()
 
     assert result == {
-        "server": {"mode": "local"},
+        "server": {"mode": "local", "registration": "open", "two_factor": False},
         "panels": {},
         "actions": {},
+        "publish_instances": {},
         "features": dict(app_config.DEFAULT_FEATURES),
     }
 
@@ -191,7 +207,9 @@ def test_capabilities_endpoint_includes_configured_features(
     real_path.write_text("[features]\ncwe = false\n")
 
     monkeypatch.setattr(app_config, "CONFIG_PATH", real_path)
-    monkeypatch.setattr(app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample")
+    monkeypatch.setattr(
+        app_config, "SAMPLE_CONFIG_PATH", tmp_path / "vulniverse.toml.sample"
+    )
     # The client fixture already triggered create_app(), which calls
     # load_app_config() once and caches it (@lru_cache) before this
     # test's monkeypatching above — clear it so the route re-reads

@@ -28,9 +28,7 @@ def load_manifest() -> dict[str, Any]:
         )
 
     if not isinstance(manifest, dict):
-        raise ProfileConfigurationError(
-            "Schema manifest root must be an object."
-        )
+        raise ProfileConfigurationError("Schema manifest root must be an object.")
 
     profiles = manifest.get(
         "profiles",
@@ -50,9 +48,7 @@ def load_manifest() -> dict[str, Any]:
 def resolve_profile(
     profile_id: str,
 ) -> dict[str, Any]:
-    profiles = load_manifest()[
-        "profiles"
-    ]
+    profiles = load_manifest()["profiles"]
 
     profile = profiles.get(
         profile_id,
@@ -62,18 +58,12 @@ def resolve_profile(
         profile,
         dict,
     ):
-        raise UnknownProfileError(
-            profile_id
-        )
+        raise UnknownProfileError(profile_id)
 
     return profile
 
 
 def known_profiles() -> set[str]:
-    profiles = load_manifest()[
-        "profiles"
-    ]
+    profiles = load_manifest()["profiles"]
 
-    return set(
-        profiles
-    )
+    return set(profiles)

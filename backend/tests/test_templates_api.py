@@ -46,7 +46,9 @@ def create_template(
         json={
             "profile": profile,
             "name": name,
-            "fields": fields if fields is not None else [
+            "fields": fields
+            if fields is not None
+            else [
                 {"path": "containers.cna.affected.0.vendor", "value": "Acme"},
                 {"path": "containers.cna.affected.0.product", "value": "Widget"},
             ],
@@ -173,11 +175,15 @@ def test_list_templates_filters_by_profile(client: FlaskClient) -> None:
 
     cve_names = [
         template["name"]
-        for template in list_templates(client, profile="cve-5.2.0").get_json()["templates"]
+        for template in list_templates(client, profile="cve-5.2.0").get_json()[
+            "templates"
+        ]
     ]
     gcve_names = [
         template["name"]
-        for template in list_templates(client, profile="gcve-bcp-05-1.7").get_json()["templates"]
+        for template in list_templates(client, profile="gcve-bcp-05-1.7").get_json()[
+            "templates"
+        ]
     ]
 
     assert cve_names == ["CVE Template"]
@@ -341,8 +347,11 @@ def test_disabled_panel_404s_every_route(
 
     assert client.get("/api/v1/templates?profile=cve-5.2.0").status_code == 404
     assert create_template(client).status_code == 404
-    assert client.put(
-        f"/api/v1/templates/{template_id}",
-        json={"name": "x", "fields": []},
-    ).status_code == 404
+    assert (
+        client.put(
+            f"/api/v1/templates/{template_id}",
+            json={"name": "x", "fields": []},
+        ).status_code
+        == 404
+    )
     assert client.delete(f"/api/v1/templates/{template_id}").status_code == 404

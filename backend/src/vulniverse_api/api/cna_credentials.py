@@ -4,6 +4,7 @@ from flask import request
 from flask_login import current_user
 
 from ..services.cna_credentials import (
+    configured_instances,
     delete_credential,
     list_credentials,
     set_credential,
@@ -17,6 +18,19 @@ def get_cna_credentials() -> tuple[dict, int]:
     return list_credentials(current_user.id), 200
 
 
+@api_bp.get("/cna-credentials/instances")
+def get_cna_instances() -> tuple[dict, int]:
+    """Per target, the servers the operator allows publishing to; the
+    credentials name one of them."""
+    return {
+        target: [
+            {"id": i["id"], "name": i["name"], "url": i["api_url"]}
+            for i in configured_instances(target)
+        ]
+        for target in KNOWN_TARGETS
+    }, 200
+
+
 @api_bp.put("/cna-credentials/<string:target>")
 def put_cna_credential(target: str) -> tuple[dict, int]:
     if target not in KNOWN_TARGETS:
@@ -28,7 +42,7 @@ def put_cna_credential(target: str) -> tuple[dict, int]:
         return {"message": "A JSON object is required."}, 400
 
     fields = {
-        "cve_url": payload.get("cveUrl"),
+        "instance": payload.get("instance"),
         "short_name": payload.get("shortName"),
         "org_id": payload.get("orgId"),
         "cve_api_org": payload.get("cveApiOrg"),

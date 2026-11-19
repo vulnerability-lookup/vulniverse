@@ -13,14 +13,15 @@ Revises: c3f1a8d2e6b4
 Create Date: 2026-11-10 10:00:00.000000
 
 """
+
 import re
 
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = 'd4e2b7c9a1f0'
-down_revision = 'c3f1a8d2e6b4'
+revision = "d4e2b7c9a1f0"
+down_revision = "c3f1a8d2e6b4"
 branch_labels = None
 depends_on = None
 
@@ -29,16 +30,16 @@ ID = re.compile(r"^(?:cve|gcve-[0-9]+)-[0-9]{4}-", re.IGNORECASE)
 PREFIX = re.compile(r"^g?cve", re.IGNORECASE)
 
 records = sa.table(
-    'vulnerability_record',
-    sa.column('id', sa.Integer),
-    sa.column('identifier', sa.String),
-    sa.column('document', sa.JSON),
+    "vulnerability_record",
+    sa.column("id", sa.Integer),
+    sa.column("identifier", sa.String),
+    sa.column("document", sa.JSON),
 )
 
 publications = sa.table(
-    'cna_publication',
-    sa.column('id', sa.Integer),
-    sa.column('cve_id', sa.String),
+    "cna_publication",
+    sa.column("id", sa.Integer),
+    sa.column("cve_id", sa.String),
 )
 
 
@@ -56,20 +57,22 @@ def uppercase_ids(document):
         return None
 
     changed = False
-    metadata = document.get('cveMetadata')
+    metadata = document.get("cveMetadata")
 
     if isinstance(metadata, dict):
-        for key in ('cveId', 'vulnId'):
+        for key in ("cveId", "vulnId"):
             if canonical(metadata.get(key)) != metadata.get(key):
                 metadata[key] = canonical(metadata[key])
                 changed = True
 
-    cna = (document.get('containers') or {}).get('cna')
-    entries = cna.get('x_gcve') if isinstance(cna, dict) else None
+    cna = (document.get("containers") or {}).get("cna")
+    entries = cna.get("x_gcve") if isinstance(cna, dict) else None
 
     for entry in entries if isinstance(entries, list) else []:
-        if isinstance(entry, dict) and canonical(entry.get('vulnId')) != entry.get('vulnId'):
-            entry['vulnId'] = canonical(entry['vulnId'])
+        if isinstance(entry, dict) and canonical(entry.get("vulnId")) != entry.get(
+            "vulnId"
+        ):
+            entry["vulnId"] = canonical(entry["vulnId"])
             changed = True
 
     return document if changed else None
@@ -81,23 +84,25 @@ def upgrade():
     for row in bind.execute(sa.select(records)).mappings().all():
         values = {}
 
-        if canonical(row['identifier']) != row['identifier']:
-            values['identifier'] = canonical(row['identifier'])
+        if canonical(row["identifier"]) != row["identifier"]:
+            values["identifier"] = canonical(row["identifier"])
 
-        document = uppercase_ids(row['document'])
+        document = uppercase_ids(row["document"])
 
         if document is not None:
-            values['document'] = document
+            values["document"] = document
 
         if values:
-            bind.execute(records.update().where(records.c.id == row['id']).values(**values))
+            bind.execute(
+                records.update().where(records.c.id == row["id"]).values(**values)
+            )
 
     for row in bind.execute(sa.select(publications)).mappings().all():
-        if canonical(row['cve_id']) != row['cve_id']:
+        if canonical(row["cve_id"]) != row["cve_id"]:
             bind.execute(
                 publications.update()
-                .where(publications.c.id == row['id'])
-                .values(cve_id=canonical(row['cve_id'])),
+                .where(publications.c.id == row["id"])
+                .values(cve_id=canonical(row["cve_id"])),
             )
 
 

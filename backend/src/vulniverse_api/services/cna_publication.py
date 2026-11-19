@@ -6,11 +6,16 @@ from enum import StrEnum
 from typing import Any
 
 import httpx
+from sqlalchemy import func
 
 from ..extensions import db
 from ..models import CnaPublication, VulnerabilityRecord
-from .cna_credentials import get_credential
-from .identifiers import canonical_id
+from .cna_credentials import find_instance, get_credential
+from .identifiers import (
+    canonical_id,
+    extract_cve_identifier,
+    extract_gcve_identifier,
+)
 
 REQUEST_TIMEOUT_SECONDS = 30.0
 
@@ -38,27 +43,67 @@ class PublicationStatus(StrEnum):
 # (website/web/services/cna_pub_service.py), which this whole service
 # mirrors the shape of.
 ALLOWED_TRANSITIONS: dict[PublicationStatus, frozenset[PublicationStatus]] = {
-    PublicationStatus.RESERVED: frozenset({
-        PublicationStatus.LOCAL_ONLY,
-        PublicationStatus.RESERVATION_PENDING,
-    }),
-    PublicationStatus.PUBLISHED: frozenset({
-        PublicationStatus.RESERVED,
-        PublicationStatus.PUBLICATION_PENDING,
-        PublicationStatus.PUBLISHED,
-        PublicationStatus.REJECTED,
-    }),
-    PublicationStatus.REJECTED: frozenset({
-        PublicationStatus.RESERVED,
-        PublicationStatus.PUBLISHED,
-        PublicationStatus.REJECTION_PENDING,
-    }),
-    PublicationStatus.ABORTED: frozenset(PublicationStatus) - {PublicationStatus.ABORTED},
+    PublicationStatus.RESERVED: frozenset(
+        {
+            PublicationStatus.LOCAL_ONLY,
+            PublicationStatus.RESERVATION_PENDING,
+        }
+    ),
+    PublicationStatus.PUBLISHED: frozenset(
+        {
+            PublicationStatus.RESERVED,
+            PublicationStatus.PUBLICATION_PENDING,
+            PublicationStatus.PUBLISHED,
+            PublicationStatus.REJECTED,
+        }
+    ),
+    PublicationStatus.REJECTED: frozenset(
+        {
+            PublicationStatus.RESERVED,
+            PublicationStatus.PUBLISHED,
+            PublicationStatus.REJECTION_PENDING,
+        }
+    ),
+    PublicationStatus.ABORTED: frozenset(PublicationStatus)
+    - {PublicationStatus.ABORTED},
 }
 
 
 class IntegrationNotConfiguredError(ValueError):
     pass
+
+
+class LinkedElsewhereError(ValueError):
+    """The upstream ID is already linked to another record; the API names
+    it if the user may see it."""
+
+    def __init__(self, cve_id: str, record_id: int) -> None:
+        super().__init__(f"{cve_id} is already linked to another record.")
+        self.cve_id = cve_id
+        self.record_id = record_id
+
+
+# An upstream ID's states (CVE Services' get-cve-id response).
+UPSTREAM_STATES = ("RESERVED", "PUBLISHED", "REJECTED")
+
+
+def _record_id_like(document: dict[str, Any], linked_id: str) -> str | None:
+    """The record's own ID of the linked ID's kind, where the panel puts
+    it: a GCVE ID in the advisory x_gcve entry, others in cveMetadata."""
+    if linked_id.upper().startswith("GCVE-"):
+        return extract_gcve_identifier(document)
+    return extract_cve_identifier(document)
+
+
+def _timestamp(value: Any) -> datetime | None:
+    """An upstream ISO 8601 time, or None if absent or unreadable."""
+    if not isinstance(value, str):
+        return None
+    try:
+        moment = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
 
 
 class CnaPublicationService:
@@ -77,8 +122,21 @@ class CnaPublicationService:
                 "up under your account's CNA credentials.",
             )
 
+        instance = find_instance(target, credentials["instance"])
+
+        if instance is None:
+            raise IntegrationNotConfiguredError(
+                f"The {target!r} instance in your CNA credentials isn't offered"
+                " on this server (anymore); choose one under CNA credentials.",
+            )
+
         self.target = target
-        self.base_url = credentials["cve_url"].rstrip("/")
+        # Only operator-configured URLs (see app_config.py), never one a
+        # user typed: the server mustn't be sent to arbitrary addresses.
+        # httpx doesn't follow redirects either (its default); keep it so.
+        self.base_url = instance["api_url"].rstrip("/")
+        # Empty only where optional (Vulnerability-Lookup): then it's sent
+        # nowhere (see OPTIONAL_FIELDS in cna_credentials.py).
         self.short_name = credentials["short_name"]
         self.org_id = credentials["org_id"]
         self._api_key = credentials["cve_api_key"]
@@ -124,8 +182,10 @@ class CnaPublicationService:
             "cve_year": year,
             "amount": 1,
             "batch_type": "sequential",
-            "short_name": self.short_name,
         }
+        # Without one, VL reserves the ID without an owning CNA.
+        if self.short_name:
+            params["short_name"] = self.short_name
 
         response = self._do_request(
             publication,
@@ -180,6 +240,17 @@ class CnaPublicationService:
         if record is None:
             raise ValueError(f"Unknown record: {record_id}")
 
+        # The upstream ID comes from the link, the one users see from the
+        # record: they must agree, or the record goes out under an ID it
+        # doesn't show (e.g. its vulnId was edited after linking).
+        in_record = _record_id_like(record.document, publication.cve_id)
+        if (in_record or "").lower() != publication.cve_id.lower():
+            raise ValueError(
+                f"This record is linked to {publication.cve_id}, but its ID is"
+                f" {in_record or 'missing'}. Set it to {publication.cve_id}"
+                " before publishing."
+            )
+
         cna_container = (record.document.get("containers") or {}).get("cna")
 
         if not isinstance(cna_container, dict):
@@ -189,8 +260,7 @@ class CnaPublicationService:
         cna_container = self._with_default_provider_metadata(cna_container)
 
         body = {"cnaContainer": cna_container}
-        use_put = publication.published_at is not None
-        method = "PUT" if use_put else "POST"
+        method = "PUT" if publication.posted else "POST"
 
         response = self._do_request(
             publication,
@@ -202,9 +272,12 @@ class CnaPublicationService:
 
         data = response.json()
 
+        now = datetime.now(UTC)
         publication.status = PublicationStatus.PUBLISHED.value
-        if not use_put:
-            publication.published_at = datetime.now(UTC)
+        publication.posted = True
+        # First publication; later ones are updates (last_sent_at).
+        publication.published_at = publication.published_at or now
+        publication.last_sent_at = now
         publication.last_response = self._scrub(json.dumps(data))
         publication.last_error = None
         self._save(publication)
@@ -221,13 +294,14 @@ class CnaPublicationService:
         if not publication.cve_id:
             raise ValueError("Publication has no reserved CVE ID.")
 
+        # providerMetadata as in publish(): the CVE schema's rejected
+        # container requires it, and VL's reject handler fails without it.
         body = {
-            "cnaContainer": {
-                "rejectedReasons": [{"lang": "en", "value": reason.strip()}],
-            },
+            "cnaContainer": self._with_default_provider_metadata(
+                {"rejectedReasons": [{"lang": "en", "value": reason.strip()}]}
+            ),
         }
-        use_put = publication.published_at is not None
-        method = "PUT" if use_put else "POST"
+        method = "PUT" if publication.posted else "POST"
 
         response = self._do_request(
             publication,
@@ -239,19 +313,25 @@ class CnaPublicationService:
 
         data = response.json()
 
+        now = datetime.now(UTC)
         publication.status = PublicationStatus.REJECTED.value
-        # published_at doubles as "has this CVE ID had any prior POST" for
-        # the use_put decision above (matching the cveawg-shaped API's
-        # per-CVE-ID POST-once-then-PUT semantics) — rejected_at is the
-        # separate, purely informational timestamp shown in the UI.
-        if not use_put:
-            publication.published_at = datetime.now(UTC)
-        publication.rejected_at = datetime.now(UTC)
+        publication.posted = True
+        publication.rejected_at = now
+        publication.last_sent_at = now
         publication.last_response = self._scrub(json.dumps(data))
         publication.last_error = None
         self._save(publication)
 
         return publication
+
+    def unlink(self, record_id: int) -> CnaPublication:
+        """Forget the link to upstream entirely (the ID stays there): the
+        record is back to LOCAL_ONLY and can reserve or pull anew. Unlike
+        abort(), which keeps the link as ABORTED for good."""
+        CnaPublication.query.filter_by(record_id=record_id, target=self.target).delete()
+        db.session.commit()
+
+        return self.get_or_create(record_id)
 
     def abort(self, record_id: int) -> CnaPublication:
         publication = self.get_or_create(record_id)
@@ -262,7 +342,107 @@ class CnaPublicationService:
 
         return publication
 
+    def pull(
+        self, record_id: int, cve_id: str
+    ) -> tuple[CnaPublication, dict[str, Any] | None]:
+        """Link the record to an existing upstream ID and take over its
+        state (RESERVED/PUBLISHED/REJECTED): after a lost link (e.g. the
+        record was deleted and recreated), an uncertain *_PENDING state,
+        or to import a record made elsewhere. Returns the upstream record
+        too, unless only reserved; the caller decides what to do with it
+        (the editor shows it as unsaved changes). Who owns the ID upstream
+        isn't checked: the instance is one the operator configured and
+        the credentials are for."""
+        cve_id = canonical_id(cve_id.strip())
+        publication = self.get_or_create(record_id)
+
+        if publication.cve_id and publication.cve_id.lower() != cve_id.lower():
+            raise ValueError(
+                f"This record is linked to {publication.cve_id};"
+                " pull that one, or use another record."
+            )
+
+        elsewhere = CnaPublication.query.filter(
+            CnaPublication.target == self.target,
+            func.lower(CnaPublication.cve_id) == cve_id.lower(),
+            CnaPublication.record_id != record_id,
+        ).first()
+        if elsewhere is not None:
+            raise LinkedElsewhereError(cve_id, elsewhere.record_id)
+
+        entry = self._get(f"/cve-id/{cve_id}")
+        state = entry.get("state")
+        if state not in UPSTREAM_STATES:
+            raise ValueError(
+                f"Upstream reports an unknown state for {cve_id}: {state!r}."
+            )
+
+        record = None if state == "RESERVED" else self._get(f"/cve/{cve_id}")
+        metadata = (record or {}).get("cveMetadata") or {}
+
+        publication.cve_id = cve_id
+        publication.status = state
+        publication.reserved_at = (
+            _timestamp(entry.get("reserved")) or publication.reserved_at
+        )
+        # Upstream's dates win: it's the record of what happened there.
+        # Published or rejected, upstream has the record: next is a PUT.
+        publication.posted = state != "RESERVED"
+        published = _timestamp(metadata.get("datePublished"))
+        if state == "PUBLISHED":
+            publication.published_at = (
+                published or publication.published_at or datetime.now(UTC)
+            )
+        else:
+            # A rejected ID may never have been published.
+            publication.published_at = published
+        if state == "REJECTED":
+            publication.rejected_at = (
+                _timestamp(metadata.get("dateRejected"))
+                or publication.rejected_at
+                or datetime.now(UTC)
+            )
+        publication.last_sent_at = (
+            _timestamp(metadata.get("dateUpdated"))
+            or publication.rejected_at
+            or publication.published_at
+            if state != "RESERVED"
+            else None
+        )
+        publication.last_response = self._scrub(json.dumps(entry))
+        publication.last_error = None
+        self._save(publication)
+
+        return publication, record
+
+    def upstream_record(self, record_id: int) -> dict[str, Any]:
+        """The record upstream has for the linked ID, to compare with the
+        local one. Read only: no status or date changes."""
+        publication = self.get_or_create(record_id)
+
+        if not publication.cve_id:
+            raise ValueError("This record isn't linked to an upstream ID.")
+
+        return self._get(f"/cve/{publication.cve_id}")
+
     # ----- internals -----
+
+    def _get(self, path: str) -> dict[str, Any]:
+        """A read from the configured instance; LookupError on 404."""
+        response = httpx.get(
+            f"{self.base_url}{path}",
+            headers=self._headers,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+        if response.status_code == 404:
+            raise LookupError(f"{path.rsplit('/', 1)[-1]} wasn't found upstream.")
+        response.raise_for_status()
+
+        data = response.json()
+        if not isinstance(data, dict):
+            # A bad upstream answer, not a caller type error.
+            raise ValueError("Upstream answered with something unexpected.")  # noqa: TRY004
+        return data
 
     def _with_default_provider_metadata(
         self,
@@ -287,8 +467,10 @@ class CnaPublicationService:
             **cna_container,
             "providerMetadata": {
                 **(provider_metadata if isinstance(provider_metadata, dict) else {}),
-                "orgId": self.org_id,
-                "shortName": self.short_name,
+                # Optional for Vulnerability-Lookup: only what's configured
+                # (VL needs providerMetadata itself, even empty).
+                **({"orgId": self.org_id} if self.org_id else {}),
+                **({"shortName": self.short_name} if self.short_name else {}),
             },
         }
 

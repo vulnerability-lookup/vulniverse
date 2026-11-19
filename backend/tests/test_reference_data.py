@@ -94,7 +94,9 @@ def clear_reference_cache() -> None:
 
 
 def mock_cwe_endpoints(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fake_get(url: str, params: dict | None = None, timeout: float | None = None) -> FakeResponse:
+    def fake_get(
+        url: str, params: dict | None = None, timeout: float | None = None
+    ) -> FakeResponse:
         assert "descendants" in url
         return FakeResponse(DESCENDANTS_TREE)
 
@@ -106,14 +108,18 @@ def mock_cwe_endpoints(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def mock_capec_endpoint(monkeypatch: pytest.MonkeyPatch, payload: Any = CAPEC_BUNDLE) -> None:
+def mock_capec_endpoint(
+    monkeypatch: pytest.MonkeyPatch, payload: Any = CAPEC_BUNDLE
+) -> None:
     def fake_get(url: str, timeout: float | None = None) -> FakeResponse:
         return FakeResponse(payload)
 
     monkeypatch.setattr(reference_data_service.httpx, "get", fake_get)
 
 
-def test_fetch_cwe_list_excludes_non_weakness_nodes(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fetch_cwe_list_excludes_non_weakness_nodes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     mock_cwe_endpoints(monkeypatch)
 
     items = reference_data_service.get_reference_list("cwe")
@@ -124,7 +130,9 @@ def test_fetch_cwe_list_excludes_non_weakness_nodes(monkeypatch: pytest.MonkeyPa
     ]
 
 
-def test_fetch_capec_list_excludes_non_attack_patterns(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fetch_capec_list_excludes_non_attack_patterns(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     mock_capec_endpoint(monkeypatch)
 
     items = reference_data_service.get_reference_list("capec")
@@ -164,7 +172,9 @@ def test_stale_cache_used_when_refetch_fails(monkeypatch: pytest.MonkeyPatch) ->
     assert second == first
 
 
-def test_raises_when_never_cached_and_fetch_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_raises_when_never_cached_and_fetch_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     def fake_get_fail(url: str, timeout: float | None = None) -> FakeResponse:
         raise httpx.ConnectError("boom")
 
@@ -174,7 +184,9 @@ def test_raises_when_never_cached_and_fetch_fails(monkeypatch: pytest.MonkeyPatc
         reference_data_service.get_reference_list("capec")
 
 
-def test_reference_list_route_success(client: FlaskClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_reference_list_route_success(
+    client: FlaskClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(
         reference_data_api,
         "get_reference_list",
@@ -213,7 +225,9 @@ def test_reference_list_route_disabled_by_config(
     assert response.get_json() == {"message": "CWE suggestions are disabled."}
 
 
-def test_reference_list_route_upstream_failure(client: FlaskClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_reference_list_route_upstream_failure(
+    client: FlaskClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     def raise_error(kind: str) -> list[dict[str, str]]:
         raise httpx.ConnectError("boom")
 

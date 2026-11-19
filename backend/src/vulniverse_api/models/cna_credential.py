@@ -27,10 +27,7 @@ class UserCnaCredential(
         UniqueConstraint(
             "user_id",
             "target",
-            name=(
-                "uq_user_cna_credential_"
-                "user_target"
-            ),
+            name=("uq_user_cna_credential_user_target"),
         ),
     )
 
@@ -51,8 +48,11 @@ class UserCnaCredential(
         nullable=False,
     )
 
-    cve_url: Mapped[str] = mapped_column(
-        String(512),
+    # Which of the operator's [[panels.<target>.instances]] the key is
+    # for; the URL comes from there, never from the user. "" when an
+    # older stored URL matched no configured instance.
+    instance: Mapped[str] = mapped_column(
+        String(64),
         nullable=False,
     )
 
@@ -79,24 +79,18 @@ class UserCnaCredential(
     # Encrypted at rest with Fernet using
     # CNA_CREDENTIAL_ENCRYPTION_KEY.
     # Never returned by an API response.
-    cve_api_key_encrypted: Mapped[
-        str
-    ] = mapped_column(
+    cve_api_key_encrypted: Mapped[str] = mapped_column(
         Text,
         nullable=False,
     )
 
-    created_at: Mapped[
-        datetime
-    ] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
     )
 
-    updated_at: Mapped[
-        datetime
-    ] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),

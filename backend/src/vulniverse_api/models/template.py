@@ -41,16 +41,12 @@ class Template(
         nullable=False,
     )
 
-    created_by_id: Mapped[
-        int
-    ] = mapped_column(
+    created_by_id: Mapped[int] = mapped_column(
         ForeignKey("user.id"),
         nullable=False,
     )
 
-    created_by: Mapped[
-        User
-    ] = relationship(
+    created_by: Mapped[User] = relationship(
         foreign_keys=[
             created_by_id,
         ],
@@ -65,16 +61,12 @@ class Template(
     #
     # Template fields belong to the profile above and should only be
     # offered for documents using that same profile.
-    fields: Mapped[
-        list[dict[str, Any]]
-    ] = mapped_column(
+    fields: Mapped[list[dict[str, Any]]] = mapped_column(
         JSON,
         nullable=False,
     )
 
-    created_at: Mapped[
-        datetime
-    ] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,

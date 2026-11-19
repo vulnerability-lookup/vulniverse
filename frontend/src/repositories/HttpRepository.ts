@@ -1,5 +1,6 @@
 import type {
   CnaPublication,
+  CveRecord,
   EditorDocument,
   EditorRepository,
   LoadedRecord,
@@ -47,6 +48,7 @@ export interface RecordSummary {
   isDraft: boolean;
   updatedAt: string;
   createdBy: string | null;
+  organisation: { id: number; name: string };
 }
 
 /** The backend addresses records by database id; the editor contract
@@ -57,6 +59,8 @@ interface RecordResponse {
   profile: string;
   record: EditorDocument;
   isDraft: boolean;
+  /** Counts saves; sent back with the next save (see `versions`). */
+  version: number;
 }
 
 function toLoadedRecord(response: RecordResponse): LoadedRecord {
@@ -236,9 +240,24 @@ export class HttpRepository
     ...CLOSED_SUGGESTION_FEATURES,
   };
 
+  /*
+   * The version of each record as last loaded or saved here, sent with
+   * its next save: the backend refuses a save based on an outdated copy
+   * (someone else saved in between) instead of overwriting their work.
+   * Kept here, not in the editor contract, so hosts with their own
+   * repositories (Vulnerability-Lookup) are unaffected.
+   */
+  private readonly versions = new Map<string, number>();
+
   constructor(
     private readonly apiRoot = "/api/v1",
   ) { }
+
+  private remember(response: RecordResponse): LoadedRecord {
+    this.versions.set(String(response.id), response.version);
+
+    return toLoadedRecord(response);
+  }
 
   async listRecords(): Promise<RecordSummary[]> {
     const result = await this.request<{ records: RecordSummary[] }>(
@@ -281,7 +300,7 @@ export class HttpRepository
   async loadRecord(
     identifier: string,
   ): Promise<LoadedRecord> {
-    return toLoadedRecord(await this.request<RecordResponse>(
+    return this.remember(await this.request<RecordResponse>(
       `/records/${encodeURIComponent(identifier)}`,
     ));
   }
@@ -291,7 +310,7 @@ export class HttpRepository
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
-    return toLoadedRecord(await this.request<RecordResponse>(
+    return this.remember(await this.request<RecordResponse>(
       "/records",
       {
         method: "POST",
@@ -310,7 +329,7 @@ export class HttpRepository
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
-    return toLoadedRecord(await this.request<RecordResponse>(
+    return this.remember(await this.request<RecordResponse>(
       `/records/${encodeURIComponent(identifier)}`,
       {
         method: "PUT",
@@ -318,6 +337,8 @@ export class HttpRepository
           record,
           profile,
           isDraft,
+          // Absent for a record not loaded here; JSON drops undefined.
+          version: this.versions.get(identifier),
         }),
       },
     ));
@@ -651,7 +672,46 @@ export class HttpRepository
   ): Promise<CnaPublication> {
     return this.request<CnaPublication>(
       `/publish/${target}/${encodeURIComponent(recordIdentifier)}/publish`,
-      { method: "POST" },
+      {
+        method: "POST",
+        // The version this editor shows: the backend refuses to publish
+        // if the stored record is another one (see updateRecord).
+        body: JSON.stringify({ version: this.versions.get(recordIdentifier) }),
+      },
+    );
+  }
+
+  async getUpstreamCna(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CveRecord> {
+    const { record } = await this.request<{ record: CveRecord }>(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}/upstream`,
+    );
+    return record;
+  }
+
+  async unlinkCna(
+    target: PublicationTarget,
+    recordIdentifier: string,
+  ): Promise<CnaPublication> {
+    return this.request<CnaPublication>(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}`,
+      { method: "DELETE" },
+    );
+  }
+
+  async pullCna(
+    target: PublicationTarget,
+    recordIdentifier: string,
+    cveId: string,
+  ): Promise<{ publication: CnaPublication; record: CveRecord | null }> {
+    return this.request(
+      `/publish/${target}/${encodeURIComponent(recordIdentifier)}/pull`,
+      {
+        method: "POST",
+        body: JSON.stringify({ cveId }),
+      },
     );
   }
 

@@ -68,7 +68,9 @@ def mock_exports(
     )
 
 
-def test_sync_catalog_writes_trimmed_fields(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sync_catalog_writes_trimmed_fields(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     mock_exports(monkeypatch)
     destination = tmp_path / "cpe-catalog.json"
 
@@ -221,7 +223,10 @@ def test_search_catalog_products_scoped_by_vendor(
     cpe_catalog.sync_catalog(path=destination)
 
     result = cpe_catalog.search_catalog(
-        "products", "widget", vendor_q="acme", path=destination,
+        "products",
+        "widget",
+        vendor_q="acme",
+        path=destination,
     )
 
     assert [item["uuid"] for item in result["items"]] == ["p-1"]
@@ -237,7 +242,10 @@ def test_search_catalog_products_vendor_q_matching_no_vendor_returns_empty(
     cpe_catalog.sync_catalog(path=destination)
 
     result = cpe_catalog.search_catalog(
-        "products", "widget", vendor_q="no-such-vendor", path=destination,
+        "products",
+        "widget",
+        vendor_q="no-such-vendor",
+        path=destination,
     )
 
     assert result["items"] == []
@@ -253,7 +261,10 @@ def test_search_catalog_blank_vendor_q_is_ignored(
     cpe_catalog.sync_catalog(path=destination)
 
     with_blank = cpe_catalog.search_catalog(
-        "products", "widget", vendor_q="   ", path=destination,
+        "products",
+        "widget",
+        vendor_q="   ",
+        path=destination,
     )
     without = cpe_catalog.search_catalog("products", "widget", path=destination)
 
@@ -276,10 +287,18 @@ def test_search_catalog_paginates(
     cpe_catalog.sync_catalog(path=destination)
 
     page1 = cpe_catalog.search_catalog(
-        "vendors", "vendor", page=1, per_page=2, path=destination,
+        "vendors",
+        "vendor",
+        page=1,
+        per_page=2,
+        path=destination,
     )
     page2 = cpe_catalog.search_catalog(
-        "vendors", "vendor", page=2, per_page=2, path=destination,
+        "vendors",
+        "vendor",
+        page=2,
+        per_page=2,
+        path=destination,
     )
 
     assert [item["uuid"] for item in page1["items"]] == ["v-0", "v-1"]

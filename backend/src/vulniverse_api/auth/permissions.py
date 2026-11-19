@@ -23,9 +23,7 @@ def multiuser_only[F: Callable[..., Any]](view: F) -> F:
     @wraps(view)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
         if is_local_mode():
-            return {
-                "message": "Not available in local mode."
-            }, 404
+            return {"message": "Not available in local mode."}, 404
 
         return view(*args, **kwargs)
 

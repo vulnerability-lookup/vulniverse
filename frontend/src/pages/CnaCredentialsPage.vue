@@ -16,8 +16,16 @@ const TARGETS: TargetInfo[] = [
   { id: "cve-program", label: "CVE Program" },
 ];
 
+/** A server the operator allows publishing to ([[panels.<target>.instances]]). */
+interface Instance {
+  id: string;
+  name: string;
+  url: string;
+}
+
 interface StoredCredential {
-  cveUrl: string;
+  /** "" when an older stored URL matched none of the instances. */
+  instance: string;
   shortName: string;
   orgId: string;
   cveApiOrg: string;
@@ -25,7 +33,7 @@ interface StoredCredential {
 }
 
 interface FormState {
-  cveUrl: string;
+  instance: string;
   shortName: string;
   orgId: string;
   cveApiOrg: string;
@@ -35,7 +43,7 @@ interface FormState {
 
 function emptyForm(): FormState {
   return {
-    cveUrl: "",
+    instance: "",
     shortName: "",
     orgId: "",
     cveApiOrg: "",
@@ -55,6 +63,26 @@ const loading = ref(true);
 
 const repository = new HttpRepository("/api/v1");
 const panelFlags = ref<Record<string, boolean>>({});
+const instances = ref<Partial<Record<PublicationTarget, Instance[]>>>({});
+
+function instancesOf(target: PublicationTarget): Instance[] {
+  return instances.value[target] ?? [];
+}
+
+function urlOf(target: PublicationTarget): string | undefined {
+  return instancesOf(target).find((instance) => instance.id === forms[target].instance)?.url;
+}
+
+// Vulnerability-Lookup needs neither short name nor org ID (see the
+// backend's OPTIONAL_FIELDS).
+function isVl(target: PublicationTarget): boolean {
+  return target === "vl";
+}
+
+// The stored key only goes to the instance it was entered for.
+function needsKey(target: PublicationTarget): boolean {
+  return configured[target]?.instance !== forms[target].instance;
+}
 
 // A panel id absent from config defaults to enabled — same convention
 // as editor/enabled-extensions.ts's filterEnabled() and AppHeader.vue's
@@ -66,12 +94,14 @@ const visibleTargets = computed(() =>
 async function load(): Promise<void> {
   loading.value = true;
 
-  const [result, capabilities] = await Promise.all([
+  const [result, capabilities, available] = await Promise.all([
     apiRequest<Record<string, StoredCredential>>("/cna-credentials"),
     repository.getCapabilities(),
+    apiRequest<Record<PublicationTarget, Instance[]>>("/cna-credentials/instances"),
   ]);
 
   panelFlags.value = capabilities.panels;
+  instances.value = available;
 
   for (const target of TARGETS) {
     const stored = result[target.id];
@@ -79,6 +109,9 @@ async function load(): Promise<void> {
     if (stored) {
       configured[target.id] = stored;
       forms[target.id] = { ...stored, cveApiKey: "" };
+    } else if (instancesOf(target.id).length === 1) {
+      // Only one to choose from: chosen.
+      forms[target.id].instance = instancesOf(target.id)[0]!.id;
     }
   }
 
@@ -97,7 +130,7 @@ async function onSave(target: PublicationTarget): Promise<void> {
       {
         method: "PUT",
         body: JSON.stringify({
-          cveUrl: form.cveUrl,
+          instance: form.instance,
           shortName: form.shortName,
           orgId: form.orgId,
           cveApiOrg: form.cveApiOrg,
@@ -167,15 +200,49 @@ onMounted(load);
             <span v-else class="badge text-bg-secondary">Not configured</span>
           </h2>
 
-          <form @submit.prevent="onSave(target.id)">
+          <p
+            v-if="instancesOf(target.id).length === 0"
+            class="text-secondary mb-0"
+          >
+            This instance's operator hasn't configured a server to publish
+            to yet ([[panels.{{ target.id }}.instances]] in the config).
+          </p>
+
+          <form
+            v-else
+            @submit.prevent="onSave(target.id)"
+          >
             <div class="mb-2">
-              <label class="form-label">CVE API URL</label>
-              <input
-                v-model="forms[target.id].cveUrl"
-                type="url"
-                class="form-control"
+              <label
+                :for="`instance-${target.id}`"
+                class="form-label"
+              >Server</label>
+              <select
+                :id="`instance-${target.id}`"
+                v-model="forms[target.id].instance"
+                class="form-select"
                 required
               >
+                <option
+                  value=""
+                  disabled
+                >
+                  Choose…
+                </option>
+                <option
+                  v-for="instance in instancesOf(target.id)"
+                  :key="instance.id"
+                  :value="instance.id"
+                >
+                  {{ instance.name }}
+                </option>
+              </select>
+              <div
+                v-if="urlOf(target.id)"
+                class="form-text"
+              >
+                {{ urlOf(target.id) }}
+              </div>
             </div>
 
             <div class="row">
@@ -185,8 +252,14 @@ onMounted(load);
                   v-model="forms[target.id].shortName"
                   type="text"
                   class="form-control"
-                  required
+                  :required="!isVl(target.id)"
                 >
+                <div
+                  v-if="isVl(target.id)"
+                  class="form-text"
+                >
+                  Optional; not sent when empty.
+                </div>
               </div>
 
               <div class="col-md-6 mb-2">
@@ -195,8 +268,14 @@ onMounted(load);
                   v-model="forms[target.id].orgId"
                   type="text"
                   class="form-control"
-                  required
+                  :required="!isVl(target.id)"
                 >
+                <div
+                  v-if="isVl(target.id)"
+                  class="form-text"
+                >
+                  Optional; not sent when empty.
+                </div>
               </div>
 
               <div class="col-md-6 mb-2">
@@ -226,12 +305,17 @@ onMounted(load);
                 v-model="forms[target.id].cveApiKey"
                 type="password"
                 class="form-control"
-                :placeholder="configured[target.id] ? 'Unchanged' : ''"
-                :required="!configured[target.id]"
+                :placeholder="needsKey(target.id) ? '' : 'Unchanged'"
+                :required="needsKey(target.id)"
               >
               <div class="form-text">
-                Never shown once saved — leave blank to keep the current
-                key when updating the other fields.
+                <template v-if="configured[target.id] && needsKey(target.id)">
+                  Enter the key again for the new server.
+                </template>
+                <template v-else>
+                  Never shown once saved — leave blank to keep the current
+                  key when updating the other fields.
+                </template>
               </div>
             </div>
 

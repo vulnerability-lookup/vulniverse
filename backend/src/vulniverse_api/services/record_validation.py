@@ -630,6 +630,17 @@ SEMANTIC_VALIDATORS: dict[
 }
 
 
+def not_required_paths(profile: dict[str, Any]) -> frozenset[str]:
+    """validation.notRequired in the manifest: dotted paths of fields the
+    base schema requires but this profile doesn't (GCVE records have no
+    CVE ID). Their "required" errors are dropped here; a value that's
+    present is still checked. The editor schema generator drops them
+    from its required lists the same way."""
+    validation = profile.get("validation")
+    paths = validation.get("notRequired", []) if isinstance(validation, dict) else []
+    return frozenset(path for path in paths if isinstance(path, str))
+
+
 def validate_record(
     record: dict[str, Any],
     profile_id: str,
@@ -650,7 +661,15 @@ def validate_record(
             )
         )
 
-    errors = [shape_error(error) for error in base_errors]
+    not_required = not_required_paths(profile)
+    errors = [
+        shaped
+        for shaped in (shape_error(error) for error in base_errors)
+        if not (
+            shaped["validator"] == "required"
+            and ".".join(map(str, shaped["path"])) in not_required
+        )
+    ]
 
     semantic_validator_id = profile.get("semanticValidator")
 

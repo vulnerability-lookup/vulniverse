@@ -21,7 +21,8 @@ def test_record_quality_scores_a_record(client: FlaskClient) -> None:
 
 
 def test_disabled_panel_is_404(
-    client: FlaskClient, monkeypatch: pytest.MonkeyPatch,
+    client: FlaskClient,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     real_load_app_config = api_module.load_app_config
 

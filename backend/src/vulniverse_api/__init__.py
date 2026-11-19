@@ -7,7 +7,11 @@ from typing import Any
 from dotenv import load_dotenv
 from flask import Flask
 
-from .app_config import load_app_config
+from .app_config import (
+    REGISTRATION_MODES,
+    load_app_config,
+    publish_instances_problem,
+)
 from .auth.identity import init_auth
 from .extensions import csrf, db, login_manager, migrate
 
@@ -30,9 +34,19 @@ def create_app(
     mode = app_config["server"]["mode"]
 
     if mode not in {"local", "multiuser"}:
+        raise RuntimeError(f"Invalid Vulniverse deployment mode: {mode}")
+
+    registration = app_config["server"]["registration"]
+
+    if registration not in REGISTRATION_MODES:
         raise RuntimeError(
-            f"Invalid Vulniverse deployment mode: {mode}"
+            f"Invalid [server] registration: {registration!r}"
+            f" (one of {', '.join(REGISTRATION_MODES)})"
         )
+
+    problem = publish_instances_problem(app_config["publish_instances"])
+    if problem:
+        raise RuntimeError(f"Invalid config: {problem}")
 
     instance_path = Path(app.instance_path)
     instance_path.mkdir(parents=True, exist_ok=True)
@@ -53,7 +67,7 @@ def create_app(
     if not cna_encryption_key and test_config is None:
         raise RuntimeError(
             "CNA_CREDENTIAL_ENCRYPTION_KEY environment variable is not "
-            "set. Generate one with `python -c \"from cryptography.fernet "
+            'set. Generate one with `python -c "from cryptography.fernet '
             'import Fernet; print(Fernet.generate_key().decode())"` and '
             "set it in backend/.env (see docs/setup/production.md).",
         )
@@ -67,6 +81,9 @@ def create_app(
         ),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         VULNIVERSE_MODE=mode,
+        VULNIVERSE_REGISTRATION=registration,
+        VULNIVERSE_TWO_FACTOR=app_config["server"]["two_factor"],
+        VULNIVERSE_PUBLISH_INSTANCES=app_config["publish_instances"],
     )
 
     if test_config:
@@ -78,23 +95,11 @@ def create_app(
     csrf.init_app(app)
 
     # Ensure models are registered with SQLAlchemy and Alembic.
-    from . import models
+    from . import models  # noqa: F401
     from .api import api_bp
     from .cli import register_cli
 
     init_auth()
-
-    @login_manager.user_loader
-    def load_user(user_id: str) -> models.User | None:
-        # populate_existing=True: is_admin/is_active can change (an admin
-        # action) between two requests from the same still-logged-in
-        # session — without this, a stale identity-mapped User object
-        # could mask a deactivation until something else evicts it.
-        return db.session.get(
-            models.User,
-            int(user_id),
-            populate_existing=True,
-        )
 
     app.register_blueprint(
         api_bp,

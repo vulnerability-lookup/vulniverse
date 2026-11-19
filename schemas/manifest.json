@@ -66,6 +66,13 @@
       },
       "semanticValidator": "gcve-bcp-05",
       "validation": {
+        "notRequired": [
+          "cveMetadata.cveId",
+          "cveMetadata.assignerOrgId",
+          "containers.cna.providerMetadata",
+          "cveMetadata.state",
+          "containers.cna.providerMetadata.orgId"
+        ],
         "preferredRootBranch": {
           "index": 0,
           "keyword": "oneOf"

@@ -59,7 +59,9 @@ def test_submit_job_requires_at_least_one_input(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     with pytest.raises(ValueError, match="No patch inputs"):
@@ -146,12 +148,15 @@ def test_submit_job_raises_on_non_202_with_error_envelope(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_post(url: str, *, json: Any, headers: Any, timeout: Any) -> FakeResponse:
         return FakeResponse(
-            429, {"error": {"code": "busy", "message": "Queue is full"}},
+            429,
+            {"error": {"code": "busy", "message": "Queue is full"}},
         )
 
     monkeypatch.setattr(patch2vuln.httpx, "post", fake_post)
@@ -164,7 +169,9 @@ def test_submit_job_raises_on_non_202_without_error_envelope(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_post(url: str, *, json: Any, headers: Any, timeout: Any) -> FakeResponse:
@@ -180,7 +187,9 @@ def test_submit_job_raises_on_timeout(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_post(url: str, *, json: Any, headers: Any, timeout: Any) -> None:
@@ -196,7 +205,9 @@ def test_submit_job_raises_on_connection_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_post(url: str, *, json: Any, headers: Any, timeout: Any) -> None:
@@ -212,7 +223,9 @@ def test_submit_job_raises_when_no_job_id_returned(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_post(url: str, *, json: Any, headers: Any, timeout: Any) -> FakeResponse:
@@ -244,7 +257,9 @@ def test_get_job_status_maps_remote_status(
     expected: str,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_get(url: str, *, headers: Any, timeout: Any) -> FakeResponse:
@@ -260,7 +275,9 @@ def test_get_job_status_raises_lookup_error_on_404(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_get(url: str, *, headers: Any, timeout: Any) -> FakeResponse:
@@ -276,7 +293,9 @@ def test_get_job_status_raises_on_connection_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_get(url: str, *, headers: Any, timeout: Any) -> None:
@@ -292,17 +311,23 @@ def test_get_job_status_passes_on_worker_availability(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
     monkeypatch.setattr(
         patch2vuln.httpx,
         "get",
         lambda url, *, headers, timeout: FakeResponse(
-            200, {"status": "queued", "workerAvailable": False},
+            200,
+            {"status": "queued", "workerAvailable": False},
         ),
     )
 
-    assert patch2vuln.get_job_status("job-123") == {"status": "queued", "workerAvailable": False}
+    assert patch2vuln.get_job_status("job-123") == {
+        "status": "queued",
+        "workerAvailable": False,
+    }
 
 
 # --- cancel_job ------------------------------------------------------------
@@ -323,12 +348,16 @@ def test_cancel_job_reports_the_resulting_status(
     expected: str,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     captured: dict[str, Any] = {}
 
-    def fake_delete(url: str, *, params: Any, headers: Any, timeout: Any) -> FakeResponse:
+    def fake_delete(
+        url: str, *, params: Any, headers: Any, timeout: Any
+    ) -> FakeResponse:
         captured["url"] = url
         captured["params"] = params
         return FakeResponse(http_status, {"id": "job-123", "status": remote_status})
@@ -347,7 +376,9 @@ def test_cancel_job_raises_lookup_error_on_404(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
     monkeypatch.setattr(
         patch2vuln.httpx,
@@ -366,7 +397,9 @@ def test_get_job_result_reshapes_response(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_get(url: str, *, headers: Any, timeout: Any) -> FakeResponse:
@@ -393,22 +426,35 @@ def test_get_job_result_drops_nulls_the_cve_schema_rejects(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     record: dict[str, Any] = copy.deepcopy(VALID_CVE_RECORD)
-    record["containers"]["cna"].update({
-        "title": None,
-        "affected": [
-            {"vendor": "Acme", "product": "Widget", "collectionURL": None, "versions": [None]},
-        ],
-        "x_gcve": [{"extensions": {"bcp-05-x-02": {"x_patch2vuln": {"commit": None}}}}],
-    })
+    record["containers"]["cna"].update(
+        {
+            "title": None,
+            "affected": [
+                {
+                    "vendor": "Acme",
+                    "product": "Widget",
+                    "collectionURL": None,
+                    "versions": [None],
+                },
+            ],
+            "x_gcve": [
+                {"extensions": {"bcp-05-x-02": {"x_patch2vuln": {"commit": None}}}}
+            ],
+        }
+    )
 
     monkeypatch.setattr(
         patch2vuln.httpx,
         "get",
-        lambda url, *, headers, timeout: FakeResponse(200, {"records": {"cve": record}}),
+        lambda url, *, headers, timeout: FakeResponse(
+            200, {"records": {"cve": record}}
+        ),
     )
 
     cna = patch2vuln.get_job_result("job-123")["record"]["containers"]["cna"]
@@ -416,21 +462,27 @@ def test_get_job_result_drops_nulls_the_cve_schema_rejects(
     assert "title" not in cna
     assert cna["affected"] == [{"vendor": "Acme", "product": "Widget", "versions": []}]
     # The patch2vuln extension allows null, so x_gcve is untouched.
-    assert cna["x_gcve"][0]["extensions"]["bcp-05-x-02"]["x_patch2vuln"]["commit"] is None
+    assert (
+        cna["x_gcve"][0]["extensions"]["bcp-05-x-02"]["x_patch2vuln"]["commit"] is None
+    )
 
 
 def test_get_job_result_passes_the_osv_record_through_without_nulls(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     osv = {
         "id": "GCVE-1-2026-0001",
         "summary": "Path traversal",
         "aliases": None,
-        "affected": [{"package": {"ecosystem": "PyPI", "name": "widget", "purl": None}}],
+        "affected": [
+            {"package": {"ecosystem": "PyPI", "name": "widget", "purl": None}}
+        ],
         "database_specific": {"x_gcve": {"commit": None}},
     }
 
@@ -438,7 +490,8 @@ def test_get_job_result_passes_the_osv_record_through_without_nulls(
         patch2vuln.httpx,
         "get",
         lambda url, *, headers, timeout: FakeResponse(
-            200, {"records": {"cve": copy.deepcopy(VALID_CVE_RECORD), "osv": osv}},
+            200,
+            {"records": {"cve": copy.deepcopy(VALID_CVE_RECORD), "osv": osv}},
         ),
     )
 
@@ -455,7 +508,9 @@ def test_get_job_result_raises_lookup_error_on_404(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_get(url: str, *, headers: Any, timeout: Any) -> FakeResponse:
@@ -471,7 +526,9 @@ def test_get_job_result_rejects_missing_records(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_get(url: str, *, headers: Any, timeout: Any) -> FakeResponse:
@@ -487,7 +544,9 @@ def test_get_job_result_rejects_invalid_record_shape(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_patch2vuln_config", enabled_config,
+        patch2vuln,
+        "get_patch2vuln_config",
+        enabled_config,
     )
 
     def fake_get(url: str, *, headers: Any, timeout: Any) -> FakeResponse:
@@ -506,13 +565,18 @@ def test_stream_job_status_stops_immediately_on_terminal_status(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        patch2vuln, "get_job_status", lambda job_id: {"status": "completed"},
+        patch2vuln,
+        "get_job_status",
+        lambda job_id: {"status": "completed"},
     )
 
     events = list(patch2vuln.stream_job_status("token-abc", "job-123"))
 
     assert events[0] == "retry: 3000\n\n"
-    assert events[1] == 'event: status\ndata: {"jobId": "token-abc", "status": "completed"}\n\n'
+    assert (
+        events[1]
+        == 'event: status\ndata: {"jobId": "token-abc", "status": "completed"}\n\n'
+    )
     assert len(events) == 2
 
 
@@ -549,14 +613,19 @@ def test_stream_job_status_treats_job_not_found_as_failed(
 
     events = list(patch2vuln.stream_job_status("token-abc", "job-123"))
 
-    assert events[-1] == 'event: status\ndata: {"jobId": "token-abc", "status": "failed"}\n\n'
+    assert (
+        events[-1]
+        == 'event: status\ndata: {"jobId": "token-abc", "status": "failed"}\n\n'
+    )
 
 
 def test_stream_job_status_waits_out_an_outage_on_the_first_check(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     outcomes: list[dict[str, Any] | Exception] = [
-        RuntimeError("unreachable"), {"status": "running"}, {"status": "completed"},
+        RuntimeError("unreachable"),
+        {"status": "running"},
+        {"status": "completed"},
     ]
     states = iter(outcomes)
 
@@ -640,11 +709,13 @@ def test_stream_job_status_reports_an_outage_once_and_its_end(
 def test_stream_job_status_reports_a_missing_worker(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    states = iter([
-        {"status": "running", "workerAvailable": True},
-        {"status": "running", "workerAvailable": False},
-        {"status": "failed"},
-    ])
+    states = iter(
+        [
+            {"status": "running", "workerAvailable": True},
+            {"status": "running", "workerAvailable": False},
+            {"status": "failed"},
+        ]
+    )
 
     monkeypatch.setattr(patch2vuln, "get_job_status", lambda job_id: next(states))
     monkeypatch.setattr(patch2vuln.time, "sleep", lambda _seconds: None)
@@ -663,7 +734,8 @@ def test_stream_job_status_ends_after_its_maximum_lifetime(
 ) -> None:
     # A job that never finishes, e.g. queued with no worker running.
     monkeypatch.setattr(
-        patch2vuln, "get_job_status",
+        patch2vuln,
+        "get_job_status",
         lambda job_id: {"status": "queued", "workerAvailable": False},
     )
     monkeypatch.setattr(patch2vuln.time, "sleep", lambda _seconds: None)

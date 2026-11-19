@@ -124,7 +124,9 @@ def test_cpe_products_forwards_vendor_q(
 ) -> None:
     captured: dict[str, Any] = {}
 
-    def fake_search_products(q: str, *, page: int, per_page: int, vendor_q: str | None) -> dict:
+    def fake_search_products(
+        q: str, *, page: int, per_page: int, vendor_q: str | None
+    ) -> dict:
         captured["q"] = q
         captured["vendor_q"] = vendor_q
         return SEARCH_RESULT
@@ -141,7 +143,9 @@ def test_cpe_products_returns_503_when_catalog_unavailable(
     client: FlaskClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def raise_corrupt(q: str, *, page: int, per_page: int, vendor_q: str | None) -> None:
+    def raise_corrupt(
+        q: str, *, page: int, per_page: int, vendor_q: str | None
+    ) -> None:
         raise ValueError("malformed catalog")
 
     monkeypatch.setattr(cpe_search_api, "search_products", raise_corrupt)
