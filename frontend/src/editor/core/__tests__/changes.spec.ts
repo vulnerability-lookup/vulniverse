@@ -142,4 +142,16 @@ describe("the list of changes", () => {
     undoChange(current, diffPaths(current, saved).changes[0]!);
     expect(current).toEqual(saved);
   });
+
+  it("lists a new text entry in a list as added", () => {
+    const saved = { modules: ["a"] };
+    const current = { modules: ["a", "b"] };
+    const { added, changes } = diffPaths(current, saved);
+
+    expect(added.has("modules.1")).toBe(true);
+    expect(changes).toEqual([{ kind: "added", path: "modules.1", after: "b" }]);
+
+    undoChange(current, changes[0]!);
+    expect(current).toEqual(saved);
+  });
 });

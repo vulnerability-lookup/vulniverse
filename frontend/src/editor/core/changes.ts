@@ -61,10 +61,11 @@ export function diffPaths(
   );
 
   // `quiet`: inside an added or removed object, which is listed once.
-  function walk(a: unknown, b: unknown, path: string, quiet = false): boolean {
+  // `listItem`: a list's item, which is added even if it's just a text.
+  function walk(a: unknown, b: unknown, path: string, quiet = false, listItem = false): boolean {
     if (a === b) return false;
 
-    const isAdded = Boolean(path) && b === undefined && isContainer(a);
+    const isAdded = Boolean(path) && b === undefined && (isContainer(a) || (listItem && a !== undefined));
     const isRemoved = Boolean(path) && a === undefined && isContainer(b);
 
     if (isAdded) added.add(path);
@@ -138,7 +139,7 @@ export function diffPaths(
 
       const old = leftOver.shift();
 
-      if (walk(item, old === undefined ? undefined : oldItems[old], join(path, index), quiet)) differs = true;
+      if (walk(item, old === undefined ? undefined : oldItems[old], join(path, index), quiet, true)) differs = true;
     });
 
     // Old items nothing was paired with: removed.
