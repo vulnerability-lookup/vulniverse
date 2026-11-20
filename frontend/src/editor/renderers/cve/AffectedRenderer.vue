@@ -134,6 +134,13 @@ function controlFor(
   };
 }
 
+// Versions get their own renderer (versions/VersionsRenderer.vue).
+const versionsControl: ControlElement = {
+  type: "Control",
+  scope: "#/properties/versions",
+  options: { renderer: "vulniverse-versions" },
+};
+
 function itemPath(
   index: number,
 ): string {
@@ -311,7 +318,7 @@ const changeClass = useChangeClass();
         <ChangedField :path="`${itemPath(index)}.versions`">
           <dispatch-renderer
             :schema="control.schema"
-            :uischema="controlFor('versions')"
+            :uischema="versionsControl"
             :path="itemPath(index)"
             :enabled="control.enabled"
             :renderers="control.renderers"

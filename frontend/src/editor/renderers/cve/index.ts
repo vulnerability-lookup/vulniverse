@@ -15,6 +15,8 @@ import AdpRenderer from
 
 import AffectedRenderer from
   "./AffectedRenderer.vue";
+import VersionsRenderer from
+  "./versions/VersionsRenderer.vue";
 
 import ReferencesRenderer from
   "./ReferencesRenderer.vue";
@@ -172,6 +174,16 @@ export const CVE_RENDERERS:
       tester:
         rendererOptionIs(
           "vulniverse-affected",
+        ),
+    },
+
+    {
+      renderer:
+        VersionsRenderer,
+
+      tester:
+        rendererOptionIs(
+          "vulniverse-versions",
         ),
     },
 

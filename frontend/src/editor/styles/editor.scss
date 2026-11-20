@@ -210,6 +210,12 @@
   }
 }
 
+// A Bootstrap column has half the gutter as padding on its left: put the
+// bar the usual distance from its field, not next to the column before.
+.row > .editor-changed::before {
+  left: calc(var(--bs-gutter-x, 0px) * 0.5 - 0.5rem);
+}
+
 // Only the innermost marker shows: an open card's changed fields carry
 // the bar, not the whole card. A closed card has nothing inside, so it
 // keeps its bar (and its header says how many fields changed).
