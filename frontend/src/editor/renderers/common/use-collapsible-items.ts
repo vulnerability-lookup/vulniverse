@@ -1,4 +1,5 @@
 import {
+  computed,
   inject,
   ref,
   watch,
@@ -17,12 +18,12 @@ import type {
 } from "vue";
 
 /*
- * Shared by every array-card renderer: the item just added (always
- * the last one, since addItem appends) starts expanded so its
- * fields are visible immediately; everything else starts collapsed
- * and toggles via its own button. With the array's data path, the item
- * a reveal request points into (the record tree, a validation error)
- * opens too.
+ * Shared by every array-card renderer: on load a single card starts
+ * expanded, several start collapsed; the item just added (always the
+ * last one, since addItem appends) opens so its fields are visible
+ * immediately; each toggles via its own button, or all at once. With
+ * the array's data path, the item a reveal request points into (the
+ * record tree, a validation error) opens too.
  */
 export function useCollapsibleItems(
   length: Ref<number>,
@@ -51,8 +52,10 @@ export function useCollapsibleItems(
     length,
     (currentLength, previousLength) => {
       if (previousLength === undefined) {
-        if (currentLength > 0) {
-          expandedIndices.value.add(currentLength - 1);
+        // On load: a single card opens (nothing to overview), several
+        // stay closed, their headers summing them up.
+        if (currentLength === 1) {
+          expandedIndices.value.add(0);
         }
 
         return;
@@ -83,8 +86,22 @@ export function useCollapsibleItems(
     }
   }
 
+  // "Expand all" / "Collapse all" for the whole list.
+  const allExpanded = computed(() => (
+    length.value > 0
+    && Array.from({ length: length.value }, (_, index) => index).every((index) => expandedIndices.value.has(index))
+  ));
+
+  function toggleAll(): void {
+    expandedIndices.value = allExpanded.value
+      ? new Set()
+      : new Set(Array.from({ length: length.value }, (_, index) => index));
+  }
+
   return {
     isExpanded,
     toggle,
+    allExpanded,
+    toggleAll,
   };
 }

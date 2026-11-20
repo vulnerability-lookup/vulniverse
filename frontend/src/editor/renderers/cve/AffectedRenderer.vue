@@ -4,6 +4,7 @@ import {
   useIsChanged,
 } from "../../core/changes";
 import ChangeBadge from "../common/ChangeBadge.vue";
+import ExpandAllButton from "../common/ExpandAllButton.vue";
 import RemovedItems from "../common/RemovedItems.vue";
 import ChangedField from "../common/ChangedField.vue";
 
@@ -59,7 +60,7 @@ const items = computed(() => {
   >;
 });
 
-const { isExpanded, toggle } = useCollapsibleItems(
+const { isExpanded, toggle, allExpanded, toggleAll } = useCollapsibleItems(
   computed(() => items.value.length),
   computed(() => control.value.path),
 );
@@ -170,14 +171,22 @@ const changeClass = useChangeClass();
     <legend class="d-flex align-items-center justify-content-between h5">
       {{ control.label }}
 
-      <button
-        type="button"
-        class="btn btn-outline-primary btn-sm"
-        :disabled="!control.enabled"
-        @click="addAffected"
-      >
-        + Add affected product
-      </button>
+      <div class="d-flex gap-1">
+        <ExpandAllButton
+          :count="items.length"
+          :all-expanded="allExpanded"
+          @toggle="toggleAll"
+        />
+
+        <button
+          type="button"
+          class="btn btn-outline-primary btn-sm"
+          :disabled="!control.enabled"
+          @click="addAffected"
+        >
+          + Add affected product
+        </button>
+      </div>
     </legend>
 
     <p

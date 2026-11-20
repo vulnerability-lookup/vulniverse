@@ -3,6 +3,7 @@ import {
   useChangeClass,
 } from "../../core/changes";
 import ChangeBadge from "./ChangeBadge.vue";
+import ExpandAllButton from "./ExpandAllButton.vue";
 import RemovedItems from "./RemovedItems.vue";
 
 import {
@@ -176,7 +177,7 @@ const childUiSchema = computed((): UISchemaElement => {
   };
 });
 
-const { isExpanded, toggle } = useCollapsibleItems(
+const { isExpanded, toggle, allExpanded, toggleAll } = useCollapsibleItems(
   computed(() => items.value.length),
   computed(() => control.value.path),
 );
@@ -265,14 +266,22 @@ const changeClass = useChangeClass();
     <legend class="d-flex align-items-center justify-content-between h6">
       {{ control.label }}
 
-      <button
-        type="button"
-        class="btn btn-outline-primary btn-sm"
-        :disabled="!control.enabled"
-        @click="addEntry"
-      >
-        + Add
-      </button>
+      <div class="d-flex gap-1">
+        <ExpandAllButton
+          :count="items.length"
+          :all-expanded="allExpanded"
+          @toggle="toggleAll"
+        />
+
+        <button
+          type="button"
+          class="btn btn-outline-primary btn-sm"
+          :disabled="!control.enabled"
+          @click="addEntry"
+        >
+          + Add
+        </button>
+      </div>
     </legend>
 
     <p

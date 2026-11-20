@@ -17,6 +17,7 @@ import {
 
 import { useChangeClass } from "../../../core/changes";
 import ChangeBadge from "../../common/ChangeBadge.vue";
+import ExpandAllButton from "../../common/ExpandAllButton.vue";
 import ChangedField from "../../common/ChangedField.vue";
 import RemovedItems from "../../common/RemovedItems.vue";
 import SuggestField from "../../common/SuggestField.vue";
@@ -53,7 +54,7 @@ const { handleChange } = useJsonFormsControl(props);
 
 const items = computed(() => (control.value.data ?? []) as VersionEntry[]);
 
-const { isExpanded, toggle } = useCollapsibleItems(
+const { isExpanded, toggle, allExpanded, toggleAll } = useCollapsibleItems(
   computed(() => items.value.length),
   computed(() => control.value.path),
 );
@@ -137,14 +138,22 @@ function missing(entry: VersionEntry, field: "version" | "versionType" | "bound"
     <legend class="d-flex align-items-center justify-content-between h6">
       {{ control.label || "Versions" }}
 
-      <button
-        type="button"
-        class="btn btn-outline-primary btn-sm"
-        :disabled="!control.enabled"
-        @click="addVersion"
-      >
-        + Add version
-      </button>
+      <div class="d-flex gap-1">
+        <ExpandAllButton
+          :count="items.length"
+          :all-expanded="allExpanded"
+          @toggle="toggleAll"
+        />
+
+        <button
+          type="button"
+          class="btn btn-outline-primary btn-sm"
+          :disabled="!control.enabled"
+          @click="addVersion"
+        >
+          + Add version
+        </button>
+      </div>
     </legend>
 
     <p

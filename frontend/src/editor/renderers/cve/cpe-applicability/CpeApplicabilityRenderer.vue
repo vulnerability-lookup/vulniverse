@@ -3,6 +3,7 @@ import {
   useChangeClass,
 } from "../../../core/changes";
 import ChangeBadge from "../../common/ChangeBadge.vue";
+import ExpandAllButton from "../../common/ExpandAllButton.vue";
 import RemovedItems from "../../common/RemovedItems.vue";
 
 import {
@@ -97,7 +98,7 @@ const statements = computed(() => {
   return (control.value.data ?? []) as CpeStatement[];
 });
 
-const { isExpanded, toggle } = useCollapsibleItems(
+const { isExpanded, toggle, allExpanded, toggleAll } = useCollapsibleItems(
   computed(() => statements.value.length),
   computed(() => control.value.path),
 );
@@ -400,14 +401,22 @@ const changeClass = useChangeClass();
     <legend class="d-flex align-items-center justify-content-between h5">
       CPE Applicability
 
-      <button
-        type="button"
-        class="btn btn-outline-primary btn-sm"
-        :disabled="!control.enabled"
-        @click="addStatement"
-      >
-        + Add statement
-      </button>
+      <div class="d-flex gap-1">
+        <ExpandAllButton
+          :count="statements.length"
+          :all-expanded="allExpanded"
+          @toggle="toggleAll"
+        />
+
+        <button
+          type="button"
+          class="btn btn-outline-primary btn-sm"
+          :disabled="!control.enabled"
+          @click="addStatement"
+        >
+          + Add statement
+        </button>
+      </div>
     </legend>
 
     <p
