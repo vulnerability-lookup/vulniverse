@@ -3,6 +3,7 @@ import {
   useChangeClass,
 } from "../../../core/changes";
 import ChangeBadge from "../../common/ChangeBadge.vue";
+import RemovedItems from "../../common/RemovedItems.vue";
 
 import {
   computed,
@@ -675,6 +676,8 @@ const changeClass = useChangeClass();
         </button>
       </div>
     </div>
+
+    <RemovedItems :path="control.path" />
 
     <CpeConditionDialog
       ref="conditionDialogRef"

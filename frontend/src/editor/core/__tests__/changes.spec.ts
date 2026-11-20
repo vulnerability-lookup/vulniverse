@@ -125,5 +125,21 @@ describe("the list of changes", () => {
 
     expect(current).toEqual(original);
   });
-});
 
+  it("lists a list removed as a whole as its items, and restores them", () => {
+    const saved = { title: "T", refs: [{ url: "a" }, { url: "b" }] };
+    const current: Record<string, unknown> = { title: "T" };
+
+    expect(diffPaths(current, saved).changes).toEqual([
+      { kind: "removed", path: "refs.0", before: { url: "a" }, fromList: true },
+      { kind: "removed", path: "refs.1", before: { url: "b" }, fromList: true },
+    ]);
+
+    // Restoring the second one first recreates the list with it.
+    undoChange(current, diffPaths(current, saved).changes[1]!);
+    expect(current).toEqual({ title: "T", refs: [{ url: "b" }] });
+
+    undoChange(current, diffPaths(current, saved).changes[0]!);
+    expect(current).toEqual(saved);
+  });
+});

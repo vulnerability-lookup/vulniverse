@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, inject, ref } from "vue";
 
-import { undoChange } from "../core/changes";
+import { useUndoChange } from "../core/changes";
 import type { RecordChange } from "../core/changes";
 import { editorStateKey } from "../core/context/keys";
-import { humanize, summaryOf } from "../core/record-tree";
-import type { EditorDocument } from "../contracts";
+import { humanize, shownValue as shown, summaryOf } from "../core/record-tree";
 
 /*
  * The header's "unsaved changes" badge, opening the list of what changed
@@ -48,15 +47,6 @@ function label(change: RecordChange): string {
   }).join(" › ");
 }
 
-function shown(value: unknown): string {
-  if (value === undefined || value === "") return "—";
-  if (Array.isArray(value)) return `${value.length} ${value.length === 1 ? "item" : "items"}`;
-  if (typeof value === "object" && value !== null) return summaryOf(value) || (Object.keys(value).length ? "{…}" : "empty");
-
-  const text = String(value);
-  return text.length > 60 ? `${text.slice(0, 59)}…` : text;
-}
-
 // A removed item isn't in the editor any more: show the list it was in.
 function revealTarget(change: RecordChange): string {
   return change.kind === "removed" ? change.path.slice(0, change.path.lastIndexOf(".")) : change.path;
@@ -67,15 +57,12 @@ function show(change: RecordChange): void {
   state.revealPath(revealTarget(change));
 }
 
-function undo(change: RecordChange): void {
-  if (!state.record.value) return;
+const undoChange = useUndoChange();
 
+function undo(change: RecordChange): void {
   // Its button goes away with the change: keep the focus (and the list open).
   menu.value?.focus();
-
-  const record = plainCopy(state.record.value) as Record<string, unknown>;
-  undoChange(record, change);
-  state.record.value = record as EditorDocument;
+  undoChange(change);
 }
 
 function undoAll(): void {
@@ -168,7 +155,7 @@ const title = computed(() => {
               v-else-if="change.kind === 'removed'"
               class="text-truncate"
             >
-              <span class="badge text-bg-secondary me-1">Removed</span>{{ shown(change.before) }}
+              <span class="badge bg-danger-subtle text-danger-emphasis me-1">Removed</span>{{ shown(change.before) }}
             </div>
             <template v-else>
               <div

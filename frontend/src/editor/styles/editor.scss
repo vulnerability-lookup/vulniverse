@@ -226,6 +226,17 @@
   display: none;
 }
 
+// An item removed from a list since the last save (RemovedItems.vue).
+.editor-removed {
+  border-style: dashed;
+  background: transparent;
+
+  // Red, not the colour of an addition or edit.
+  &.editor-changed::before {
+    background: var(--bs-danger);
+  }
+}
+
 // The list of unsaved changes, opened from the header's badge.
 .editor-unsaved-toggle {
   cursor: pointer;

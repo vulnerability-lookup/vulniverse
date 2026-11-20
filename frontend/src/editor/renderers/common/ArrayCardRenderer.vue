@@ -3,6 +3,7 @@ import {
   useChangeClass,
 } from "../../core/changes";
 import ChangeBadge from "./ChangeBadge.vue";
+import RemovedItems from "./RemovedItems.vue";
 
 import {
   computed,
@@ -332,5 +333,7 @@ const changeClass = useChangeClass();
         />
       </div>
     </div>
+
+    <RemovedItems :path="control.path" />
   </fieldset>
 </template>

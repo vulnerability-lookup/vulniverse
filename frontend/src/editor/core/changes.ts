@@ -69,7 +69,17 @@ export function diffPaths(
 
     if (isAdded) added.add(path);
     if (!quiet && isAdded) changes.push({ kind: "added", path, after: a });
-    if (!quiet && isRemoved) changes.push({ kind: "removed", path, before: b });
+    if (!quiet && isRemoved) {
+      // A list removed as a whole (e.g. its last item, where it must not be
+      // empty) counts as its items removed, like a list that's still there.
+      if (Array.isArray(b) && b.length) {
+        b.forEach((item, index) => {
+          changes.push({ kind: "removed", path: join(path, index), before: item, fromList: true });
+        });
+      } else {
+        changes.push({ kind: "removed", path, before: b });
+      }
+    }
 
     const inner = quiet || isAdded || isRemoved;
     const left = emptyLike(a, b);
@@ -185,8 +195,11 @@ export function undoChange(record: Record<string, unknown>, change: RecordChange
       const index = Number(change.path.slice(at + 1));
       // Back where it was, or at the end if the list is shorter now.
       list.splice(Math.min(index, list.length), 0, JSON.parse(JSON.stringify(change.before)));
-      return;
+    } else {
+      // The whole list is gone: it comes back with this item.
+      setAtPath(record, change.path.slice(0, at), [change.before]);
     }
+    return;
   }
 
   setAtPath(record, change.path, change.kind === "added" ? undefined : change.before);
@@ -219,4 +232,19 @@ export function countChanges(changed: Set<string>, path: string): number {
   const inside = [...changed].filter((other) => other.startsWith(`${path}.`));
 
   return inside.filter((other) => !inside.some((deeper) => deeper.startsWith(`${other}.`))).length;
+}
+
+/** Undoes one change in the editor's record (a new copy, so everything updates). */
+export function useUndoChange(): (change: RecordChange) => void {
+  const state = inject(editorStateKey, null);
+
+  return (change) => {
+    if (!state?.record.value) return;
+
+    // Records are plain JSON, but after form edits they hold nested Vue
+    // proxies, which structuredClone (even after toRaw) can't copy.
+    const record = JSON.parse(JSON.stringify(state.record.value)) as Record<string, unknown>;
+    undoChange(record, change);
+    state.record.value = record as typeof state.record.value;
+  };
 }

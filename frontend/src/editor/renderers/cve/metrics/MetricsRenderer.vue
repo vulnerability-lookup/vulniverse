@@ -3,6 +3,7 @@ import {
   useChangeClass,
 } from "../../../core/changes";
 import ChangeBadge from "../../common/ChangeBadge.vue";
+import RemovedItems from "../../common/RemovedItems.vue";
 import ChangedField from "../../common/ChangedField.vue";
 
 import {
@@ -457,6 +458,8 @@ const changeClass = useChangeClass();
         </template>
       </div>
     </div>
+
+    <RemovedItems :path="control.path" />
 
     <CvssCalculatorDialog
       ref="calculatorRef"

@@ -77,6 +77,31 @@ export function summaryOf(value: unknown): string {
 }
 
 
+// An item's summary, else its first nested item's (a problem type's is in
+// its description), down to `depth` levels.
+function nestedSummary(value: unknown, depth: number): string {
+  const own = summaryOf(value);
+  if (own || depth === 0 || typeof value !== "object" || value === null) return own;
+
+  for (const child of Object.values(value)) {
+    const found = typeof child === "object" && child !== null ? nestedSummary(child, depth - 1) : "";
+    if (found) return found;
+  }
+
+  return "";
+}
+
+/** A value in one short line, for lists of changes: "—" when not set. */
+export function shownValue(value: unknown): string {
+  if (value === undefined || value === "") return "—";
+  if (Array.isArray(value)) return `${value.length} ${value.length === 1 ? "item" : "items"}`;
+  if (typeof value === "object" && value !== null) return nestedSummary(value, 3) || (Object.keys(value).length ? "{…}" : "empty");
+
+  const text = String(value);
+  return text.length > 60 ? `${text.slice(0, 59)}…` : text;
+}
+
+
 function childSchema(schema: JsonSchema | undefined, key: string | number): JsonSchema | undefined {
   if (!schema) {
     return undefined;

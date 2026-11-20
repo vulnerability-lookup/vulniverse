@@ -4,6 +4,7 @@ import {
   useIsChanged,
 } from "../../core/changes";
 import ChangeBadge from "../common/ChangeBadge.vue";
+import RemovedItems from "../common/RemovedItems.vue";
 import ChangedField from "../common/ChangedField.vue";
 
 import {
@@ -319,5 +320,7 @@ const changeClass = useChangeClass();
         </ChangedField>
       </div>
     </div>
+
+    <RemovedItems :path="control.path" />
   </fieldset>
 </template>
