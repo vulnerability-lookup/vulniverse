@@ -1,0 +1,337 @@
+{
+  "containers": {
+    "cna": {
+      "affected": [
+        {
+          "cpes": [
+            "cpe:2.3:a:flowintel:flowintel:*:*:*:*:*:*:*:*"
+          ],
+          "modules": [
+            "app/main/home.py",
+            "app/notification/notification_core.py"
+          ],
+          "product": "flowintel",
+          "programFiles": [
+            "app/main/home.py",
+            "app/notification/notification_core.py"
+          ],
+          "repo": "https://github.com/flowintel/flowintel",
+          "vendor": "flowintel",
+          "versions": [
+            {
+              "lessThan": "4.1.0",
+              "status": "affected",
+              "version": "0",
+              "versionType": "semver"
+            }
+          ]
+        }
+      ],
+      "cpeApplicability": [
+        {
+          "nodes": [
+            {
+              "cpeMatch": [
+                {
+                  "criteria": "cpe:2.3:a:flowintel:flowintel:*:*:*:*:*:*:*:*",
+                  "vulnerable": true
+                }
+              ],
+              "negate": false,
+              "operator": "OR"
+            }
+          ]
+        }
+      ],
+      "credits": [
+        {
+          "lang": "en",
+          "type": "reporter",
+          "value": "elhoim"
+        },
+        {
+          "lang": "en",
+          "type": "remediation developer",
+          "value": "David Cruciani"
+        }
+      ],
+      "descriptions": [
+        {
+          "lang": "en",
+          "value": "FlowIntel contains an authorization flaw in its deadline notification subsystem that allows an authenticated user to view case and task titles belonging to other users' private cases.\n\nThe deadline notification queries joined membership and assignment tables without properly correlating the joined rows to the specific case or task, and without verifying that the requesting user retains visibility of the parent case. As a result, private case and task titles from unrelated users could appear in the caller's reminder list, notification counts, and home-page statistics.\n\nAdditionally, the notification lookup mechanism relied on a shared pointer that could reference another recipient's record. Sequential polling by one user could overwrite a different user's deadline notification or conflate tasks that share the same title, causing integrity issues in notification state.\n\nHistorical deadline notices created before correct scoping was in place remained visible in notification lists and counts even after the recipient lost access to the underlying case.\n\nImpact:\n- Confidentiality: disclosure of private case and task titles to unauthorized users.\n- Integrity: cross-user notification records may be overwritten or conflated.\n\nAffected versions: FlowIntel prior to 4.1.0."
+        }
+      ],
+      "impacts": [
+        {
+          "capecId": "CAPEC-12",
+          "descriptions": [
+            {
+              "lang": "en",
+              "value": "CAPEC-12 Application Metadata Discovery"
+            }
+          ]
+        }
+      ],
+      "metrics": [
+        {
+          "cvssV4_0": {
+            "Automatable": "NOT_DEFINED",
+            "Recovery": "NOT_DEFINED",
+            "Safety": "NOT_DEFINED",
+            "attackComplexity": "LOW",
+            "attackRequirements": "NONE",
+            "attackVector": "NETWORK",
+            "baseScore": 5.3,
+            "baseSeverity": "MEDIUM",
+            "privilegesRequired": "LOW",
+            "providerUrgency": "NOT_DEFINED",
+            "subAvailabilityImpact": "NONE",
+            "subConfidentialityImpact": "NONE",
+            "subIntegrityImpact": "NONE",
+            "userInteraction": "NONE",
+            "valueDensity": "NOT_DEFINED",
+            "vectorString": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N",
+            "version": "4.0",
+            "vulnAvailabilityImpact": "NONE",
+            "vulnConfidentialityImpact": "LOW",
+            "vulnIntegrityImpact": "LOW",
+            "vulnerabilityResponseEffort": "NOT_DEFINED"
+          },
+          "format": "CVSS",
+          "scenarios": [
+            {
+              "lang": "en",
+              "value": "GENERAL"
+            }
+          ]
+        },
+        {
+          "format": "SSVC",
+          "other": {
+            "content": {
+              "options": [
+                {
+                  "Exploitation": "none"
+                },
+                {
+                  "Automatable": "yes"
+                },
+                {
+                  "Technical Impact": "partial"
+                }
+              ],
+              "role": "Supplier",
+              "timestamp": "2026-11-20T10:06:29Z",
+              "version": "2.0.3"
+            },
+            "type": "SSVC"
+          },
+          "scenarios": [
+            {
+              "lang": "en",
+              "value": "GENERAL"
+            }
+          ]
+        }
+      ],
+      "problemTypes": [
+        {
+          "descriptions": [
+            {
+              "cweId": "CWE-862",
+              "description": "CWE-862 Missing Authorization",
+              "lang": "en",
+              "type": "CWE"
+            }
+          ]
+        },
+        {
+          "descriptions": [
+            {
+              "cweId": "CWE-200",
+              "description": "CWE-200 Exposure of Sensitive Information to an Unauthorized Actor",
+              "lang": "en",
+              "type": "CWE"
+            }
+          ]
+        }
+      ],
+      "providerMetadata": {
+        "orgId": "00000000-0000-4000-8000-000000000000"
+      },
+      "references": [
+        {
+          "name": "Security patch",
+          "tags": [
+            "patch"
+          ],
+          "url": "https://github.com/flowintel/flowintel/commit/6a3d53ad03d7b69dd0eefacfcf6bc7ceca7e1c66"
+        }
+      ],
+      "solutions": [
+        {
+          "lang": "en",
+          "value": "The fix enforces proper authorization scoping on all deadline notification queries by adding explicit join conditions that correlate membership and assignment rows to the correct case or task, and by invoking a case-visibility check before generating task deadline reminders. Notification lookups are now scoped to the requesting user and the specific case, using stable object identifiers rather than shared pointers or title matching. A post-query filter hides historical deadline notices whose parent case is no longer accessible to the viewer. The home-page unread count is routed through the same filtered path, preventing leakage of inaccessible notifications."
+        }
+      ],
+      "title": "FlowIntel Deadline Notification Information Disclosure and Cross-User Notification Overwrite",
+      "x_gcve": [
+        {
+          "extensions": {
+            "bcp-05-x-01": {
+              "ai_annotations": [
+                {
+                  "ai_level": "generated",
+                  "description": "Draft vulnerability metadata was generated from a git-format patch using an Ollama-hosted language model. Human validation is required before publication.",
+                  "gna_source": 1,
+                  "models": [
+                    {
+                      "gna_source": 1,
+                      "identifier": "qwen3.8:27b",
+                      "name": "qwen3.8:27b",
+                      "source": "ollama"
+                    }
+                  ],
+                  "review_status": "full",
+                  "scope": "record",
+                  "tags": [
+                    "ai-computer-assisted:llm-generated",
+                    "ai-computer-assisted:classification"
+                  ]
+                }
+              ]
+            },
+            "bcp-05-x-02": {
+              "x_patch2vuln": {
+                "assumptions": [
+                  "The affected version range is assumed to be all versions prior to 4.1.0 based on the explicit context; no earlier version boundary is specified in the patch.",
+                  "The CAPEC-12 mapping is the closest available match; no CAPEC specifically covers 'information disclosure due to missing authorization scoping in ORM queries.'",
+                  "CVSS VI is rated Low based on the cross-user notification overwrite described in the commit message; if this overwrite is considered negligible in practice, VI could be reduced to None.",
+                  "The patch does not specify whether the vulnerability requires the attacker and victim to be in the same organization or different organizations; the analysis assumes cross-organization leakage is possible given the missing join conditions.",
+                  "The 'affected_version: 0' in the metadata is interpreted as 'all versions before the fix' rather than a literal version string."
+                ],
+                "capecRationale": [
+                  {
+                    "capecId": "CAPEC-12",
+                    "rationale": "The closest plausible CAPEC is Application Metadata Discovery, because the attacker (an authenticated user) discovers metadata—specifically case and task titles—about resources they are not authorized to access, through the application's notification subsystem. This is not a perfect fit because the discovery is a side-effect of a normal operation (polling notifications) rather than a deliberate metadata-enumeration technique, and no dedicated CAPEC for 'broken access control via missing query scoping' exists in the CAPEC catalog. CAPEC-12 is selected as the best available match describing unauthorized exposure of application data."
+                  }
+                ],
+                "commit": "6a3d53ad03d7b69dd0eefacfcf6bc7ceca7e1c66",
+                "confidence": "medium",
+                "credits": [
+                  {
+                    "lang": "en",
+                    "type": "reporter",
+                    "value": "elhoim"
+                  },
+                  {
+                    "lang": "en",
+                    "type": "remediation developer",
+                    "value": "David Cruciani"
+                  }
+                ],
+                "cvssRationale": "AV:N: web application accessed over the network. AC:L: exploitation requires only triggering the normal notification polling or home-page load; no race condition or special timing is needed. AT:N: no manipulation of the attack target is required. PR:L: the attacker must be an authenticated user with a low-privilege account. UI:N: no victim interaction beyond normal application use is required. VC:L: confidential case and task titles of other users are exposed, but full case contents are not. VI:L: cross-user notification records can be overwritten or conflated, a limited integrity impact. VA:N: no availability impact. SC/SI/SA:N: no impact on secondary systems.",
+                "fixSummary": "The fix enforces proper authorization scoping on all deadline notification queries by adding explicit join conditions that correlate membership and assignment rows to the correct case or task, and by invoking a case-visibility check before generating task deadline reminders. Notification lookups are now scoped to the requesting user and the specific case, using stable object identifiers rather than shared pointers or title matching. A post-query filter hides historical deadline notices whose parent case is no longer accessible to the viewer. The home-page unread count is routed through the same filtered path, preventing leakage of inaccessible notifications.",
+                "generatedAt": "2026-11-20T10:06:29.031007Z",
+                "generator": "patch2vuln.py",
+                "model": "qwen3.8:27b",
+                "modelComparison": {
+                  "potentialErrors": [],
+                  "rankings": [
+                    {
+                      "agreementScore": 11,
+                      "assumptionCount": 5,
+                      "confidence": "medium",
+                      "model": "qwen3.8:27b",
+                      "score": 7
+                    }
+                  ],
+                  "selectedModel": "qwen3.8:27b",
+                  "selectionMethod": "deterministic-consensus-v1",
+                  "selectionNotice": "The selected result is closest to model consensus; this heuristic does not establish factual correctness and human review remains required."
+                },
+                "patchSha256": "42cf8eedf3d29ea55a9cfb459aedb172ca0b932d0052541ae58bebdd91cd83c6",
+                "patchSummary": "In app/notification/notification_core.py: added missing join conditions (Case_Org.case_id == Case.id, Task_User.task_id == Task.id) and .distinct() to the case and task queries in create_notification_deadline; added a can_view_case() guard before processing each task; introduced _user_deadline_notification() to scope notification lookups by user_id, case_id, html_icon, and target_url instead of a shared notif_deadline_id pointer; introduced _visible_deadline_notifications() to filter out deadline notices whose case is not visible to the current user; updated get_user_notif() to apply the visibility filter; changed the sort logic from early returns to query chaining. In app/main/home.py: replaced the direct Notification.query count with a call to the filtered get_user_notif() helper so the home-page unread count respects case visibility.",
+                "patchTruncated": false,
+                "patches": [
+                  {
+                    "commit": "6a3d53ad03d7b69dd0eefacfcf6bc7ceca7e1c66",
+                    "date": "Tue, 3 Nov 2026 08:25:11 +0100",
+                    "patchSha256": "42cf8eedf3d29ea55a9cfb459aedb172ca0b932d0052541ae58bebdd91cd83c6",
+                    "retrievedAt": "2026-11-20T10:05:49.654658Z",
+                    "source": "https://github.com/flowintel/flowintel/commit/6a3d53ad03d7b69dd0eefacfcf6bc7ceca7e1c66.patch",
+                    "sourceUrl": "https://github.com/flowintel/flowintel/commit/6a3d53ad03d7b69dd0eefacfcf6bc7ceca7e1c66.patch",
+                    "subject": "fix: [security] Keep deadline notifications scoped to"
+                  }
+                ],
+                "source": "https://github.com/flowintel/flowintel/commit/6a3d53ad03d7b69dd0eefacfcf6bc7ceca7e1c66.patch",
+                "ssvc": {
+                  "options": [
+                    {
+                      "Exploitation": "none"
+                    },
+                    {
+                      "Automatable": "yes"
+                    },
+                    {
+                      "Technical Impact": "partial"
+                    }
+                  ],
+                  "role": "Supplier",
+                  "timestamp": "2026-11-20T10:06:29Z",
+                  "version": "2.0.3"
+                },
+                "subject": "fix: [security] Keep deadline notifications scoped to",
+                "weaknessRationale": [
+                  {
+                    "cweId": "CWE-862",
+                    "rationale": "The primary defect is that database queries for deadline notifications did not enforce per-user authorization or case-visibility checks, allowing an authenticated user to retrieve notification data (titles) belonging to other users' private cases. The missing join conditions and absent can_view_case() check constitute a missing authorization control."
+                  },
+                  {
+                    "cweId": "CWE-200",
+                    "rationale": "The consequence of the missing authorization is the exposure of private case and task titles to users who do not have access to those cases. Historical notifications for inaccessible cases were also visible in lists and counts."
+                  }
+                ]
+              }
+            },
+            "bcp-05-x-03": {
+              "x_timeline": {
+                "events": [
+                  {
+                    "description": "Corrective change authored (6a3d53ad03d7b69dd0eefacfcf6bc7ceca7e1c66): fix: [security] Keep deadline notifications scoped to",
+                    "id": "evt-fix-developed-1",
+                    "references": [
+                      "https://github.com/flowintel/flowintel/commit/6a3d53ad03d7b69dd0eefacfcf6bc7ceca7e1c66.patch"
+                    ],
+                    "timestamp": "2026-11-03T07:25:11Z",
+                    "type": "fix-developed"
+                  },
+                  {
+                    "description": "Patch retrieved from the supplied URL; retrieval time is used as the default availability time.",
+                    "id": "evt-fix-available-1",
+                    "references": [
+                      "https://github.com/flowintel/flowintel/commit/6a3d53ad03d7b69dd0eefacfcf6bc7ceca7e1c66.patch"
+                    ],
+                    "timestamp": "2026-11-20T10:05:49.654658Z",
+                    "type": "fix-available"
+                  }
+                ]
+              }
+            }
+          },
+          "recordType": "advisory",
+          "vulnId": "GCVE-1-2026-20334"
+        }
+      ]
+    }
+  },
+  "cveMetadata": {
+    "assignerOrgId": "00000000-0000-4000-8000-000000000000",
+    "datePublished": "2026-11-20T10:10:34.466580Z",
+    "dateUpdated": "2026-11-20T10:10:34.466580Z",
+    "state": "PUBLISHED",
+    "vulnId": "GCVE-1-2026-20334"
+  },
+  "dataType": "CVE_RECORD",
+  "dataVersion": "5.2"
+}
