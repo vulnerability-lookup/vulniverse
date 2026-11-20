@@ -19,6 +19,9 @@ import {
 
 import {
   setAtPath,
+} from "../../core/changes";
+
+import {
   upstreamDifferences,
 } from "./upstream-diff";
 

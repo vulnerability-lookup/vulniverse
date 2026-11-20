@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { CveRecord } from "../../../contracts";
-import { setAtPath, upstreamDifferences } from "../upstream-diff";
+import { setAtPath } from "../../../core/changes";
+import { upstreamDifferences } from "../upstream-diff";
 
 const record = (cna: Record<string, unknown>, cveMetadata = {}): CveRecord =>
   ({ cveMetadata, containers: { cna } }) as CveRecord;

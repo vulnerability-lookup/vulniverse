@@ -43,32 +43,3 @@ export function upstreamDifferences(local: CveRecord, published: CveRecord): Ups
       published: valueAt(published, path),
     }));
 }
-
-/**
- * Sets `path` in `record` to `value`, creating objects and lists on the
- * way; `undefined` removes it (from a list: the item). For taking over
- * one upstream value.
- */
-export function setAtPath(record: Record<string, unknown>, path: string, value: unknown): void {
-  const keys = path.split(".");
-  const last = keys.pop()!;
-  let parent: Record<string, unknown> | unknown[] = record;
-
-  keys.forEach((key, index) => {
-    const container = parent as Record<string, unknown>;
-    if (typeof container[key] !== "object" || container[key] === null) {
-      // The next key decides: a number means a list.
-      container[key] = /^\d+$/.test(keys[index + 1] ?? last) ? [] : {};
-    }
-    parent = container[key] as Record<string, unknown>;
-  });
-
-  if (value !== undefined) {
-    // A JSON copy: the value may hold Vue proxies, which structuredClone can't copy.
-    (parent as Record<string, unknown>)[last] = JSON.parse(JSON.stringify(value));
-  } else if (Array.isArray(parent)) {
-    parent.splice(Number(last), 1);
-  } else {
-    delete (parent as Record<string, unknown>)[last];
-  }
-}

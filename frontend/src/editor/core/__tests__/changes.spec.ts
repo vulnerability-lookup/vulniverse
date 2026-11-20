@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { changedPaths, countChanges, diffPaths } from "../changes";
+import { changedPaths, countChanges, diffPaths, undoChange } from "../changes";
 
 describe("changedPaths", () => {
   const original = {
@@ -68,3 +68,62 @@ describe("countChanges", () => {
     expect(countChanges(changedPaths(current, original), "card")).toBe(2);
   });
 });
+
+describe("the list of changes", () => {
+  const original = {
+    title: "Old",
+    refs: [{ url: "a" }, { url: "b" }, { url: "c" }],
+    extensions: { x: { lang: "en" } },
+  };
+
+  function changesOf(current: unknown) {
+    return diffPaths(current, original).changes;
+  }
+
+  it("lists changed fields with both values", () => {
+    expect(changesOf({ ...original, title: "New" })).toEqual([
+      { kind: "changed", path: "title", before: "Old", after: "New" },
+    ]);
+  });
+
+  it("lists an added item once, not each of its fields", () => {
+    const current = { ...original, refs: [...original.refs, { url: "d", tags: ["x"] }] };
+
+    expect(changesOf(current)).toEqual([
+      { kind: "added", path: "refs.3", after: { url: "d", tags: ["x"] } },
+    ]);
+  });
+
+  it("lists a removed list item at its saved place, and a removed object", () => {
+    const current = { title: "Old", refs: [{ url: "a" }, { url: "c" }] };
+
+    expect(changesOf(current)).toEqual([
+      { kind: "removed", path: "refs.1", before: { url: "b" }, fromList: true },
+      { kind: "removed", path: "extensions", before: { x: { lang: "en" } } },
+    ]);
+  });
+
+  it("lists a reordered list as one change", () => {
+    const current = { ...original, refs: [{ url: "c" }, { url: "a" }, { url: "b" }] };
+
+    expect(changesOf(current).map((change) => change.path)).toEqual(["refs"]);
+  });
+
+  it("undoes each kind of change back to the saved record", () => {
+    const current = {
+      title: "New",
+      refs: [{ url: "a" }, { url: "c" }, { url: "d" }],
+      extensions: { x: { lang: "de" } },
+    };
+
+    // Undone one at a time, each time against the record as it is now.
+    for (let round = 0; round < 10; round += 1) {
+      const [change] = changesOf(current);
+      if (!change) break;
+      undoChange(current, change);
+    }
+
+    expect(current).toEqual(original);
+  });
+});
+

@@ -52,7 +52,7 @@ function short(value: string): string {
 }
 
 
-function summaryOf(value: unknown): string {
+export function summaryOf(value: unknown): string {
   if (typeof value === "string") {
     return short(value);
   }

@@ -76,11 +76,13 @@ export function useEditorState() {
   const diff = computed(() => (
     record.value && originalRecord.value
       ? diffPaths(record.value, originalRecord.value)
-      : { changed: new Set<string>(), added: new Set<string>() }
+      : { changed: new Set<string>(), added: new Set<string>(), changes: [] }
   ));
   const changedPaths = computed(() => diff.value.changed);
   // New objects and lists, e.g. an added card.
   const addedPaths = computed(() => diff.value.added);
+  // What changed, one entry per change, for the list in the header.
+  const changes = computed(() => diff.value.changes);
 
   function replaceRecord(
     loaded: LoadedRecord,
@@ -120,6 +122,7 @@ export function useEditorState() {
     originalRecord,
     changedPaths,
     addedPaths,
+    changes,
     identifier,
     vulnerabilityId,
     profile,

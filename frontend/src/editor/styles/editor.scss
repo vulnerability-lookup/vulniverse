@@ -226,6 +226,24 @@
   display: none;
 }
 
+// The list of unsaved changes, opened from the header's badge.
+.editor-unsaved-toggle {
+  cursor: pointer;
+}
+
+.editor-changes-menu {
+  width: min(34rem, 90vw);
+}
+
+.editor-changes-list {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.editor-changes-text {
+  min-width: 0;
+}
+
 .editor-changed-dot {
   display: inline-block;
   width: 0.4rem;

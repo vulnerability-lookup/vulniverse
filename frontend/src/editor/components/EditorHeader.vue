@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+import UnsavedChanges from "./UnsavedChanges.vue";
+
 // Header-sized, light lettering for the dark theme; both made by
 // scripts/make_dark_logo.py (the web component embeds its images).
 import vulniverseLogo from "../../assets/vulniverse-logo-header.webp";
@@ -131,13 +133,7 @@ function transitionButtonClass(
               Rejected
             </span>
 
-            <span
-              v-if="dirty"
-              class="badge bg-info-subtle text-info-emphasis border border-info-subtle"
-              title="Changed fields and cards have a bar in this colour on their left; tabs and Tree nodes with changes a dot"
-            >
-              Unsaved changes
-            </span>
+            <UnsavedChanges v-if="dirty" />
           </div>
         </div>
 

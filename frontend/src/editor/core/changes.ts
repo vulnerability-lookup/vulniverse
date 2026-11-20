@@ -24,15 +24,34 @@ export function changedPaths(current: unknown, original: unknown): Set<string> {
 }
 
 /**
+ * One change since the last save, for the list of unsaved changes:
+ * a field that changed, or an object or list item added or removed as a
+ * whole (its fields aren't listed one by one). `path` is where it is in
+ * the record as edited; for a removed list item, where it was in the
+ * saved list (`fromList`), so undoing it puts it back there.
+ */
+export interface RecordChange {
+  kind: "changed" | "added" | "removed";
+  path: string;
+  /** As saved; undefined if it wasn't there. */
+  before?: unknown;
+  /** As edited; undefined if it's gone. */
+  after?: unknown;
+  fromList?: boolean;
+}
+
+/**
  * changedPaths, plus `added`: the objects and lists that are new (no
- * counterpart in the original), e.g. an added card, for its "New" badge.
+ * counterpart in the original), e.g. an added card, for its "New" badge;
+ * and `changes`, the list of what changed.
  */
 export function diffPaths(
   current: unknown,
   original: unknown,
-): { changed: Set<string>; added: Set<string> } {
+): { changed: Set<string>; added: Set<string>; changes: RecordChange[] } {
   const changed = new Set<string>();
   const added = new Set<string>();
+  const changes: RecordChange[] = [];
   const join = (path: string, key: string | number) => (path ? `${path}.${key}` : String(key));
 
   // An added or removed object or list compares against an empty one,
@@ -41,24 +60,40 @@ export function diffPaths(
     value === undefined && isContainer(other) ? (Array.isArray(other) ? [] : {}) : value
   );
 
-  function walk(a: unknown, b: unknown, path: string): boolean {
+  // `quiet`: inside an added or removed object, which is listed once.
+  function walk(a: unknown, b: unknown, path: string, quiet = false): boolean {
     if (a === b) return false;
-    if (path && b === undefined && isContainer(a)) added.add(path);
 
+    const isAdded = Boolean(path) && b === undefined && isContainer(a);
+    const isRemoved = Boolean(path) && a === undefined && isContainer(b);
+
+    if (isAdded) added.add(path);
+    if (!quiet && isAdded) changes.push({ kind: "added", path, after: a });
+    if (!quiet && isRemoved) changes.push({ kind: "removed", path, before: b });
+
+    const inner = quiet || isAdded || isRemoved;
     const left = emptyLike(a, b);
     const right = emptyLike(b, a);
     let differs = true;
 
     if (Array.isArray(left) && Array.isArray(right)) {
+      const listed = changes.length;
       // walkList first: it records the items' own paths either way.
-      differs = walkList(left, right, path) || left !== a || right !== b;
+      differs = walkList(left, right, path, inner) || left !== a || right !== b;
+
+      // Nothing inside changed, added or went: only the order did.
+      if (differs && !inner && changes.length === listed) {
+        changes.push({ kind: "changed", path, before: b, after: a });
+      }
     } else if (isContainer(left) && isContainer(right) && !Array.isArray(left) && !Array.isArray(right)) {
       differs = left !== a || right !== b;
 
       for (const key of new Set([...Object.keys(left), ...Object.keys(right)])) {
         // Not short-circuited: every changed child gets its own path.
-        if (walk(left[key], right[key], join(path, key))) differs = true;
+        if (walk(left[key], right[key], join(path, key), inner)) differs = true;
       }
+    } else if (!inner && path) {
+      changes.push({ kind: "changed", path, before: b, after: a });
     }
 
     if (differs && path) changed.add(path);
@@ -75,7 +110,7 @@ export function diffPaths(
    * shortcut: an edit plus a removal in the same list can pair the edited
    * item with the wrong old one; a real list diff (LCS) would fix that.
    */
-  function walkList(items: unknown[], oldItems: unknown[], path: string): boolean {
+  function walkList(items: unknown[], oldItems: unknown[], path: string, quiet: boolean): boolean {
     const unmatched = new Map<string, number[]>();
 
     oldItems.forEach((item, index) => {
@@ -93,15 +128,68 @@ export function diffPaths(
 
       const old = leftOver.shift();
 
-      if (walk(item, old === undefined ? undefined : oldItems[old], join(path, index))) differs = true;
+      if (walk(item, old === undefined ? undefined : oldItems[old], join(path, index), quiet)) differs = true;
     });
+
+    // Old items nothing was paired with: removed.
+    if (!quiet) {
+      leftOver.forEach((old) => {
+        changes.push({ kind: "removed", path: join(path, old), before: oldItems[old], fromList: true });
+      });
+    }
 
     return differs;
   }
 
   walk(current, original, "");
 
-  return { changed, added };
+  return { changed, added, changes };
+}
+
+/**
+ * Sets `path` in `record` to `value`, creating objects and lists on the
+ * way; `undefined` removes it (from a list: the item).
+ */
+export function setAtPath(record: Record<string, unknown>, path: string, value: unknown): void {
+  const keys = path.split(".");
+  const last = keys.pop()!;
+  let parent: Record<string, unknown> | unknown[] = record;
+
+  keys.forEach((key, index) => {
+    const container = parent as Record<string, unknown>;
+    if (typeof container[key] !== "object" || container[key] === null) {
+      // The next key decides: a number means a list.
+      container[key] = /^\d+$/.test(keys[index + 1] ?? last) ? [] : {};
+    }
+    parent = container[key] as Record<string, unknown>;
+  });
+
+  if (value !== undefined) {
+    // A JSON copy: the value may hold Vue proxies, which structuredClone can't copy.
+    (parent as Record<string, unknown>)[last] = JSON.parse(JSON.stringify(value));
+  } else if (Array.isArray(parent)) {
+    parent.splice(Number(last), 1);
+  } else {
+    delete (parent as Record<string, unknown>)[last];
+  }
+}
+
+/** Takes one change back in `record` (a plain copy of the edited record). */
+export function undoChange(record: Record<string, unknown>, change: RecordChange): void {
+  if (change.fromList) {
+    const at = change.path.lastIndexOf(".");
+    const list = change.path.slice(0, at).split(".")
+      .reduce<unknown>((value, key) => (value as Record<string, unknown> | undefined)?.[key], record);
+
+    if (Array.isArray(list)) {
+      const index = Number(change.path.slice(at + 1));
+      // Back where it was, or at the end if the list is shorter now.
+      list.splice(Math.min(index, list.length), 0, JSON.parse(JSON.stringify(change.before)));
+      return;
+    }
+  }
+
+  setAtPath(record, change.path, change.kind === "added" ? undefined : change.before);
 }
 
 
