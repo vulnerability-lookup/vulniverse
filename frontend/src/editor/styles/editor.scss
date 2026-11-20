@@ -579,6 +579,63 @@
  * neither disappears nor becomes absurdly tall if actually embedded
  * somewhere height-constrained.
  */
+// The JSON section's "Changes" view (JsonChanges.vue): removed lines
+// red, added ones in the colour of the form's change markers.
+.json-diff {
+  max-height: clamp(20rem, calc(100vh - 24rem), 50rem);
+  overflow: auto;
+  border: var(--bs-border-width) solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.875rem;
+  }
+
+  td {
+    padding: 0 0.5rem;
+    white-space: pre;
+    vertical-align: top;
+  }
+}
+
+.json-diff-number {
+  width: 1%;
+  text-align: right;
+  color: var(--bs-secondary-color);
+  user-select: none;
+}
+
+.json-diff-sign {
+  width: 1%;
+  user-select: none;
+}
+
+.json-diff-added {
+  background: rgba(var(--bs-info-rgb), 0.15);
+}
+
+.json-diff-removed {
+  background: rgba(var(--bs-danger-rgb), 0.15);
+}
+
+.json-diff-gap td {
+  padding: 0.125rem 0.5rem;
+  // Not the JSON's whitespace rule: no spaces around the button's text.
+  white-space: normal;
+  background: var(--bs-tertiary-bg);
+}
+
+.json-diff-count-added {
+  color: var(--bs-info-text-emphasis);
+}
+
+.json-diff-count-removed {
+  color: var(--bs-danger-text-emphasis);
+}
+
 .json-editor {
   display: flex;
   align-items: stretch;

@@ -14,7 +14,12 @@ import type {
   EditorDocument
 } from "../contracts";
 
+import JsonChanges from "./JsonChanges.vue";
+
 const editor = useEditorContext();
+
+// "edit" the JSON, or see the "changes" since the last save.
+const view = ref<"edit" | "changes">("edit");
 
 const source = ref("");
 const parseError = ref<string | null>(null);
@@ -256,56 +261,94 @@ function apply(): void {
 <template>
   <section>
     <header class="mb-3">
-      <h2 class="h4">Advanced JSON</h2>
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <h2 class="h4 mb-0">Advanced JSON</h2>
 
-      <p class="text-secondary">
+        <div
+          class="btn-group btn-group-sm"
+          role="group"
+          aria-label="View"
+        >
+          <button
+            type="button"
+            class="btn"
+            :class="view === 'edit' ? 'btn-secondary' : 'btn-outline-secondary'"
+            :aria-pressed="view === 'edit'"
+            @click="view = 'edit'"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            class="btn"
+            :class="view === 'changes' ? 'btn-secondary' : 'btn-outline-secondary'"
+            :aria-pressed="view === 'changes'"
+            @click="view = 'changes'"
+          >
+            Changes
+            <span
+              v-if="editor.dirty.value"
+              class="editor-changed-dot"
+            ><span class="visually-hidden">(has unsaved changes)</span></span>
+          </button>
+        </div>
+      </div>
+
+      <p
+        v-if="view === 'edit'"
+        class="text-secondary mt-2 mb-0"
+      >
         Review or replace the complete record.
         Changes are only applied after pressing
         Apply JSON.
       </p>
     </header>
 
-    <div class="json-editor">
-      <pre
-        ref="gutter"
-        class="json-gutter"
-        aria-hidden="true"
-      >{{ lineNumbers }}</pre>
+    <JsonChanges v-if="view === 'changes'" />
 
-      <textarea
-        ref="textarea"
-        v-model="source"
-        class="form-control json-source"
-        spellcheck="false"
-        @scroll="syncGutterScroll"
-        @keydown.tab="handleTab"
-      />
-    </div>
+    <template v-else>
+      <div class="json-editor">
+        <pre
+          ref="gutter"
+          class="json-gutter"
+          aria-hidden="true"
+        >{{ lineNumbers }}</pre>
 
-    <p
-      v-if="parseError"
-      role="alert"
-      class="text-danger mt-2"
-    >
-      {{ parseError }}
-    </p>
+        <textarea
+          ref="textarea"
+          v-model="source"
+          class="form-control json-source"
+          spellcheck="false"
+          @scroll="syncGutterScroll"
+          @keydown.tab="handleTab"
+        />
+      </div>
 
-    <div class="d-flex justify-content-end gap-2 mt-3">
-      <button
-        type="button"
-        class="btn btn-outline-secondary"
-        @click="reset"
+      <p
+        v-if="parseError"
+        role="alert"
+        class="text-danger mt-2"
       >
-        Discard edits
-      </button>
+        {{ parseError }}
+      </p>
 
-      <button
-        type="button"
-        class="btn btn-primary"
-        @click="apply"
-      >
-        Apply JSON
-      </button>
-    </div>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          @click="reset"
+        >
+          Discard edits
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          @click="apply"
+        >
+          Apply JSON
+        </button>
+      </div>
+    </template>
   </section>
 </template>
