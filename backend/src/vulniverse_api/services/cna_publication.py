@@ -20,7 +20,7 @@ from .identifiers import (
 REQUEST_TIMEOUT_SECONDS = 30.0
 
 # "vl" and "cve-program" speak the identical CVE Services API-shaped
-# protocol (see docs/embedding/vl.md and VL's own website/web/api/v1/cna.py)
+# protocol (see https://vulnerability-lookup.github.io/vulniverse/docs/embedding/vl/ and VL's own website/web/api/v1/cna.py)
 # — the only difference is which per-user UserCnaCredential row supplies
 # the base URL and credentials.
 KNOWN_TARGETS = frozenset({"vl", "cve-program"})

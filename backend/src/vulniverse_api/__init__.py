@@ -21,7 +21,7 @@ def create_app(
 ) -> Flask:
     # A no-op if no .env file exists (e.g. production, where the real
     # environment is expected to already carry these) — see
-    # docs/setup/production.md.
+    # https://vulnerability-lookup.github.io/vulniverse/docs/setup/production/
     load_dotenv()
 
     app = Flask(
@@ -59,7 +59,7 @@ def create_app(
         raise RuntimeError(
             "SECRET_KEY environment variable is not set. Copy "
             "backend/.env.example to backend/.env and fill it in "
-            "(see docs/setup/production.md).",
+            "(see https://vulnerability-lookup.github.io/vulniverse/docs/setup/production/).",
         )
 
     cna_encryption_key = os.environ.get("CNA_CREDENTIAL_ENCRYPTION_KEY")
@@ -69,7 +69,7 @@ def create_app(
             "CNA_CREDENTIAL_ENCRYPTION_KEY environment variable is not "
             'set. Generate one with `python -c "from cryptography.fernet '
             'import Fernet; print(Fernet.generate_key().decode())"` and '
-            "set it in backend/.env (see docs/setup/production.md).",
+            "set it in backend/.env (see https://vulnerability-lookup.github.io/vulniverse/docs/setup/production/).",
         )
 
     app.config.from_mapping(

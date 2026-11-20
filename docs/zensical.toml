@@ -1,6 +1,6 @@
 [project]
 # Published with the demo on GitHub Pages (.github/workflows/pages.yml).
-site_url = "https://vulnerability-lookup.github.io/Vulniverse/docs/"
+site_url = "https://vulnerability-lookup.github.io/vulniverse/docs/"
 site_name = "Vulniverse"
 site_description = "Editor for CVE / GCVE vulnerability records, embeddable into Vulnerability-Lookup."
 

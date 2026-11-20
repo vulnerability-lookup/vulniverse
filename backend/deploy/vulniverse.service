@@ -1,5 +1,5 @@
 # Example systemd unit for running the Vulniverse backend under gunicorn.
-# See docs/setup/production.md for the full walkthrough. Copy this to
+# See https://vulnerability-lookup.github.io/vulniverse/docs/setup/production/ for the full walkthrough. Copy this to
 # /etc/systemd/system/vulniverse.service and adjust the paths/user below
 # for your deployment, then:
 #
@@ -17,7 +17,7 @@ Group=vulniverse
 
 WorkingDirectory=/opt/vulniverse/backend
 
-# Replace with actual generated values — see docs/setup/production.md.
+# Replace with actual generated values — see https://vulnerability-lookup.github.io/vulniverse/docs/setup/production/
 Environment=SECRET_KEY=replace-with-a-real-generated-secret
 Environment=CNA_CREDENTIAL_ENCRYPTION_KEY=replace-with-a-real-generated-fernet-key
 

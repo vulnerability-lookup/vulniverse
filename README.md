@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="https://vulnerability-lookup.github.io/Vulniverse/"><img alt="Live demo" src="https://img.shields.io/badge/demo-try%20it-blue"></a>
+  <a href="https://vulnerability-lookup.github.io/vulniverse/"><img alt="Live demo" src="https://img.shields.io/badge/demo-try%20it-blue"></a>
   <a href="https://github.com/vulnerability-lookup/Vulniverse/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/vulnerability-lookup/Vulniverse/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/vulnerability-lookup/Vulniverse/releases"><img alt="Release" src="https://img.shields.io/github/v/release/vulnerability-lookup/Vulniverse?include_prereleases&sort=semver&filter=v*&label=release"></a>
   <a href="LICENSE"><img alt="License: BSD 2-Clause" src="https://img.shields.io/badge/license-BSD%202--Clause-blue"></a>
@@ -21,9 +21,9 @@ credits and all the rest. It's the vulnerability editor of
 [Vulnerability-Lookup](https://github.com/vulnerability-lookup/vulnerability-lookup).
 
 <p align="center">
-  <a href="https://vulnerability-lookup.github.io/Vulniverse/"><b>Try it in your browser</b></a> (no installation, no account) ·
-  <a href="docs/docs/setup/docker.md">Run it yourself</a> ·
-  <a href="docs/docs/embedding/element.md">Embed it in your app</a>
+  <a href="https://vulnerability-lookup.github.io/vulniverse/"><b>Try it in your browser</b></a> (no installation, no account) ·
+  <a href="https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/single-user/">Run it yourself</a> ·
+  <a href="https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/embed/">Embed it in your app</a>
 </p>
 
 <p align="center">
@@ -115,12 +115,12 @@ credits and all the rest. It's the vulnerability editor of
 
 | | |
 |---|---|
-| **Try it now** | The [live demo](https://vulnerability-lookup.github.io/Vulniverse/) runs entirely in your browser. |
-| **Run it yourself** | Start the editor and its backend [with Docker](docs/docs/setup/docker.md), or [from source](docs/docs/development/from-source.md). |
-| **Embed it** | Add [`<vulniverse-editor>`](docs/docs/embedding/element.md) to your application, as [Vulnerability-Lookup does](docs/docs/embedding/vl.md). |
+| **Try it now** | The [live demo](https://vulnerability-lookup.github.io/vulniverse/) runs entirely in your browser. |
+| **Run it yourself** | Follow the quick start [for yourself](https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/single-user/) or [for your team](https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/team/), or [build it from source](https://vulnerability-lookup.github.io/vulniverse/docs/development/from-source/). |
+| **Embed it** | Add [`<vulniverse-editor>`](https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/embed/) to your application, as [Vulnerability-Lookup does](https://vulnerability-lookup.github.io/vulniverse/docs/embedding/vl/). |
 
 Configuration, production setup and the architecture are described in the
-[documentation](docs/docs/index.md).
+[documentation](https://vulnerability-lookup.github.io/vulniverse/docs/).
 
 ## License
 
