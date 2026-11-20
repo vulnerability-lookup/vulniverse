@@ -14,7 +14,7 @@ const saved: LoadedRecord = {
 
 function createModeEditor() {
   const state = useEditorState();
-  const loadRecord = vi.fn(async () => saved);
+  const loadRecord = vi.fn<(identifier: string) => Promise<LoadedRecord>>(async () => saved);
   const controller = useEditorController({
     state,
     repository: ref({ loadRecord } as unknown as EditorRepository),
