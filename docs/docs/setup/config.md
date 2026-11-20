@@ -31,7 +31,7 @@ features it's allowed to use.
 
 ```toml
 [server]
-mode = "local" # local or multiuser -> Multiuser is still WIP, do not use in prod
+mode = "local" # local (single user, no login) or multiuser (accounts)
 registration = "open" # multi-user mode: open, invite or closed
 two_factor = false # multi-user mode: every account must set up 2FA
 ```
@@ -46,9 +46,9 @@ uv run flask --app vulniverse_api init-local-user
 
 Without it, every request gets "Authentication required" even in local
 mode, since `db upgrade` only creates the `user` table, not this row —
-see [Get started](setup.md). `multiuser` enables real accounts
-(registration/login), but is explicitly still work in progress and isn't
-meant for a real deployment yet.
+see [Build from source](../development/from-source.md). `multiuser` enables real accounts
+(registration and login), organisations and roles; see
+[My team: a shared server](../quickstart/team.md) for setting one up.
 
 `registration` decides who may create an account in multi-user mode:
 
@@ -73,6 +73,7 @@ itself rather than promoting one somebody registered through the web.
 For an address that already has an account, it asks before promoting
 it. Until the admin exists, keep `registration` on `invite` or `closed`.
 
+`two_factor` only applies in `multiuser` mode; local mode has no logins.
 `two_factor = true` makes every account set up two-factor
 authentication: after the next login, a user can do nothing else until
 they have scanned a QR code with an authenticator app (TOTP, such as
@@ -87,6 +88,14 @@ under Admin → Users. If the only admin loses theirs:
 
 ```bash
 uv run flask --app vulniverse_api reset-two-factor admin@example.com
+```
+
+If records or templates exist without an owner (created before owners
+were tracked, or through a direct API call), assign them all to one user
+once:
+
+```bash
+uv run flask --app vulniverse_api backfill-record-owner admin@example.com
 ```
 
 With `two_factor = false` (the default), logins never ask for a code,
@@ -137,6 +146,9 @@ enabled = false
 [panels.record-quality]
 enabled = true
 
+[panels.templates]
+enabled = true
+
 [panels.patch2vuln]
 enabled = true
 api_url = "https://patch2vuln.example.org"
@@ -149,13 +161,19 @@ timeout_seconds = 300
 "tutorial" = true
 ```
 
-A panel id not listed defaults to enabled. Most panels are a plain
+A panel id not listed defaults to enabled — except `patch2vuln`: without
+a `[panels.patch2vuln]` table it's disabled, and its routes return 403.
+Most panels are a plain
 `enabled` flag; `[panels.patch2vuln]` additionally carries its own
 operational settings (`api_url`/`api_token`/`models`/`timeout_seconds`)
 for reaching an external
 [Patch2Vuln](https://github.com/gcve-eu/gcve-lab-patch2vuln) web service
 instance — see the comments in `config/vulniverse.toml.sample` for the
-full set.
+full set. `models` takes up to 4 model names.
+
+Set the Patch2Vuln token through the `PATCH2VULN_API_TOKEN` environment
+variable (e.g. in `backend/.env`) rather than `api_token`, so the secret
+stays out of the TOML file. If both are set, the env var wins.
 
 As with `[features]`, disabling a panel here is enforced on the backend:
 the underlying routes for a disabled panel return 404, not just a hidden
@@ -204,8 +222,8 @@ cp .env.example .env
 A secret key and a CNA-credential encryption key both need to be set:
 
 ```bash
-python -c "import secrets; print(secrets.token_hex(32))"   # paste into SECRET_KEY=
-python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"   # paste into CNA_CREDENTIAL_ENCRYPTION_KEY=
+python3 -c "import secrets; print(secrets.token_hex(32))"   # paste into SECRET_KEY=
+uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"   # paste into CNA_CREDENTIAL_ENCRYPTION_KEY=
 ```
 
 Optionally the DB address can be changed here as well.
@@ -213,18 +231,12 @@ Optionally the DB address can be changed here as well.
 
 ## Frontend dev server
 
-`frontend/vite.config.ts` hardcodes the dev-proxy target:
+`npm run dev` proxies `/api` to `http://127.0.0.1:5000` (see
+`frontend/vite.config.ts`). If the backend runs on a different host/port
+during development, set `API_PROXY_TARGET` instead of editing the file:
 
-```ts
-server: {
-  proxy: {
-    "/api": {
-      target: "http://127.0.0.1:5000",
-      changeOrigin: true,
-    },
-  },
-},
+```bash
+API_PROXY_TARGET=http://127.0.0.1:5001 npm run dev
 ```
 
-If the backend runs on a different host/port during development, this is
-the line to change.
+`compose.dev.yaml` sets it to `http://backend:5000` the same way.

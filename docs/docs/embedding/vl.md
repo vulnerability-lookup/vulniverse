@@ -21,35 +21,36 @@ in Vulniverse:
 
 | File | What it is |
 | --- | --- |
-| `website/web/static/vulniverse/vulniverse-editor.js` | The built custom element — copied in from `frontend/dist/element/vulniverse-editor.js` after `npm run build:element` (see [Get started](../setup/setup.md)). |
+| `website/web/static/vulniverse/vulniverse-editor.js` | The built custom element — copied in from `frontend/dist/element/vulniverse-editor.js` after `npm run build:element` (see [Build from source](../development/from-source.md)). |
 | `website/web/static/vulniverse/repository.js` | VL's own `EditorRepository` implementation, `VulnerabilityLookupRepository`. |
+| `website/web/static/vulniverse/gcve-id.js` | Reads and writes a record's GCVE ID: `x_gcve[].vulnId` in the CNA container, with the legacy `cveMetadata.vulnId` as a fallback. Shared by the repository and both VL panels. |
 | `website/web/static/vulniverse/gcve-reservation-panel.js`, `cna-publication-panel.js`, `view-vulnerability-module.js` | VL-authored `EditorPanel`/`EditorAction` implementations — see [Custom panels and actions](#custom-panels-and-actions) below. |
 | `website/web/templates/vulniverse/index.html` | The page template that imports all of the above and constructs the `<vulniverse-editor>` element. |
-| `website/web/views/user.py` | The Flask views that render that template. |
+| `website/web/views/vulnerability_editor.py` | The Flask blueprint whose views render that template. |
 | `website/web/api/v1/vulniverse_templates.py`, `vulniverse_record_quality.py`, `patch2vuln.py` | VL's own backend routes for the Templates, Record Quality, and Patch2Vuln panels respectively (`website/web/services/patch2vuln_service.py` and `website/lib/patch2vuln_access.py` back the last one). |
 
 ## Where and how it's mounted
 
-`config/generic.json`'s `"editor"` value (`"vulnogram"` or `"vulniverse"`)
-decides which editor VL's normal submit/edit routes render, read in
-`website/web/views/user.py`'s `vulnogram()` view:
+The editor lives in its own blueprint,
+`website/web/views/vulnerability_editor.py` (URL prefix `/vuln`):
 
-```python
-if get_config("generic", "editor").strip().lower() == "vulniverse":
-    return render_template("vulniverse/index.html", vulnerability_id=vulnerability_id)
-# ...otherwise falls through to rendering vulnogram/index.html as before
-```
-
-| Route | Renders Vulniverse when... |
+| Route | What it is |
 | --- | --- |
-| `/submit` | `config/generic.json`'s `"editor"` is `"vulniverse"` |
-| `/edit/<vulnerability_id>` | same |
-| `/submit-vulniverse` | always, regardless of that setting |
-| `/edit-vulniverse/<vulnerability_id>` | always, regardless of that setting |
+| `/vuln/create` | The editor, for a new vulnerability |
+| `/vuln/<vulnerability_id>/edit` | The editor, for an existing vulnerability |
 
-The last two (view function `vulniverse_editor()`, same file) are a direct
-link to the Vulniverse editor that doesn't depend on which editor is
-currently selected as the default.
+Both need a logged-in user with the right permission. Two settings in
+`config/website.py` decide whether and which editor is served (read in
+`website/web/vulnerability_editor.py`):
+
+- `WEB_MODULES["vulnerability_editor"]` turns the editor on. It's off by
+  default; with it off, these routes don't exist.
+- `VULNERABILITY_EDITOR` chooses the editor: `"vulniverse"` (the default)
+  renders `vulniverse/index.html`, `"vulnogram"` the older Vulnogram
+  editor. Any other value stops VL at start-up.
+
+The old `/submit` and `/edit/<vulnerability_id>` URLs
+(`website/web/views/user.py`) are permanent (301) redirects to these.
 
 Whichever route renders it, `website/web/templates/vulniverse/index.html`
 does the actual mounting: it has a `<div id="vulniverse-mount"></div>`
@@ -80,20 +81,23 @@ constraints of the CNA API's shape through into the adapter:
   to persist an intermediate state to. See [The `<vulniverse-editor>`
   element](element.md#repository) for what an unset vs. an explicit empty
   `lifecycleTransitions` means in general.
-- The CNA API has no standalone validation endpoint, so `validateRecord`
-  throws rather than fabricating a fake "valid" result; the real
-  validation happens server-side on save.
+- `validateRecord` POSTs the record to VL's own
+  `/api/vulnerability/validate`, which checks it the GCVE way. The editor
+  has no notion of a warning, so when the record is invalid its warnings
+  are listed after its errors, each prefixed `Warning:`; a valid record
+  reports nothing.
 - `getReferenceList`, `searchCpeVendors`/`searchCpeProducts`/`searchCpes`,
-  `listTemplates`+CRUD, and `scoreRecordQuality` are all implemented —
-  each gated behind the `features` the repository was constructed with
-  (see [Configuring panels, actions, and
+  `listTemplates`+CRUD, and `scoreRecordQuality` are all implemented. The
+  CWE/CAPEC/CPE lookups are gated behind the `features` the repository
+  was constructed with (see [Configuring panels, actions, and
   features](#configuring-panels-actions-and-features) below). CWE/CAPEC
   reuse VL's own already-indexed lists for its `/cwe`/`/capec` browsing
   pages (`website/web/api/v1/cwe.py`, `capec.py`) rather than fetching
   MITRE's data a second time; CPE vendor/product/entry lookups proxy to
   VL's own `/api/cpe_editor` routes, default **off** (see that route's own
   tradeoffs — a live call per keystroke to an external CPE Editor
-  instance).
+  instance). Those routes only exist when `cpe.cpe_enabled` is set in
+  VL's config (`website/web/api/v1/__init__.py`).
 - `submitPatch2VulnJob`/`getPatch2VulnJob` call VL's own `/api/patch2vuln`
   routes, which in turn call an external Patch2Vuln web service directly
   — configured via `config/patch2vuln.json` in VL, entirely independent of
@@ -112,9 +116,17 @@ purpose-built for its backend, and Vulniverse's built-ins reused as-is:
 | `createGcveReservationPanel({csrfToken, editUrlBase})` | VL-authored (`gcve-reservation-panel.js`) | `EditorPanel` | VL's own reservation endpoints directly — not part of `EditorRepository` |
 | `createCnaPublicationPanel({csrfToken})` | VL-authored (`cna-publication-panel.js`) | `EditorPanel` | Same — talks to VL's CNA publication backend directly |
 | `createViewVulnerabilityModule({viewUrlBase})` | VL-authored (`view-vulnerability-module.js`) | `EditorAction` | A link to the published record's VL page — no repository method |
+| `downloadAction`, `tutorialAction` | Reused from `vulniverse-editor.js` | `EditorAction` | Nothing — the record as JSON/HTML/PDF, and a guided tour |
 | `templatesPanel` | Reused from `vulniverse-editor.js` | `EditorPanel` | `listTemplates` + CRUD (implemented, see above) |
 | `recordQualityPanel` | Reused from `vulniverse-editor.js` | `EditorPanel` | `scoreRecordQuality` (implemented) |
 | `patch2vulnPanel` | Reused from `vulniverse-editor.js` | `EditorPanel` | `submitPatch2VulnJob` + `getPatch2VulnJob` (implemented) |
+
+`createGcveReservationPanel` and `createCnaPublicationPanel` also take an
+optional `apiRoot` (defaults `/api/cna` and `/publications`). Likewise,
+`VulnerabilityLookupRepository`'s constructor takes, besides `csrfToken`
+and `features`, optional base URLs for each backend it talks to:
+`apiRoot` (`/api/cna`), `referenceApiRoot` (`/api`), `cpeApiRoot`,
+`templatesApiRoot`, `recordQualityApiRoot`, and `patch2vulnApiRoot`.
 
 The VL-authored ones bypass `EditorRepository` entirely and call VL's own
 endpoints directly from inside the panel component — they exist because
@@ -141,7 +153,9 @@ apply):
     "patch2vuln": true
   },
   "actions": {
-    "view-vulnerability": true
+    "view-vulnerability": true,
+    "download": true,
+    "tutorial": true
   },
   "features": {
     "cpeVendors": false,
@@ -153,7 +167,9 @@ apply):
 }
 ```
 
-A panel/action id absent from this file defaults to enabled.
+A panel/action id (or a whole section) absent from this file takes its
+value from `config/vulniverse.json.sample` — the merge happens in
+`website/web/vulnerability_editor.py`'s `vulniverse_settings()`.
 `cna-publication` additionally requires `generic.cna` to be true
 regardless of this setting. `features` gates which CPE/CWE/CAPEC
 autocomplete lookups `repository.js` is allowed to perform — CPE lookups
@@ -163,9 +179,9 @@ records.
 
 Patch2Vuln additionally needs its own `config/patch2vuln.json`
 (`patch2vuln_enabled`, `patch2vuln_url`, `patch2vuln_timeout`, `api_key`)
-to actually reach a Patch2Vuln web service — the `panels.patch2vuln` flag
-above only controls whether the panel is shown, independently of whether
-it's actually configured to work.
+to actually reach a Patch2Vuln web service — the panel is only included
+when both `patch2vuln_enabled` there and `panels.patch2vuln` above are
+true.
 
 Every panel/action entry in `index.html` is individually wrapped in its
 own `{% if config.vulniverse.panels['id'] %}`/`actions['id']` Jinja check
@@ -176,7 +192,7 @@ corresponding to this file.
 Putting the pieces above together, `index.html`'s script block:
 
 ```js
-import { patch2vulnPanel, recordQualityPanel, templatesPanel } from ".../vulniverse-editor.js";
+import { downloadAction, patch2vulnPanel, recordQualityPanel, templatesPanel, tutorialAction } from ".../vulniverse-editor.js";
 import { VulnerabilityLookupRepository } from ".../repository.js";
 import { createGcveReservationPanel } from ".../gcve-reservation-panel.js";
 import { createViewVulnerabilityModule } from ".../view-vulnerability-module.js";
@@ -201,15 +217,27 @@ editor.panels = [
   createCnaPublicationPanel({ csrfToken }),                // {% if config.cna and panels['cna-publication'] %}
   templatesPanel,                                          // {% if panels['templates'] %}
   recordQualityPanel,                                       // {% if panels['record-quality'] %}
-  patch2vulnPanel,                                           // {% if panels['patch2vuln'] %}
+  patch2vulnPanel,                                           // {% if config.patch2vuln_enabled and panels['patch2vuln'] %}
 ];
 
 editor.actions = [
   createViewVulnerabilityModule({ viewUrlBase }), // {% if actions['view-vulnerability'] %}
+  downloadAction,                                 // {% if actions['download'] %}
+  tutorialAction,                                 // {% if actions['tutorial'] %}
 ];
 
 editor.addEventListener("deleted", () => { /* redirect to the recent-activity page */ });
 editor.addEventListener("error", (event) => { console.error(event.detail); });
+
+// The first save gives a new record its id: show its edit URL, without a reload.
+editor.addEventListener("loaded", (event) => {
+  const [identifier] = event.detail ?? [];
+  if (!identifier) return;
+  const editUrl = editUrlBase.replace("__VID__", encodeURIComponent(identifier));
+  if (location.pathname !== new URL(editUrl, location.href).pathname) {
+    history.replaceState(null, "", editUrl);
+  }
+});
 
 document.getElementById("vulniverse-mount").replaceWith(editor);
 ```

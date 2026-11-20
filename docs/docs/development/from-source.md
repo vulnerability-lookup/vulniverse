@@ -2,7 +2,10 @@
 icon: lucide/rocket
 ---
 
-# Get started
+# Build from source
+
+For working on Vulniverse itself. To just run it, start with the
+[quick starts](../index.md#choose-your-path) instead.
 
 This runs the standalone application: the Flask backend plus the Vue
 frontend, talking to each other over `/api/v1`.
@@ -21,19 +24,21 @@ cd backend
 uv sync
 cp .env.example .env
 python3 -c "import secrets; print(secrets.token_hex(32))"   # paste into .env's SECRET_KEY=
+uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"   # paste into .env's CNA_CREDENTIAL_ENCRYPTION_KEY=
 uv run flask --app vulniverse_api db upgrade
 uv run flask --app vulniverse_api init-local-user
 uv run flask --app vulniverse_api run --debug
 ```
 
-`create_app()` requires `SECRET_KEY` to be set (via `.env` or the real
-environment) and fails fast with a clear error if it isn't — see
-[Configuration](config.md) and [Running in production](production.md).
+`create_app()` requires both `SECRET_KEY` and
+`CNA_CREDENTIAL_ENCRYPTION_KEY` to be set (via `.env` or the real
+environment) and fails fast with a clear error if either isn't — see
+[Configuration](../setup/config.md) and [Running in production](../setup/production.md).
 
 `init-local-user` is a separate, one-time step `db upgrade` doesn't do for
 you: it creates the internal user that local mode (`[server] mode =
 "local"` in `config/vulniverse.toml`, the default — see
-[Configuration](config.md)) auto-authenticates every request as. Without
+[Configuration](../setup/config.md)) auto-authenticates every request as. Without
 it, every request gets "Authentication required" even though the
 deployment is genuinely in local mode, since `db upgrade` only creates the
 `user` table, not this row.
@@ -51,7 +56,7 @@ uv run flask --app vulniverse_api cpe sync
 
 Without this, the app still works fine — vendor/product search just
 silently returns no results until it's run. See
-[Architecture](../development/architecture.md).
+[Architecture](architecture.md).
 
 ## 2. Install and start the frontend
 
@@ -99,13 +104,13 @@ npm run build:element
 
 This writes a single file, `frontend/dist/element/vulniverse-editor.js`,
 with its CSS and images inlined. See
-[Architecture](../development/architecture.md) for what to do with it, and
+[Architecture](architecture.md) for what to do with it, and
 [Embedding: Vulnerability-Lookup](../embedding/vl.md) for a worked example.
 
 !!! warning
 
-    `npm run build` (the standalone app) and `npm run build:element` share
-    the same `frontend/dist/` output directory and both clear it on start.
-    If you need both outputs, run `build:element` last — running the
-    standalone build afterwards deletes the element bundle it just
-    produced.
+    `npm run build` (the standalone app) clears all of `frontend/dist/` on
+    start, including `frontend/dist/element/`; `npm run build:element`
+    only clears `frontend/dist/element/`. If you need both outputs, run
+    `build:element` last — running the standalone build afterwards
+    deletes the element bundle it just produced.

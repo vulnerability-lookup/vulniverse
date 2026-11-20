@@ -25,7 +25,7 @@ Same as [Running in production](production.md)'s Step 1, Docker or not:
 ```bash
 cp backend/.env.example backend/.env
 python3 -c "import secrets; print(secrets.token_hex(32))"   # -> .env's SECRET_KEY=
-python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"   # -> .env's CNA_CREDENTIAL_ENCRYPTION_KEY=
+python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"   # -> .env's CNA_CREDENTIAL_ENCRYPTION_KEY= (a valid Fernet key)
 ```
 
 `config/vulniverse.toml` is optional — no file falls back to the committed
@@ -52,12 +52,22 @@ your own TLS termination (Caddy, nginx, Traefik) in front of it.
 
 ## First run
 
-`backend_instance` is a plain named volume — empty the first time a given
-project name/overlay combination starts, regardless of dev or prod.
-Migrate the DB and for a local only setup create the local user:
+`backend_instance` is a plain named volume, named after the Compose
+project (by default the repo directory), not the overlay. Dev and prod
+started from the same checkout therefore share one database; use
+`docker compose -p <name>` to keep them apart. The volume is empty the
+first time a project starts. Migrate the DB and for a local only setup
+create the local user:
 
 ```bash
 docker compose exec backend flask --app vulniverse_api db upgrade
 docker compose exec backend flask --app vulniverse_api init-local-user
+```
+
+In `multiuser` mode, skip `init-local-user` and create the first admin
+instead (see [Configuration](config.md)):
+
+```bash
+docker compose exec backend flask --app vulniverse_api create-admin admin@example.com
 ```
 

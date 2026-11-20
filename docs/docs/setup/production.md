@@ -4,7 +4,7 @@ icon: lucide/server
 
 # Running in production
 
-The commands in [Get started](setup.md) (`flask --app vulniverse_api run
+The commands in [Build from source](../development/from-source.md) (`flask --app vulniverse_api run
 --debug`, `npm run dev`) are development-only. Follow these steps in order
 for a real, bare-metal deployment (systemd + nginx on the host). If you'd
 rather run it in containers instead, see [Docker](docker.md).
@@ -14,11 +14,16 @@ rather run it in containers instead, see [Docker](docker.md).
 `create_app()` requires a `SECRET_KEY` and a `CNA_CREDENTIAL_ENCRYPTION_KEY`
 from the environment — it refuses to start without either.
 
-1. Copy the template:
+1. Install the dependencies and copy the template:
    ```bash
    cd backend
+   uv sync --no-dev
    cp .env.example .env
    ```
+   This creates `backend/.venv`, which the systemd unit in
+   [Step 5](#step-5-supervise-it-with-systemd) runs from. The unit
+   assumes the checkout lives at `/opt/vulniverse`; adjust its paths if
+   yours is elsewhere.
 2. Generate a real secret and paste it into `.env`'s `SECRET_KEY=`:
    ```bash
    python3 -c "import secrets; print(secrets.token_hex(32))"
@@ -29,7 +34,7 @@ from the environment — it refuses to start without either.
    credentials undecryptable, so treat it like `SECRET_KEY`: generate it
    once, keep it, back it up:
    ```bash
-   python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+   uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
    ```
 4. Leave `DATABASE_URL` unset for now if you're staying on SQLite — skip to
    [Step 3](#step-3-run-migrations). Otherwise continue to Step 2.
@@ -37,7 +42,7 @@ from the environment — it refuses to start without either.
 
 ## Step 2 — (Optional) Set up PostgreSQL
 
-Skip this entirely unless you want to run a seperate PostgreSQL instance.
+Skip this entirely unless you want to run a separate PostgreSQL instance.
 
 1. Create a dedicated role and database — don't reuse one that belongs to
    another application:
@@ -98,7 +103,7 @@ outside development.
 ## Step 5 — Supervise it with systemd
 
 `backend/deploy/vulniverse.service` is a template to run the backend as a systemd service. Copy
-it to your sytemd path and adjust the values:
+it to your systemd path and adjust the values:
 
 ```bash
 sudo cp backend/deploy/vulniverse.service /etc/systemd/system/vulniverse.service
@@ -106,12 +111,20 @@ sudo cp backend/deploy/vulniverse.service /etc/systemd/system/vulniverse.service
 
 To use it follow these steps:
 
-1. **Create the service user** the template runs as (or edit `User=`/
+1. **Remove or fill in the placeholder keys.** The template sets
+   `Environment=SECRET_KEY=replace-…` and
+   `Environment=CNA_CREDENTIAL_ENCRYPTION_KEY=replace-…`. Values already
+   in the environment win over `backend/.env`, so these placeholders
+   would be used instead of your real keys — and an invalid Fernet key
+   breaks CNA credentials and 2FA. Delete both lines so `.env` is used,
+   or replace them with your real values.
+2. **Create the service user** the template runs as (or edit `User=`/
    `Group=` to an existing one):
    ```bash
    sudo useradd --system --no-create-home vulniverse
    ```
-2. **Install and start it**:
+3. **Install and start it**. The unit runs `db upgrade` (`ExecStartPre=`)
+   before every start, so migrations stay current after updates:
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl enable --now vulniverse
@@ -136,5 +149,6 @@ To use it follow these steps:
    sudo nginx -t
    sudo systemctl reload nginx
    ```
-3. Add TLS with rather than serving over plain HTTP in production.
+3. Add TLS (for example with Certbot/Let's Encrypt) rather than serving
+   over plain HTTP in production.
 

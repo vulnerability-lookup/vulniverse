@@ -15,3 +15,20 @@ Vulniverse provides a set of built-in panels and actions that can be enabled by 
 
 This architecture keeps the editor independent of any specific backend implementation while allowing it to integrate with different vulnerability-management platforms.
 
+
+## The interfaces
+
+All types live in `frontend/src/editor/contracts.ts`.
+
+`EditorRepository` has four required methods: `loadRecord`, `createRecord`, `updateRecord` and `validateRecord`. Everything else is optional; an adapter implements only what its host supports:
+
+- **Records:** `deleteRecord`, `lifecycleTransitions` (which draft/publish buttons the header shows).
+- **Reference data:** `getReferenceList`, `searchCpeVendors`, `searchCpeProducts`, `searchCpes`.
+- **Templates:** `listTemplates`, `saveTemplate`, `updateTemplate`, `deleteTemplate`.
+- **CNA publication:** `getCnaPublication`, `reserveCveId`, `publishCna`, `rejectCna`, `abortCna`, `getUpstreamCna`, `unlinkCna`, `pullCna`.
+- **Record quality:** `scoreRecordQuality`.
+- **Patch2Vuln:** `submitPatch2VulnJob`, `getPatch2VulnJob`, `cancelPatch2VulnJob`, `subscribeJobEvents`.
+
+An `EditorPanel` is `{ id, label, icon?, component, isVisible? }`: a Vue component shown in the sidebar. An `EditorAction` is `{ id, label, icon?, options?, isVisible?, isEnabled?, run }`: a header button whose `run(context, option?)` does the work.
+
+The standalone app's adapter is `frontend/src/repositories/HttpRepository.ts`, which talks to the Flask API in `backend/src/vulniverse_api/api` under `/api/v1`. The in-browser demo (`/try`) uses `frontend/src/repositories/SandboxRepository.ts` instead, which keeps the record in memory and has no validation.

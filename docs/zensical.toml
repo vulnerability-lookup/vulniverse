@@ -3,30 +3,37 @@
 site_name = "Vulniverse"
 site_description = "Editor for CVE / GCVE vulnerability records, embeddable into Vulnerability-Lookup."
 
-repo_url = "https://github.com/vulnerability-lookup/vulniverse"
-repo_name = "vulnerability-lookup/vulniverse"
+repo_url = "https://github.com/vulnerability-lookup/Vulniverse"
+repo_name = "vulnerability-lookup/Vulniverse"
 edit_uri = "edit/main/docs/docs/"
 
 nav = [
-    { "Introduction" = "index.md "},
-  
-    { "Setup" = [
-        { "Get started" = "setup/setup.md" },
+    { "Introduction" = "index.md" },
+
+    { "Quick start" = [
+        { "Just me" = "quickstart/single-user.md" },
+        { "My team" = "quickstart/team.md" },
+        { "Embed it" = "quickstart/embed.md" },
+    ]},
+
+    { "Using the editor" = "guide/editor.md" },
+
+    { "Deployment" = [
         { "Configuration" = "setup/config.md" },
-        { "Running in production" = "setup/production.md" },
         { "Docker" = "setup/docker.md" },
+        { "Running in production" = "setup/production.md" },
+    ]},
+
+    { "Embedding" = [
+        { "The vulniverse-editor element" = "embedding/element.md" },
+        { "Vulnerability-Lookup" = "embedding/vl.md" },
     ]},
 
     { "Development" = [
+        { "Build from source" = "development/from-source.md" },
         { "Architecture" = "development/architecture.md" },
         { "Manage Schemas" = "development/schema.md" },
     ] },
-
-    { "Embedding" = [
-        { "The <vulniverse-editor> element" = "embedding/element.md" },
-        { "Vulnerability-Lookup" = "embedding/vl.md" },
-    ] },
-
 ]
 
 dev_addr = "localhost:8008"

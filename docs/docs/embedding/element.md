@@ -27,6 +27,10 @@ all of these steps together.
    Produces one self-contained file, `dist/element/vulniverse-editor.js`
    — CSS inlined, images base64'd, no external dependencies. Copy it into
    the host app's own static assets; there's no publish-to-npm step today.
+   CI (`.github/workflows/build-element.yml`) also publishes it as a
+   GitHub release asset: every push to `main` updates
+   `releases/download/nightly/vulniverse-editor.js`, and every `v*.*.*`
+   tag publishes `releases/latest/download/vulniverse-editor.js`.
 
 2. **Load it with a static import**:
    ```js
@@ -47,7 +51,7 @@ all of these steps together.
    const editor = document.createElement("vulniverse-editor");
 
    editor.setAttribute("mode", vulnerabilityId ? "edit" : "create");
-   editor.setAttribute("profile", "cve-5.2.0"); // or "gcve-bcp-05-1.7"
+   editor.setAttribute("profile", "gcve-bcp-05-1.7"); // or "cve-5.2.0", "osv-1.9.2"
    if (vulnerabilityId) editor.setAttribute("record-id", vulnerabilityId);
 
    editor.repository = new MyRepository({ /* ... */ });
@@ -66,8 +70,8 @@ all of these steps together.
 
 6. **Listen for events** — see [Events](#events) below:
    ```js
-   editor.addEventListener("loaded", (e) => { /* e.detail: identifier */ });
-   editor.addEventListener("error", (e) => console.error(e.detail));
+   editor.addEventListener("loaded", (e) => { /* e.detail[0]: identifier */ });
+   editor.addEventListener("error", (e) => console.error(e.detail[0]));
    ```
 
 7. **Mount it**:
@@ -76,8 +80,10 @@ all of these steps together.
    ```
 
 8. **(Optional) Theme it** — the shadow-DOM CSS reads a handful of custom
-   properties with fallbacks: `--vulniverse-primary`, `--vulniverse-text`,
-   `--vulniverse-background`, `--vulniverse-muted`, `--vulniverse-border`.
+   properties with fallbacks: `--vulniverse-primary`,
+   `--vulniverse-primary-rgb`, `--vulniverse-accent-text`,
+   `--vulniverse-text`, `--vulniverse-background`, `--vulniverse-muted`,
+   `--vulniverse-border`, `--vulniverse-changed`.
    CSS custom properties pierce shadow boundaries, so setting these on
    `:root` (or on the `<vulniverse-editor>` element itself) in the host
    page re-themes the editor's colors without touching its internal
@@ -94,7 +100,7 @@ all of these steps together.
 | --- | --- | --- |
 | `mode` | `"create" \| "edit"` | Defaults to `"create"`. |
 | `record-id` | `string` | Required when `mode="edit"`. |
-| `profile` | `string` | Defaults to `"cve-5.2.0"`. |
+| `profile` | `string` | `"gcve-bcp-05-1.7"` (the default), `"cve-5.2.0"`, or `"osv-1.9.2"`. |
 | `repository` | `EditorRepository` | Set from JavaScript (`editor.repository = ...`), not an HTML attribute — see below. |
 | `actions` | `EditorAction[]` | Optional extra header buttons. |
 | `panels` | `EditorPanel[]` | Optional extra sidebar tabs — see note below. |
@@ -123,8 +129,12 @@ rather than breaking:
 | `searchCpeVendors`, `searchCpeProducts`, `searchCpes` | Optional | No CPE autocomplete |
 | `listTemplates`, `saveTemplate`, `updateTemplate`, `deleteTemplate` | Optional, implement together | Templates panel shows "not supported here" |
 | `getCnaPublication`, `reserveCveId`, `publishCna`, `rejectCna`, `abortCna` | Optional, implement together | CVE Program / Vulnerability-Lookup panels show "not supported here" |
+| `getUpstreamCna` | Optional | Those panels can't show how the local record differs from the published one |
+| `unlinkCna` | Optional | No way to stop tracking upstream (remove the record's link, keeping the ID there); the panels offer `abortCna` instead |
+| `pullCna` | Optional | No way to link the record to an existing upstream ID and take over its state |
 | `scoreRecordQuality` | Optional | Record Quality panel shows "not supported here" |
 | `submitPatch2VulnJob`, `getPatch2VulnJob` | Optional, implement together | Patch2Vuln panel shows "not supported here" |
+| `cancelPatch2VulnJob` | Optional | No way to cancel a job (a queued one cancels at once, a running one once its worker stops) |
 | `subscribeJobEvents` | Optional | Patch2Vuln panel falls back to polling instead of live (SSE) updates |
 
 See [Architecture](../development/architecture.md) for the full interface.
@@ -182,7 +192,21 @@ capabilities-filtering step for an embedded host (that machinery —
 standalone-app-only, see [Configuration](../setup/config.md)); a host just
 decides the array contents directly in its own code.
 
-Five built-in panels are exported from `src/element.ts` — none are baked
+`src/element.ts` also exports:
+
+- `downloadAction` and `tutorialAction` — built-in `EditorAction`s: the
+  record as JSON, HTML or PDF (print dialog), and a short guided tour of
+  the editor. Like the panels below, a host adds them to `actions` itself.
+- `RecordValidationError` — the error a repository throws from
+  `createRecord`/`updateRecord` when the record fails schema validation
+  (as opposed to a network failure, a 404, or a conflict).
+- The types `EditorRepository`, `EditorPanel`, `EditorAction`, and
+  `EditorDocument`.
+- `defineComponent`, `h`, `onMounted`, `ref`, `watch` — a minimal slice of
+  Vue's runtime, so a host without a build step of its own can write a
+  panel component against the same Vue the bundle uses.
+
+Five built-in panels are exported from `src/element.ts` too — none are baked
 into the element itself, so a host has to include each explicitly to get
 its UI, but can then reuse it instead of authoring an equivalent from
 scratch:
@@ -205,18 +229,21 @@ building block for embedding hosts.
 
 | Event | `detail` | Fires when |
 | --- | --- | --- |
-| `ready` | — | The editor has mounted and finished its initial setup. |
-| `loaded` | `identifier: string` (the record key) | A record has been loaded, created, or saved. |
-| `deleted` | `identifier: string` (the record key) | A record was deleted. |
-| `dirtyChange` | `dirty: boolean` | The record's unsaved-changes state changed. |
-| `error` | `error: Error` | An operation against `repository` failed. |
+| `ready` | `[]` | A new record is set up (`mode="create"`) or a record loaded successfully. Not fired when loading fails — `error` fires instead. |
+| `loaded` | `[identifier: string]` (the record key) | A record has been loaded, created, or saved. |
+| `deleted` | `[identifier: string]` (the record key) | A record was deleted. |
+| `dirtyChange` | `[dirty: boolean]` | The record's unsaved-changes state changed. Also dispatched as `dirty-change`. |
+| `error` | `[error: Error]` | An operation against `repository` failed. |
+
+These are Vue custom-element events: `event.detail` is the array of
+emitted arguments, so the value itself is `event.detail[0]`.
 
 ```js
 editor.addEventListener("loaded", (event) => {
-  console.info("Loaded:", event.detail);
+  console.info("Loaded:", event.detail[0]);
 });
 
 editor.addEventListener("error", (event) => {
-  console.error("Vulniverse editor error:", event.detail);
+  console.error("Vulniverse editor error:", event.detail[0]);
 });
 ```

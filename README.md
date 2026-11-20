@@ -116,7 +116,7 @@ credits and all the rest. It's the vulnerability editor of
 | | |
 |---|---|
 | **Try it now** | The [live demo](https://vulnerability-lookup.github.io/Vulniverse/) runs entirely in your browser. |
-| **Run it yourself** | Start the editor and its backend [with Docker](docs/docs/setup/docker.md), or [from source](docs/docs/setup/setup.md). |
+| **Run it yourself** | Start the editor and its backend [with Docker](docs/docs/setup/docker.md), or [from source](docs/docs/development/from-source.md). |
 | **Embed it** | Add [`<vulniverse-editor>`](docs/docs/embedding/element.md) to your application, as [Vulnerability-Lookup does](docs/docs/embedding/vl.md). |
 
 Configuration, production setup and the architecture are described in the
