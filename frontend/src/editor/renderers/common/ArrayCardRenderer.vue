@@ -4,6 +4,7 @@ import {
 } from "../../core/changes";
 import ChangeBadge from "./ChangeBadge.vue";
 import ExpandAllButton from "./ExpandAllButton.vue";
+import ListCount from "./ListCount.vue";
 import RemovedItems from "./RemovedItems.vue";
 
 import {
@@ -264,7 +265,10 @@ const changeClass = useChangeClass();
     class="mb-3"
   >
     <legend class="d-flex align-items-center justify-content-between h6">
-      {{ control.label }}
+      <span>
+        {{ control.label }}
+        <ListCount :count="items.length" />
+      </span>
 
       <div class="d-flex gap-1">
         <ExpandAllButton

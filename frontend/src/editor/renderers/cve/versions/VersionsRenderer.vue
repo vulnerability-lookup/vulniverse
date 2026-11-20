@@ -18,6 +18,7 @@ import {
 import { useChangeClass } from "../../../core/changes";
 import ChangeBadge from "../../common/ChangeBadge.vue";
 import ExpandAllButton from "../../common/ExpandAllButton.vue";
+import ListCount from "../../common/ListCount.vue";
 import ChangedField from "../../common/ChangedField.vue";
 import RemovedItems from "../../common/RemovedItems.vue";
 import SuggestField from "../../common/SuggestField.vue";
@@ -136,7 +137,10 @@ function missing(entry: VersionEntry, field: "version" | "versionType" | "bound"
     class="mb-3"
   >
     <legend class="d-flex align-items-center justify-content-between h6">
-      {{ control.label || "Versions" }}
+      <span>
+        {{ control.label || "Versions" }}
+        <ListCount :count="items.length" />
+      </span>
 
       <div class="d-flex gap-1">
         <ExpandAllButton
