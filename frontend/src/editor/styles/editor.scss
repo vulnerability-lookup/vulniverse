@@ -217,9 +217,13 @@
   content: none;
 }
 
-// A new card says "New" in its header instead of a bar on every field;
-// a new card inside it doesn't repeat it.
-.editor-added::before,
+// A new card: one bar along all of it, open or closed, and "New" in its
+// header; not a bar on each field inside. A new card inside it repeats
+// neither (it's .editor-changed too, so the second rule hides it).
+.editor-added.editor-changed::before {
+  content: "";
+}
+
 .editor-added .editor-changed::before,
 .editor-added .editor-added > .card-header .editor-change-badge {
   content: none;
