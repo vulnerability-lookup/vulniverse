@@ -1,4 +1,4 @@
-name: Deploy Vulniverse Demo
+name: Deploy Vulniverse demo and documentation
 
 on:
   push:
@@ -46,6 +46,20 @@ jobs:
       - name: Build GitHub Pages demo
         working-directory: frontend
         run: npm run build:pages
+
+      # The documentation goes into the same Pages site, under /docs/
+      # (a repository has only one Pages site).
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Build documentation
+        working-directory: docs
+        run: |
+          uv sync --frozen
+          uv run zensical build --clean
+
+      - name: Add documentation to the site
+        run: cp -r docs/site frontend/dist/docs
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
