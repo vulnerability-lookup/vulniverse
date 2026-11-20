@@ -5,6 +5,7 @@
  * unknown values remain valid.
  */
 export const RECORD_TYPE_PRESETS = [
+  "advisory",
   "creation",
   "update",
   "analysis",

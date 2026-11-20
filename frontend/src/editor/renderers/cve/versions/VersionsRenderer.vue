@@ -19,6 +19,7 @@ import { useChangeClass } from "../../../core/changes";
 import ChangeBadge from "../../common/ChangeBadge.vue";
 import ChangedField from "../../common/ChangedField.vue";
 import RemovedItems from "../../common/RemovedItems.vue";
+import SuggestField from "../../common/SuggestField.vue";
 import { useCollapsibleItems } from "../../common/use-collapsible-items";
 
 import {
@@ -39,7 +40,7 @@ import type {
  * An affected product's versions: each a single version or a range,
  * with the range-only fields (upper bound, version type, status
  * changes) shown only for a range. Version types are suggested from the
- * schema's examples. Logic in versions.ts.
+ * schema's examples (SuggestField). Logic in versions.ts.
  */
 
 const props = defineProps({
@@ -306,25 +307,19 @@ function missing(entry: VersionEntry, field: "version" | "versionType" | "bound"
                 class="text-secondary small"
               >(optional)</span>
             </label>
-            <input
+            <SuggestField
               :id="inputId(index, 'versionType')"
-              class="form-control"
-              :class="{ 'is-invalid': missing(entry, 'versionType') }"
-              :list="inputId(index, 'versionTypes')"
-              :value="entry.versionType ?? ''"
+              :model-value="entry.versionType ?? ''"
+              :options="versionTypes"
+              :input-class="['form-control', { 'is-invalid': missing(entry, 'versionType') }]"
               placeholder="e.g. semver"
-              autocomplete="off"
               :disabled="!control.enabled"
-              @input="setField(index, 'versionType', ($event.target as HTMLInputElement).value)"
+              @update:model-value="(value) => setField(index, 'versionType', value)"
+            />
+            <div
+              v-if="missing(entry, 'versionType')"
+              class="invalid-feedback d-block"
             >
-            <datalist :id="inputId(index, 'versionTypes')">
-              <option
-                v-for="type in versionTypes"
-                :key="type"
-                :value="type"
-              />
-            </datalist>
-            <div class="invalid-feedback">
               Required for a range: it says how versions compare.
             </div>
             <div

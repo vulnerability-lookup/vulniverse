@@ -5,6 +5,7 @@ import {
 import ChangeBadge from "../common/ChangeBadge.vue";
 import RemovedItems from "../common/RemovedItems.vue";
 import ChangedField from "../common/ChangedField.vue";
+import SuggestField from "../common/SuggestField.vue";
 
 import {
   computed,
@@ -631,29 +632,19 @@ const changeClass = useChangeClass();
             class="col-md-6"
             :path="`${itemPath(index)}.recordType`"
           >
-            <label class="form-label">Record type</label>
+            <label
+              class="form-label"
+              :for="`${control.id}-${index}-record-type`"
+            >Record type</label>
 
-            <input
-              :list="`gcve-record-type-${index}`"
-              type="text"
-              class="form-control"
-              :value="item.recordType ?? ''"
+            <SuggestField
+              :id="`${control.id}-${index}-record-type`"
+              :model-value="item.recordType ?? ''"
+              :options="RECORD_TYPE_PRESETS"
+              input-class="form-control"
               :disabled="!control.enabled"
-              @change="
-                setRecordType(
-                  index,
-                  ($event.target as HTMLInputElement).value,
-                )
-              "
-            >
-
-            <datalist :id="`gcve-record-type-${index}`">
-              <option
-                v-for="preset in RECORD_TYPE_PRESETS"
-                :key="preset"
-                :value="preset"
-              />
-            </datalist>
+              @update:model-value="(value) => setRecordType(index, value)"
+            />
           </ChangedField>
         </div>
 
