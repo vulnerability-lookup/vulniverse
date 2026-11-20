@@ -23,7 +23,8 @@
  *               header buttons wrap onto two lines  (default 1600 x 900)
  *   VIDEO_DIR   record a video (.webm) into this folder; with ffmpeg
  *               installed, a successful run also makes the animated WebP
- *               for the README from it, without the Patch2Vuln wait
+ *               for the README from it, without the waits for the app
+ *               (Patch2Vuln, reserving, saving, publishing)
  *   WEBP        where to write that WebP
  *               (default VIDEO_DIR/editor-demo-<THEME>.webp)
  *   HEADED=1    show the browser window
@@ -83,8 +84,8 @@ const page = await context.newPage();
 // The video starts with the page: step times tell where to cut it, e.g.
 // the minutes Patch2Vuln spends analysing.
 const started = Date.now();
-// The Patch2Vuln wait, in seconds of video, to cut out afterwards.
-const wait = { from: 0, to: 0 };
+// Waits for the app, in seconds of video ([from, to]), to cut out of the WebP.
+const cuts = [];
 page.setDefaultTimeout(30_000);
 
 /** Seconds since the video started. */
@@ -96,6 +97,23 @@ function step(text) {
   const seconds = Math.round(elapsed());
   const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
   console.log(`[${time}] ${text}`);
+}
+
+/**
+ * Runs `action` (something the app takes a while for) and marks the
+ * wait to be cut from the WebP, keeping `keep` seconds on each side so
+ * the start and the result stay visible.
+ */
+async function waiting(action, keep = 0.5) {
+  const from = elapsed();
+  const result = await action();
+  const to = elapsed();
+
+  if (to - from > 2 * keep + 0.5) {
+    cuts.push([from + keep, to - keep]);
+  }
+
+  return result;
 }
 
 /** Moves the pointer visibly to the element, then clicks it. */
@@ -172,7 +190,7 @@ async function waitForText(success, failures, timeout) {
 
 try {
   step("New GCVE record");
-  await page.goto(`${BASE}/editor/new`);
+  await waiting(() => page.goto(`${BASE}/editor/new`), 0.2);
   await pause(800);
   await click(page.getByRole("button", { name: "Create as GCVE" }));
   await pause();
@@ -191,18 +209,19 @@ try {
   await click(page.getByRole("button", { name: "Reserve a GCVE ID" }));
   // Its first real save moves a new record to its own address, which opens
   // a fresh editor (on the Editor section): reopen the panel there.
-  await page.waitForURL(/\/editor\/\d+$/, { timeout: 60_000 });
+  await waiting(() => page.waitForURL(/\/editor\/\d+$/, { timeout: 60_000 }));
   await pause(800);
   await open("Vulnerability-Lookup");
-  await waitForText("Reserved, not published yet", ["Reserving didn't complete", "isn't configured"], 60_000);
+  await waiting(() => waitForText("Reserved, not published yet", ["Reserving didn't complete", "isn't configured"], 60_000));
   await pause();
 
   step("Patch2Vuln: wait for the analysis, then apply all generated fields");
   await open("Patch2Vuln");
   // The cut keeps 2 s of "Analyzing..." on each side of the wait.
-  wait.from = elapsed() + 2;
-  await waitForText("Analysis completed successfully.", ["Analysis failed.", "Analysis canceled."], PATCH2VULN_TIMEOUT_MS);
-  wait.to = elapsed() - 2;
+  await waiting(
+    () => waitForText("Analysis completed successfully.", ["Analysis failed.", "Analysis canceled."], PATCH2VULN_TIMEOUT_MS),
+    2,
+  );
   step("Patch2Vuln: analysis done");
   await pause();
   // Every field starts selected.
@@ -229,7 +248,8 @@ try {
 
   step("Save");
   await click(page.getByRole("button", { name: "Save", exact: true }));
-  await page.getByText("Unsaved changes").waitFor({ state: "detached" });
+  // The header's "N unsaved changes" badge goes once it's saved.
+  await waiting(() => page.locator(".editor-unsaved-toggle").waitFor({ state: "detached" }));
   await pause();
 
   step("Preview");
@@ -243,11 +263,11 @@ try {
   step("Vulnerability-Lookup: publish");
   await open("Vulnerability-Lookup");
   await click(page.getByRole("button", { name: "Publish to Vulnerability-Lookup" }));
-  await waitForText(
+  await waiting(() => waitForText(
     "Published on Vulnerability-Lookup",
     ["Publishing didn't complete", "Fix the marked fields before publishing."],
     60_000,
-  );
+  ));
   await pause(3000);
 
   step("Done");
@@ -270,14 +290,14 @@ try {
 
 /**
  * The animated WebP for the README, in one ffmpeg step: without the
- * Patch2Vuln wait, at 12 frames per second (enough for a UI, and small),
- * 1200 px wide (sharp when shown smaller), looping.
+ * waits for the app, at 12 frames per second (enough for a UI, and
+ * small), 1200 px wide (sharp when shown smaller), looping.
  */
 function makeWebp(path) {
   const output = process.env.WEBP ?? path.replace(/[^/]+\.webm$/, `editor-demo-${THEME}.webp`);
-  const cut = wait.to > wait.from
-    ? `select='not(between(t,${wait.from.toFixed(2)},${wait.to.toFixed(2)}))',setpts=N/FRAME_RATE/TB,`
-    : "";
+  const ranges = cuts.map(([from, to]) => `between(t,${from.toFixed(2)},${to.toFixed(2)})`).join("+");
+  const cut = ranges ? `select='not(${ranges})',setpts=N/FRAME_RATE/TB,` : "";
+  const cutSeconds = Math.round(cuts.reduce((total, [from, to]) => total + to - from, 0));
 
   console.log("Making the WebP…");
   try {
@@ -287,8 +307,9 @@ function makeWebp(path) {
       "-c:v", "libwebp_anim", "-lossless", "0", "-quality", "75",
       "-compression_level", "4", "-loop", "0", "-an", output,
     ], { stdio: "inherit" });
-    console.log(`WebP${cut ? ` (Patch2Vuln wait of ${Math.round(wait.to - wait.from)} s cut)` : ""}: ${output}`);
+    console.log(`WebP${cut ? ` (${cuts.length} waits, ${cutSeconds} s, cut)` : ""}: ${output}`);
   } catch {
-    console.log(`ffmpeg failed or isn't installed. The wait to cut: ${wait.from.toFixed(1)}–${wait.to.toFixed(1)} s.`);
+    const list = cuts.map(([from, to]) => `${from.toFixed(1)}–${to.toFixed(1)} s`).join(", ");
+    console.log(`ffmpeg failed or isn't installed. The waits to cut: ${list || "none"}.`);
   }
 }
