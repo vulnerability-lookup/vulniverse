@@ -16,7 +16,7 @@ already released.
 Please **don't open a public issue** for a security problem.
 
 Report it privately through GitHub: on the repository's
-[Security tab](https://github.com/vulnerability-lookup/Vulniverse/security),
+[Security tab](https://github.com/vulnerability-lookup/vulniverse/security),
 choose **Report a vulnerability**. Only you and the maintainers see the
 report.
 

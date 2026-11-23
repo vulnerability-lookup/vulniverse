@@ -29,8 +29,8 @@ Or download `vulniverse-editor.js` from the GitHub releases:
 
 | Build | URL |
 | --- | --- |
-| Latest release | `https://github.com/vulnerability-lookup/Vulniverse/releases/latest/download/vulniverse-editor.js` |
-| Nightly (every push to `main`) | `https://github.com/vulnerability-lookup/Vulniverse/releases/download/nightly/vulniverse-editor.js` |
+| Latest release | `https://github.com/vulnerability-lookup/vulniverse/releases/latest/download/vulniverse-editor.js` |
+| Nightly (every push to `main`) | `https://github.com/vulnerability-lookup/vulniverse/releases/download/nightly/vulniverse-editor.js` |
 
 Or build it yourself:
 
@@ -213,9 +213,9 @@ server function serves both. The official schemas are in this repository:
 
 | Profile | Schema |
 | --- | --- |
-| `cve-5.2.0` | [`schemas/upstream/cve/5.2.0/CVE_Record_Format_bundled.json`](https://github.com/vulnerability-lookup/Vulniverse/blob/main/schemas/upstream/cve/5.2.0/CVE_Record_Format_bundled.json) |
-| `osv-1.9.2` | [`schemas/upstream/osv/1.9.2/schema.json`](https://github.com/vulnerability-lookup/Vulniverse/blob/main/schemas/upstream/osv/1.9.2/schema.json) |
-| `gcve-bcp-05-1.7` | The CVE schema for the record, and [`schemas/upstream/gcve/bcp-05/1.7/gcve-bcp-05.schema.json`](https://github.com/vulnerability-lookup/Vulniverse/blob/main/schemas/upstream/gcve/bcp-05/1.7/gcve-bcp-05.schema.json) for each `x_gcve` list in it |
+| `cve-5.2.0` | [`schemas/upstream/cve/5.2.0/CVE_Record_Format_bundled.json`](https://github.com/vulnerability-lookup/vulniverse/blob/main/schemas/upstream/cve/5.2.0/CVE_Record_Format_bundled.json) |
+| `osv-1.9.2` | [`schemas/upstream/osv/1.9.2/schema.json`](https://github.com/vulnerability-lookup/vulniverse/blob/main/schemas/upstream/osv/1.9.2/schema.json) |
+| `gcve-bcp-05-1.7` | The CVE schema for the record, and [`schemas/upstream/gcve/bcp-05/1.7/gcve-bcp-05.schema.json`](https://github.com/vulnerability-lookup/vulniverse/blob/main/schemas/upstream/gcve/bcp-05/1.7/gcve-bcp-05.schema.json) for each `x_gcve` list in it |
 
 For example in Python, with
 [`jsonschema`](https://python-jsonschema.readthedocs.io/):
@@ -256,7 +256,7 @@ GCVE has a few more rules: it doesn't require the CVE-only fields
 `cveMetadata.cveId`, `cveMetadata.assignerOrgId` and
 `containers.cna.providerMetadata`, and checks the GCVE extensions. Vulniverse's
 own backend implements all of it, in
-[`record_validation.py`](https://github.com/vulnerability-lookup/Vulniverse/blob/main/backend/src/vulniverse_api/services/record_validation.py);
+[`record_validation.py`](https://github.com/vulnerability-lookup/vulniverse/blob/main/backend/src/vulniverse_api/services/record_validation.py);
 use it as the reference, or run the Vulniverse backend next to your
 application.
 

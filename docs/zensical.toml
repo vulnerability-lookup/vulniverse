@@ -4,8 +4,8 @@ site_url = "https://vulnerability-lookup.github.io/vulniverse/docs/"
 site_name = "Vulniverse"
 site_description = "Editor for CVE / GCVE vulnerability records, embeddable into Vulnerability-Lookup."
 
-repo_url = "https://github.com/vulnerability-lookup/Vulniverse"
-repo_name = "vulnerability-lookup/Vulniverse"
+repo_url = "https://github.com/vulnerability-lookup/vulniverse"
+repo_name = "vulnerability-lookup/vulniverse"
 edit_uri = "edit/main/docs/docs/"
 
 nav = [

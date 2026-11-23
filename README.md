@@ -7,8 +7,8 @@
 
 <p align="center">
   <a href="https://vulnerability-lookup.github.io/vulniverse/"><img alt="Live demo" src="https://img.shields.io/badge/demo-try%20it-blue"></a>
-  <a href="https://github.com/vulnerability-lookup/Vulniverse/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/vulnerability-lookup/Vulniverse/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/vulnerability-lookup/Vulniverse/releases"><img alt="Release" src="https://img.shields.io/github/v/release/vulnerability-lookup/Vulniverse?include_prereleases&sort=semver&filter=v*&label=release"></a>
+  <a href="https://github.com/vulnerability-lookup/vulniverse/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/vulnerability-lookup/vulniverse/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/vulnerability-lookup/vulniverse/releases"><img alt="Release" src="https://img.shields.io/github/v/release/vulnerability-lookup/vulniverse?include_prereleases&sort=semver&filter=v*&label=release"></a>
   <a href="LICENSE"><img alt="License: BSD 2-Clause" src="https://img.shields.io/badge/license-BSD%202--Clause-blue"></a>
 </p>
 

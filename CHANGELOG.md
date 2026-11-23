@@ -121,7 +121,7 @@ that returns the record it was given; use 0.1.0-alpha.4.
 
 ## [0.1.0-alpha.1]
 
-[Unreleased]: https://github.com/vulnerability-lookup/Vulniverse/compare/v0.1.0-alpha.2...HEAD
-[0.1.0-alpha.4]: https://github.com/vulnerability-lookup/Vulniverse/compare/v0.1.0-alpha.2...v0.1.0-alpha.4
-[0.1.0-alpha.2]: https://github.com/vulnerability-lookup/Vulniverse/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
-[0.1.0-alpha.1]: https://github.com/vulnerability-lookup/Vulniverse/releases/tag/v0.1.0-alpha.1
+[Unreleased]: https://github.com/vulnerability-lookup/vulniverse/compare/v0.1.0-alpha.2...HEAD
+[0.1.0-alpha.4]: https://github.com/vulnerability-lookup/vulniverse/compare/v0.1.0-alpha.2...v0.1.0-alpha.4
+[0.1.0-alpha.2]: https://github.com/vulnerability-lookup/vulniverse/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
+[0.1.0-alpha.1]: https://github.com/vulnerability-lookup/vulniverse/releases/tag/v0.1.0-alpha.1

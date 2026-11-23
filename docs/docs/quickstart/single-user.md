@@ -14,8 +14,8 @@ keys).
 ## 1. Get the code
 
 ```bash
-git clone https://github.com/vulnerability-lookup/Vulniverse.git
-cd Vulniverse
+git clone https://github.com/vulnerability-lookup/vulniverse.git
+cd vulniverse
 ```
 
 Run every following command from this directory.

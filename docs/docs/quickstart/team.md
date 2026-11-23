@@ -23,8 +23,8 @@ domain name pointing to it, and (recommended) PostgreSQL.
 ## 1. Get the code
 
 ```bash
-git clone https://github.com/vulnerability-lookup/Vulniverse.git
-cd Vulniverse
+git clone https://github.com/vulnerability-lookup/vulniverse.git
+cd vulniverse
 cp backend/.env.example backend/.env
 ```
 

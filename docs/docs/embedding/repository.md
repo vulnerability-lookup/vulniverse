@@ -297,7 +297,7 @@ if the connection drops, and return a function that stops it.
 - **A minimal repository** that keeps one record in the browser: the
   complete page in [Embed it, step 5](../quickstart/embed.md#5-a-complete-page).
 - **The standalone app's** `HttpRepository`
-  ([`frontend/src/repositories/HttpRepository.ts`](https://github.com/vulnerability-lookup/Vulniverse/blob/main/frontend/src/repositories/HttpRepository.ts)):
+  ([`frontend/src/repositories/HttpRepository.ts`](https://github.com/vulnerability-lookup/vulniverse/blob/main/frontend/src/repositories/HttpRepository.ts)):
   every method, against the Vulniverse backend's `/api/v1`. Its one
   option is that base URL: `new HttpRepository("/api/v1")`.
 - **Vulnerability-Lookup's** `VulnerabilityLookupRepository`: the
