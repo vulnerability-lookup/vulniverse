@@ -36,6 +36,10 @@ export {
   RecordValidationError,
 } from "./editor/contracts";
 
+export {
+  EditorRepositoryError,
+} from "./editor/core/errors";
+
 /** Download the record as JSON, an HTML page or a PDF. */
 export declare const downloadAction: EditorAction;
 /** A short guided tour of the editor. */

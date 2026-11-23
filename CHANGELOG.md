@@ -69,6 +69,10 @@ The first stable release, after 0.1.0-alpha.2.
   counts on card lists, and a better layout on small screens.
 - Backend validation of CVSS vectors and scores.
 - **npm package** of the editor, with TypeScript declarations.
+- **For embedders:** the bundle exports `EditorRepositoryError`, so a
+  repository can tell the publishing panels about missing CNA credentials
+  or a concurrent save, and the editor waits for a `repository` set after
+  the element is in the page (as frameworks do) instead of failing.
 - Documentation with quick starts for a single user, a team server and
   embedding, published with the demo on GitHub Pages.
 
