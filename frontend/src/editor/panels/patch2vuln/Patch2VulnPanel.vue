@@ -5,6 +5,7 @@ import {
   onMounted,
   ref,
   shallowRef,
+  watch,
 } from "vue";
 
 import type {
@@ -33,6 +34,10 @@ import {
   rememberJob,
 } from "./job-storage";
 
+import {
+  repositoryOfCommitUrl,
+} from "./commit-url";
+
 
 const props = defineProps<{
   context: EditorContext;
@@ -54,6 +59,29 @@ const files = ref<File[]>([]);
 
 const vendor = ref("");
 const product = ref("");
+
+// Vendor and product follow the first commit URL's owner and repository,
+// unless the user typed their own.
+const filledVendor = ref("");
+const filledProduct = ref("");
+// The hint under the fields, while either still holds the URL's value.
+const autofilled = computed(() => (
+  (vendor.value !== "" && vendor.value === filledVendor.value)
+  || (product.value !== "" && product.value === filledProduct.value)
+));
+
+watch(commitUrls, (text) => {
+  const found = repositoryOfCommitUrl(text.split("\n")[0] ?? "");
+  if (!found) {
+    return;
+  }
+  if (vendor.value === filledVendor.value) {
+    vendor.value = filledVendor.value = found.owner;
+  }
+  if (product.value === filledProduct.value) {
+    product.value = filledProduct.value = found.repo;
+  }
+});
 const affectedVersion = ref("");
 const fixedVersion = ref("");
 const versionType = ref("");
@@ -716,24 +744,37 @@ onBeforeUnmount(() => {
 
       <h6>Additional context (optional)</h6>
 
-      <div class="mb-3">
-        <label class="form-label">Vendor</label>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Vendor</label>
 
-        <input
-          v-model="vendor"
-          class="form-control"
-          :disabled="isRunning"
+          <input
+            v-model="vendor"
+            class="form-control"
+            :disabled="isRunning"
+            :aria-describedby="autofilled ? 'patch2vuln-autofilled' : undefined"
+          >
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Product</label>
+
+          <input
+            v-model="product"
+            class="form-control"
+            :disabled="isRunning"
+            :aria-describedby="autofilled ? 'patch2vuln-autofilled' : undefined"
+          >
+        </div>
+
+        <div
+          v-if="autofilled"
+          id="patch2vuln-autofilled"
+          class="col-12 form-text"
         >
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Product</label>
-
-        <input
-          v-model="product"
-          class="form-control"
-          :disabled="isRunning"
-        >
+          Filled in from the commit URL. Change them if the real names
+          differ.
+        </div>
       </div>
 
       <div class="row mb-3">

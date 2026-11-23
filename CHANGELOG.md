@@ -62,7 +62,8 @@ The first stable release, after 0.1.0-alpha.2.
 - **Vulnerability-Lookup / CNA publication**: a timeline of the record's
   state, pulling records and reservations from upstream, a field-by-field
   comparison with the published version, and taking over upstream values.
-- **Patch2Vuln**: additional instructions for the analysis, and a
+- **Patch2Vuln**: additional instructions for the analysis, vendor and
+  product filled in from the commit URL's owner and repository, and a
   notification when an analysis finishes while the panel is closed.
 - **Templates**: export and import single templates as files.
 - **Actions**: download as JSON, HTML page or PDF; a guided tutorial.
