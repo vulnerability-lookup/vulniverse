@@ -11,7 +11,21 @@ This page shows the smallest setup that works, then where to go next.
 
 ## 1. Get the bundle
 
-Download `vulniverse-editor.js` from the GitHub releases:
+From npm, if your application uses a bundler (Vite, webpack, …):
+
+```bash
+npm install @nmd03/vulniverse
+```
+
+```js
+import "@nmd03/vulniverse"; // registers <vulniverse-editor>
+```
+
+The package includes TypeScript declarations, with nothing else to
+install: type your repository as `EditorRepository`, and
+`document.createElement("vulniverse-editor")` returns a typed element.
+
+Or download `vulniverse-editor.js` from the GitHub releases:
 
 | Build | URL |
 | --- | --- |
@@ -23,7 +37,7 @@ Or build it yourself:
 ```bash
 cd frontend
 npm run build:element
-# → frontend/dist/element/vulniverse-editor.js
+# → frontend/dist/element/vulniverse-editor.js (and vulniverse-editor.d.ts)
 ```
 
 The file is self-contained: CSS and images are inlined. Serve it from your

@@ -17,7 +17,8 @@
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
-    "build:element": "vue-tsc -b && vite build --config vite.element.config.ts"
+    "build:element": "vue-tsc -b && vite build --config vite.element.config.ts && npm run build:types",
+    "build:types": "node scripts/build-types.mjs"
   },
   "dependencies": {
     "@jsonforms/core": "^3.8.0",
@@ -43,6 +44,7 @@
     "@vue/eslint-config-typescript": "^14.9.0",
     "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",
+    "dts-bundle-generator": "^9.5.1",
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-oxlint": "~1.73.0",

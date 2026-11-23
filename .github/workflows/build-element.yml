@@ -14,6 +14,11 @@ name: Build embeddable editor
 #     alias also resolves to:
 #     https://github.com/<owner>/<repo>/releases/latest/download/vulniverse-editor.js
 #
+#   - The same version tag also publishes the npm package in
+#     packages/editor (see the "npm" job below): the version comes from
+#     the tag, and a pre-release (v1.0.0-rc.1) goes to its own npm
+#     dist-tag (rc) instead of "latest".
+#
 # Pull requests and other branches only build, to catch breakage
 # before merge, without publishing anything.
 
@@ -62,6 +67,7 @@ jobs:
           path: |
             frontend/dist/element/vulniverse-editor.js
             frontend/dist/element/vulniverse-editor.js.map
+            frontend/dist/element/vulniverse-editor.d.ts
           if-no-files-found: error
 
       - name: Publish rolling nightly release
@@ -85,3 +91,53 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
           files: frontend/dist/element/vulniverse-editor.js
+
+  # Publishes packages/editor to npm with provenance. Authentication:
+  # npm trusted publishing (register this repository and this workflow
+  # file on the package's npm settings page; no secret needed), or an
+  # NPM_TOKEN repository secret as a fallback.
+  npm:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance and trusted publishing
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      # Trusted publishing needs npm 11.5.1 or newer; Node 22 ships npm 10.
+      - name: Update npm
+        run: npm install -g npm@11
+
+      - name: Get the built bundle
+        uses: actions/download-artifact@v7
+        with:
+          name: vulniverse-editor
+          path: packages/editor/dist
+
+      - name: Set the version from the tag
+        working-directory: packages/editor
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+
+      - name: Publish to npm
+        working-directory: packages/editor
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # 1.0.0-rc.1 -> "rc", 0.1.0-alpha.3 -> "alpha", 1.0.0 -> "latest".
+          if [[ "$version" == *-* ]]; then
+            prerelease="${version#*-}"
+            tag="${prerelease%%.*}"
+          else
+            tag="latest"
+          fi
+          npm publish --provenance --access public --tag "$tag"

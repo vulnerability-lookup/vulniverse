@@ -1,0 +1,38 @@
+{
+  "name": "@nmd03/vulniverse",
+  "version": "0.1.0-alpha.3",
+  "description": "Embeddable Vulniverse vulnerability record editor",
+  "keywords": [
+    "vulnerability",
+    "cve",
+    "gcve",
+    "osv",
+    "editor",
+    "web-component",
+    "custom-element"
+  ],
+  "homepage": "https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/embed/",
+  "bugs": "https://github.com/vulnerability-lookup/Vulniverse/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vulnerability-lookup/Vulniverse.git",
+    "directory": "packages/editor"
+  },
+  "license": "BSD-2-Clause",
+  "type": "module",
+  "types": "./dist/vulniverse-editor.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/vulniverse-editor.d.ts",
+      "default": "./dist/vulniverse-editor.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": true,
+  "publishConfig": {
+    "access": "public"
+  }
+}

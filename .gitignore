@@ -36,3 +36,6 @@ config/vulniverse.toml
 .claude/scheduled_tasks.lock
 .claude/worktrees/
 .claude/plans/
+
+# The npm package's bundle is built and copied in by CI (build-element.yml).
+packages/editor/dist/

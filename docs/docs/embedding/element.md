@@ -200,8 +200,14 @@ decides the array contents directly in its own code.
 - `RecordValidationError` — the error a repository throws from
   `createRecord`/`updateRecord` when the record fails schema validation
   (as opposed to a network failure, a 404, or a conflict).
-- The types `EditorRepository`, `EditorPanel`, `EditorAction`, and
-  `EditorDocument`.
+- The types `EditorRepository`, `EditorPanel`, `EditorAction`,
+  `EditorContext`, `EditorDocument`, `LoadedRecord`, `ValidationResult`,
+  `ValidationError`, `LifecycleTransition` and `ThemePreference`, and
+  `VulniverseEditorElement`, the element itself. They ship as
+  `vulniverse-editor.d.ts`, next to the bundle and in the npm package. It's
+  self-contained (Vue's types aren't needed) and registers the element in
+  `HTMLElementTagNameMap`, so `document.createElement("vulniverse-editor")`
+  is typed.
 - `defineComponent`, `h`, `onMounted`, `ref`, `watch` — a minimal slice of
   Vue's runtime, so a host without a build step of its own can write a
   panel component against the same Vue the bundle uses.
