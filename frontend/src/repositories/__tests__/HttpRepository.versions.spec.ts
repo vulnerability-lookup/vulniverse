@@ -12,7 +12,7 @@ function stubFetch(...bodies: object[]) {
     // The CSRF token request comes first for a mutating call.
     const body = url.endsWith("/auth/csrf-token") ? { csrfToken: "t" } : bodies.shift();
 
-    return new Response(JSON.stringify(body), { status: 200 });
+    return Response.json(body);
   }));
 
   return calls;

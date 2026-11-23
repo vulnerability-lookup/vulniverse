@@ -33,8 +33,16 @@ const auth = useAuthStore();
 const organisationName = computed(() => (
   auth.isLocalMode ? null : auth.currentOrganisation?.name ?? null
 ));
-const withoutOrganisation = computed(() => (
+// Instance admins are sent every organisation's records.
+const seesAllOrganisations = computed(() => (
+  !auth.isLocalMode && auth.currentUser?.isAdmin === true
+));
+const noOrganisation = computed(() => (
   !auth.isLocalMode && auth.currentUser?.organisations.length === 0
+));
+// Nothing to list: not a member anywhere, and not an instance admin.
+const withoutOrganisation = computed(() => (
+  noOrganisation.value && !seesAllOrganisations.value
 ));
 
 function kindLabelFor(
@@ -142,7 +150,13 @@ const filteredRecords = computed(() => {
       <div>
         <h1 class="mb-0">Overview</h1>
         <p
-          v-if="organisationName"
+          v-if="seesAllOrganisations"
+          class="text-secondary mb-0"
+        >
+          Records of all organisations
+        </p>
+        <p
+          v-else-if="organisationName"
           class="text-secondary mb-0"
         >
           Records of {{ organisationName }}
@@ -150,7 +164,7 @@ const filteredRecords = computed(() => {
       </div>
 
       <RouterLink
-        v-if="!withoutOrganisation"
+        v-if="!noOrganisation"
         to="/editor/new"
         class="btn btn-primary"
       >
@@ -324,6 +338,9 @@ const filteredRecords = computed(() => {
             </div>
 
             <div class="text-secondary small mt-3">
+              <div v-if="seesAllOrganisations">
+                In {{ record.organisation.name }}
+              </div>
               <div v-if="record.createdBy">
                 Created by {{ record.createdBy }}
               </div>
