@@ -15,12 +15,6 @@ application, embed the editor in
 [Vulnerability-Lookup](https://github.com/vulnerability-lookup/vulnerability-lookup),
 or connect it to any software that works with these formats.
 
-!!! note
-
-    Vulniverse is under active development. The editor and API are usable,
-    but interfaces and deployment instructions may change before the first
-    stable release.
-
 ## Choose your path
 
 <div class="grid cards" markdown>
