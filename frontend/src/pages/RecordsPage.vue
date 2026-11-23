@@ -61,6 +61,7 @@ const loadError = ref<Error | null>(null);
 const searchText = ref("");
 const profileFilter = ref("all");
 const statusFilter = ref<"all" | "draft" | "published">("all");
+const organisationFilter = ref<number | "all">("all");
 
 function formatDate(
   value: string,
@@ -97,15 +98,35 @@ watch(() => auth.currentUser?.currentOrganisationId, (now, before) => {
   if (now !== before) void loadRecords();
 });
 
+// Instance admins only: the organisations in their list, by name.
+const usedOrganisations = computed(() => {
+  const byId = new Map(records.value.map((record) => [record.organisation.id, record.organisation]));
+
+  return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+});
+const showOrganisationFilter = computed(() => (
+  seesAllOrganisations.value && usedOrganisations.value.length > 1
+));
+const chosenOrganisation = computed(() => (
+  usedOrganisations.value.find((organisation) => organisation.id === organisationFilter.value)
+));
+
+// The counters and the list both follow the organisation filter.
+const organisationRecords = computed(() => (
+  chosenOrganisation.value
+    ? records.value.filter((record) => record.organisation.id === chosenOrganisation.value?.id)
+    : records.value
+));
+
 const usedProfiles = computed(() => {
-  const ids = new Set(records.value.map((record) => record.profile));
+  const ids = new Set(organisationRecords.value.map((record) => record.profile));
 
   return Array.from(ids);
 });
 
 const stats = computed(() => {
-  const total = records.value.length;
-  const drafts = records.value.filter((record) => record.isDraft).length;
+  const total = organisationRecords.value.length;
+  const drafts = organisationRecords.value.filter((record) => record.isDraft).length;
 
   return {
     total,
@@ -114,7 +135,7 @@ const stats = computed(() => {
     byProfile: usedProfiles.value.map((profileId) => ({
       profileId,
       label: kindLabelFor(profileId),
-      count: records.value.filter((record) => record.profile === profileId).length,
+      count: organisationRecords.value.filter((record) => record.profile === profileId).length,
     })),
   };
 });
@@ -122,7 +143,7 @@ const stats = computed(() => {
 const filteredRecords = computed(() => {
   const text = searchText.value.trim().toLowerCase();
 
-  return records.value.filter((record) => {
+  return organisationRecords.value.filter((record) => {
     if (text && !(record.identifier ?? "").toLowerCase().includes(text)) {
       return false;
     }
@@ -153,7 +174,7 @@ const filteredRecords = computed(() => {
           v-if="seesAllOrganisations"
           class="text-secondary mb-0"
         >
-          Records of all organisations
+          Records of {{ chosenOrganisation?.name ?? "all organisations" }}
         </p>
         <p
           v-else-if="organisationName"
@@ -231,7 +252,7 @@ const filteredRecords = computed(() => {
       v-if="!loading && !loadError && records.length > 0"
       class="row g-2 align-items-center mb-3"
     >
-      <div class="col-md-6">
+      <div :class="showOrganisationFilter ? 'col-md-3' : 'col-md-6'">
         <input
           v-model="searchText"
           type="search"
@@ -258,6 +279,26 @@ const filteredRecords = computed(() => {
           <option value="all">All statuses</option>
           <option value="draft">Drafts only</option>
           <option value="published">Published only</option>
+        </select>
+      </div>
+
+      <div
+        v-if="showOrganisationFilter"
+        class="col-6 col-md-3"
+      >
+        <select
+          v-model="organisationFilter"
+          class="form-select"
+          aria-label="Organisation"
+        >
+          <option value="all">All organisations</option>
+          <option
+            v-for="organisation in usedOrganisations"
+            :key="organisation.id"
+            :value="organisation.id"
+          >
+            {{ organisation.name }}
+          </option>
         </select>
       </div>
     </div>
@@ -338,7 +379,7 @@ const filteredRecords = computed(() => {
             </div>
 
             <div class="text-secondary small mt-3">
-              <div v-if="seesAllOrganisations">
+              <div v-if="seesAllOrganisations && !chosenOrganisation">
                 In {{ record.organisation.name }}
               </div>
               <div v-if="record.createdBy">
