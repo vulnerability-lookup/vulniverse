@@ -62,6 +62,11 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Unit tests before a release
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: frontend
+        run: npm run test:unit -- --run
+
       - name: Build the embeddable element
         working-directory: frontend
         run: npm run build:element
@@ -141,5 +146,10 @@ jobs:
             tag="${prerelease%%.*}"
           else
             tag="latest"
+          fi
+          name="$(node -p "require('./package.json').name")"
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "$name@$version is already on npm; nothing to publish."
+            exit 0
           fi
           npm publish --provenance --access public --tag "$tag"

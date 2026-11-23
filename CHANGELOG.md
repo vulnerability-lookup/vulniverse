@@ -98,10 +98,24 @@ The first stable release, after 0.1.0-alpha.2.
 - Read-only fields look disabled; the record tree jumps to GCVE
   extensions correctly.
 
+## [0.1.0-alpha.3]
+
+A preview of 1.0 for testing, with everything listed under
+[Unreleased](#unreleased) at the time of its release, and the first
+release of the editor on npm:
+
+```bash
+npm install @nmd03/vulniverse@alpha
+```
+
+Upgrading from 0.1.0-alpha.2 works as described under
+[Upgrading from 0.1.0-alpha.2](#upgrading-from-010-alpha2).
+
 ## [0.1.0-alpha.2] - 2026-11-06
 
 ## [0.1.0-alpha.1]
 
 [Unreleased]: https://github.com/vulnerability-lookup/Vulniverse/compare/v0.1.0-alpha.2...HEAD
+[0.1.0-alpha.3]: https://github.com/vulnerability-lookup/Vulniverse/compare/v0.1.0-alpha.2...v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/vulnerability-lookup/Vulniverse/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/vulnerability-lookup/Vulniverse/releases/tag/v0.1.0-alpha.1

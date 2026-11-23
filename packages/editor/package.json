@@ -12,10 +12,10 @@
     "custom-element"
   ],
   "homepage": "https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/embed/",
-  "bugs": "https://github.com/vulnerability-lookup/Vulniverse/issues",
+  "bugs": "https://github.com/vulnerability-lookup/vulniverse/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vulnerability-lookup/Vulniverse.git",
+    "url": "git+https://github.com/vulnerability-lookup/vulniverse.git",
     "directory": "packages/editor"
   },
   "license": "BSD-2-Clause",
