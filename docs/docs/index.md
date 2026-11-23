@@ -91,6 +91,8 @@ its own backend instead.
 
 - [The `<vulniverse-editor>` element](embedding/element.md): the Web
   Component's full API.
+- [The repository](embedding/repository.md): what your application
+  implements to load, save and publish records.
 - [Embedding: Vulnerability-Lookup](embedding/vl.md): how
   Vulnerability-Lookup wires the editor in.
 

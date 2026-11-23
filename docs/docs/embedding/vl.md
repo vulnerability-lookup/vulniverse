@@ -78,8 +78,8 @@ constraints of the CNA API's shape through into the adapter:
   `VulnerabilityLookupRepository` sets `lifecycleTransitions = []`
   explicitly in its constructor for the same reason, so the editor shows
   no Publish/Revert-to-draft button at all — there is nowhere for either
-  to persist an intermediate state to. See [The `<vulniverse-editor>`
-  element](element.md#repository) for what an unset vs. an explicit empty
+  to persist an intermediate state to. See [The
+  repository](repository.md#draft-and-publish-buttons) for what an unset vs. an explicit empty
   `lifecycleTransitions` means in general.
 - `validateRecord` POSTs the record to VL's own
   `/api/vulnerability/validate`, which checks it the GCVE way. The editor

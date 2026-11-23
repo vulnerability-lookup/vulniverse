@@ -84,43 +84,15 @@ The repository must implement four methods. They all return promises.
 | `updateRecord(identifier, record, profile, isDraft)` | `LoadedRecord` |
 | `validateRecord(record, profile)` | `ValidationResult` |
 
-A `LoadedRecord` is:
+A `LoadedRecord` is `{ identifier, vulnerabilityId?, profile, record,
+isDraft }`: your key for the record, its CVE/GCVE/OSV ID shown as the
+title, its profile, its JSON and whether it's a draft. A
+`ValidationResult` is `{ valid, profile, errors }`. The complete page in
+step 5 shows both in working code.
 
-```ts
-{
-  identifier: string;               // your key for the record, any stable string
-  vulnerabilityId?: string | null;  // CVE/GCVE/OSV ID shown as the title; null = none yet
-  profile: string;                  // e.g. "gcve-bcp-05-1.7"
-  record: object;                   // the record JSON
-  isDraft: boolean;
-}
-```
-
-A `ValidationResult` is:
-
-```ts
-{
-  valid: boolean;
-  profile: string;
-  errors: Array<{
-    path: Array<string | number>;        // where in the record, e.g. ["containers", "cna", "title"]
-    schemaPath: Array<string | number>;
-    message: string;
-    validator?: string;
-    severity?: "error" | "warning";
-  }>;
-}
-```
-
-The editor calls `createRecord` on the first save of a new record and
-`updateRecord` after that. If saving fails because the record is invalid,
-throw the `RecordValidationError` the bundle exports, with the errors:
-the editor then lists them like Validate does. Any other error is shown
-as a message and sent as an `error` event.
-
-Everything else on the repository is optional (templates, CVE/CPE
-lookups, publishing, Patch2Vuln...). See the
-[full list](../embedding/element.md#repository).
+The exact shapes, how to report errors (including an invalid record on
+save) and all the optional methods for templates, CWE/CPE suggestions,
+publishing and Patch2Vuln: [The repository](../embedding/repository.md).
 
 ## 5. A complete page
 
@@ -235,7 +207,8 @@ too: check the record against the JSON schema of its profile there.
 
 The editor validates as you type, in the browser, but your server should
 check every record it stores. `validateRecord` and a rejected save both
-expect the same shape (see [step 4](#4-give-it-a-repository)), so one
+expect the same shape (see
+[The repository](../embedding/repository.md#loading-and-saving-required)), so one
 server function serves both. The official schemas are in this repository:
 
 | Profile | Schema |

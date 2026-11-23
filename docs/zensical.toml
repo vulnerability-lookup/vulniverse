@@ -27,6 +27,7 @@ nav = [
 
     { "Embedding" = [
         { "The vulniverse-editor element" = "embedding/element.md" },
+        { "The repository" = "embedding/repository.md" },
         { "Vulnerability-Lookup" = "embedding/vl.md" },
     ]},
 

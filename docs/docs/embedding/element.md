@@ -25,12 +25,11 @@ all of these steps together.
    npm run build:element
    ```
    Produces one self-contained file, `dist/element/vulniverse-editor.js`
-   — CSS inlined, images base64'd, no external dependencies. Copy it into
-   the host app's own static assets; there's no publish-to-npm step today.
-   CI (`.github/workflows/build-element.yml`) also publishes it as a
-   GitHub release asset: every push to `main` updates
-   `releases/download/nightly/vulniverse-editor.js`, and every `v*.*.*`
-   tag publishes `releases/latest/download/vulniverse-editor.js`.
+   — CSS inlined, images base64'd, no external dependencies — plus its
+   type declarations, `vulniverse-editor.d.ts`. Copy them into the host
+   app's own static assets. Or skip the build: install the npm package, or
+   download a released bundle (see
+   [Embed it](../quickstart/embed.md#1-get-the-bundle)).
 
 2. **Load it with a static import**:
    ```js
@@ -43,8 +42,7 @@ all of these steps together.
    guaranteed to produce an already-upgraded element.
 
 3. **Implement an `EditorRepository`** against the host's own backend —
-   this is the real integration work. See [`repository`](#repository)
-   below.
+   this is the real integration work. See [The repository](repository.md).
 
 4. **Construct the element and set it up**:
    ```js
@@ -60,6 +58,12 @@ all of these steps together.
    `repository` (and `panels`/`actions` below) are always assigned as JS
    properties after `createElement` — never as attribute strings, since
    they're objects/arrays, not strings.
+
+   They can also be set after the element is mounted (step 7), as
+   frameworks usually do. In edit mode the editor then shows "Waiting for
+   a repository…" and loads the record once `repository` is first set.
+   Only the first repository is used; to switch to another, mount a new
+   element.
 
 5. **(Optional) Add panels and actions** — see [`panels` and
    `actions`](#panels-and-actions) below:
@@ -101,7 +105,7 @@ all of these steps together.
 | `mode` | `"create" \| "edit"` | Defaults to `"create"`. |
 | `record-id` | `string` | Required when `mode="edit"`. |
 | `profile` | `string` | `"gcve-bcp-05-1.7"` (the default), `"cve-5.2.0"`, or `"osv-1.9.2"`. |
-| `repository` | `EditorRepository` | Set from JavaScript (`editor.repository = ...`), not an HTML attribute — see below. |
+| `repository` | `EditorRepository` | Set from JavaScript (`editor.repository = ...`), not an HTML attribute — see below. Before or after mounting; only the first one set is used. |
 | `actions` | `EditorAction[]` | Optional extra header buttons. |
 | `panels` | `EditorPanel[]` | Optional extra sidebar tabs — see note below. |
 
@@ -115,60 +119,10 @@ const editor = document.querySelector("vulniverse-editor");
 editor.repository = myRepository;
 ```
 
-It must implement the `EditorRepository` interface
-(`frontend/src/editor/contracts.ts`). Four methods are required; the rest
-are optional, and the editor degrades gracefully when one is omitted
-(a fallback, or a "not supported here" message in the relevant panel)
-rather than breaking:
-
-| Method(s) | Required? | If omitted |
-| --- | --- | --- |
-| `loadRecord`, `createRecord`, `updateRecord`, `validateRecord` | **Required** | — |
-| `deleteRecord` | Optional | No delete action in the UI |
-| `getReferenceList` | Optional | CWE/CAPEC fields fall back to plain free text |
-| `searchCpeVendors`, `searchCpeProducts`, `searchCpes` | Optional | No CPE autocomplete |
-| `listTemplates`, `saveTemplate`, `updateTemplate`, `deleteTemplate` | Optional, implement together | Templates panel shows "not supported here" |
-| `getCnaPublication`, `reserveCveId`, `publishCna`, `rejectCna`, `abortCna` | Optional, implement together | CVE Program / Vulnerability-Lookup panels show "not supported here" |
-| `getUpstreamCna` | Optional | Those panels can't show how the local record differs from the published one |
-| `unlinkCna` | Optional | No way to stop tracking upstream (remove the record's link, keeping the ID there); the panels offer `abortCna` instead |
-| `pullCna` | Optional | No way to link the record to an existing upstream ID and take over its state |
-| `scoreRecordQuality` | Optional | Record Quality panel shows "not supported here" |
-| `submitPatch2VulnJob`, `getPatch2VulnJob` | Optional, implement together | Patch2Vuln panel shows "not supported here" |
-| `cancelPatch2VulnJob` | Optional | No way to cancel a job (a queued one cancels at once, a running one once its worker stops) |
-| `subscribeJobEvents` | Optional | Patch2Vuln panel falls back to polling instead of live (SSE) updates |
-
-See [Architecture](../development/architecture.md) for the full interface.
-
-`LoadedRecord.identifier` is an opaque key the repository addresses the
-record by — the standalone app uses its database id, a host can use
-anything stable (Vulnerability-Lookup uses the GCVE ID). The editor shows
-`LoadedRecord.vulnerabilityId` as the record's name; a host that omits it
-gets `identifier` shown instead, and `null` means "no CVE/GCVE/OSV ID
-yet".
-
-`lifecycleTransitions?: LifecycleTransition[]` is a property, not a
-method, and its three possible states each mean something different:
-
-| Value | Meaning |
-| --- | --- |
-| Omitted (`undefined`) | Use the standalone app's own default pair — Publish while a draft, Revert to draft once published (`editor/core/lifecycle.ts`'s `DEFAULT_LIFECYCLE_TRANSITIONS`). |
-| Explicit empty array `[]` | This host has no such concept (e.g. Vulnerability-Lookup's CNA API persists immediately, with nowhere to store an incomplete draft) — the editor shows none of these buttons. |
-| A custom `LifecycleTransition[]` | The host's own set: `{id, label, targetIsDraft, isVisible?}` each. Unlike `EditorAction`, there's no `run()` — clicking always just calls `controller.save(targetIsDraft)`. |
-
-The standalone app's own `HttpRepository`
-(`frontend/src/repositories/HttpRepository.ts`) takes one constructor
-argument:
-
-```ts
-new HttpRepository(apiRoot = "/api/v1")
-```
-
-`apiRoot` is the one genuinely reusable "base URL" setting in the whole
-project — change it if Vulniverse's backend is mounted somewhere other than
-`/api/v1` relative to the page the editor is embedded on. A host supplying
-its *own* `EditorRepository` (as Vulnerability-Lookup does) defines its own
-equivalent constructor options instead, talking to whatever backend it
-already has; see [Embedding: Vulnerability-Lookup](vl.md).
+What it has to implement (four required methods, and optional groups for
+deleting, templates, CWE/CPE suggestions, publishing, record quality and
+Patch2Vuln), with every signature and data shape: [The
+repository](repository.md).
 
 ## `panels` and `actions`
 
@@ -200,6 +154,9 @@ decides the array contents directly in its own code.
 - `RecordValidationError` — the error a repository throws from
   `createRecord`/`updateRecord` when the record fails schema validation
   (as opposed to a network failure, a 404, or a conflict).
+- `EditorRepositoryError` — an error with an HTTP-style `status` and
+  `details`, which the publishing panels read; see
+  [The repository](repository.md#errors).
 - The types `EditorRepository`, `EditorPanel`, `EditorAction`,
   `EditorContext`, `EditorDocument`, `LoadedRecord`, `ValidationResult`,
   `ValidationError`, `LifecycleTransition` and `ThemePreference`, and
@@ -235,7 +192,7 @@ building block for embedding hosts.
 
 | Event | `detail` | Fires when |
 | --- | --- | --- |
-| `ready` | `[]` | A new record is set up (`mode="create"`) or a record loaded successfully. Not fired when loading fails — `error` fires instead. |
+| `ready` | `[]` | A new record is set up (`mode="create"`) or a record loaded successfully; in edit mode without a `repository` yet, once it's set and the record loaded. Not fired when loading fails — `error` fires instead. |
 | `loaded` | `[identifier: string]` (the record key) | A record has been loaded, created, or saved. |
 | `deleted` | `[identifier: string]` (the record key) | A record was deleted. |
 | `dirtyChange` | `[dirty: boolean]` | The record's unsaved-changes state changed. Also dispatched as `dirty-change`. |
