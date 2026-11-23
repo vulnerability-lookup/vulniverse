@@ -45,7 +45,8 @@ The first stable release, after 0.1.0-alpha.2.
   with roles, invitation links, open/invite-only/closed registration, and
   optional two-factor authentication (authenticator app) for every
   account. Admins can deactivate accounts and reset passwords or 2FA;
-  `create-admin` and `reset-two-factor` CLI commands.
+  `create-admin` and `reset-two-factor` CLI commands. Instance admins see
+  every organisation's records, with a filter by organisation.
 - **OSV 1.9.2** records, alongside CVE 5.2.0 and GCVE BCP-05 1.7, including
   the CVSS calculator and GCVE extensions.
 - **Change tracking**: edited fields are marked in the form, closed cards
@@ -97,6 +98,11 @@ The first stable release, after 0.1.0-alpha.2.
   lost.
 - Saving works with a repository that returns the record it was given
   (it failed with a `structuredClone` error).
+- When the backend doesn't answer, logging in and saving say so ("is the
+  backend running?") instead of showing a `JSON.parse` error, and work
+  again once it's back, without reloading the page.
+- The Docker setup can read `config/` on systems with SELinux, such as
+  Fedora and RHEL.
 - Read-only fields look disabled; the record tree jumps to GCVE
   extensions correctly.
 
