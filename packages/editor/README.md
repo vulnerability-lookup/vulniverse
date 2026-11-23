@@ -1,6 +1,6 @@
 # Vulniverse editor
 
-The [Vulniverse](https://github.com/vulnerability-lookup/Vulniverse)
+The [Vulniverse](https://github.com/vulnerability-lookup/vulniverse)
 vulnerability record editor as a single Web Component,
 `<vulniverse-editor>`: guided forms for CVE Record Format 5.2.0, GCVE
 BCP-05 1.7 and OSV 1.9.2 records, a record tree, preview, change tracking
