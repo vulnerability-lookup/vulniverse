@@ -386,7 +386,7 @@ onMounted(controller.load);
       v-else
       class="editor-status text-center text-secondary p-5"
     >
-      No vulnerability record is loaded.
+      {{ props.repository ? "No vulnerability record is loaded." : "Waiting for a repository…" }}
     </div>
   </div>
 </template>

@@ -20,14 +20,7 @@ This architecture keeps the editor independent of any specific backend implement
 
 All types live in `frontend/src/editor/contracts.ts`.
 
-`EditorRepository` has four required methods: `loadRecord`, `createRecord`, `updateRecord` and `validateRecord`. Everything else is optional; an adapter implements only what its host supports:
-
-- **Records:** `deleteRecord`, `lifecycleTransitions` (which draft/publish buttons the header shows).
-- **Reference data:** `getReferenceList`, `searchCpeVendors`, `searchCpeProducts`, `searchCpes`.
-- **Templates:** `listTemplates`, `saveTemplate`, `updateTemplate`, `deleteTemplate`.
-- **CNA publication:** `getCnaPublication`, `reserveCveId`, `publishCna`, `rejectCna`, `abortCna`, `getUpstreamCna`, `unlinkCna`, `pullCna`.
-- **Record quality:** `scoreRecordQuality`.
-- **Patch2Vuln:** `submitPatch2VulnJob`, `getPatch2VulnJob`, `cancelPatch2VulnJob`, `subscribeJobEvents`.
+`EditorRepository` has four required methods, for loading and saving; everything else is optional and grouped by feature (deleting, templates, CWE/CPE data, CNA publication, record quality, Patch2Vuln), so an adapter implements only what its host supports. Every method and data shape: [The repository](../embedding/repository.md).
 
 An `EditorPanel` is `{ id, label, icon?, component, isVisible? }`: a Vue component shown in the sidebar. An `EditorAction` is `{ id, label, icon?, options?, isVisible?, isEnabled?, run }`: a header button whose `run(context, option?)` does the work.
 

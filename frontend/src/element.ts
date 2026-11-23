@@ -49,6 +49,10 @@ export {
 } from "./editor/contracts";
 
 export {
+  EditorRepositoryError,
+} from "./editor/core/errors";
+
+export {
   downloadAction,
   tutorialAction,
 } from "./editor/actions";

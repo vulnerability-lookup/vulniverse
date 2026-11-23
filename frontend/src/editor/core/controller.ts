@@ -127,14 +127,9 @@ export function useEditorController(
       return;
     }
 
+    // Hosts that bind properties after inserting the element (frameworks)
+    // set the repository a moment later: wait for it (see the watch below).
     if (!repository.value) {
-      const error = new Error(
-        "No repository has been configured.",
-      );
-
-      state.loadError.value = error;
-      options.onError(error);
-
       return;
     }
 
@@ -340,6 +335,17 @@ export function useEditorController(
 
     await save(false, { notice: "Record rejected." });
   }
+
+  // The first repository loads the record a missing one held up (not in
+  // create mode, whose empty record never waited and may be edited already).
+  watch(
+    repository,
+    async (current, previous) => {
+      if (current && !previous && !state.record.value) {
+        await load();
+      }
+    },
+  );
 
   watch(
     recordId,
