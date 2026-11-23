@@ -11,7 +11,7 @@ This page shows the smallest setup that works, then where to go next.
 
 ## 1. Get the bundle
 
-From npm, if your application uses a bundler (Vite, webpack, …):
+From [npm](https://www.npmjs.com/package/@nmd03/vulniverse), if your application uses a bundler (Vite, webpack, …):
 
 ```bash
 npm install @nmd03/vulniverse

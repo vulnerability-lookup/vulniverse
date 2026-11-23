@@ -9,6 +9,7 @@
   <a href="https://vulnerability-lookup.github.io/vulniverse/"><img alt="Live demo" src="https://img.shields.io/badge/demo-try%20it-blue"></a>
   <a href="https://github.com/vulnerability-lookup/vulniverse/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/vulnerability-lookup/vulniverse/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/vulnerability-lookup/vulniverse/releases"><img alt="Release" src="https://img.shields.io/github/v/release/vulnerability-lookup/vulniverse?include_prereleases&sort=semver&filter=v*&label=release"></a>
+  <a href="https://www.npmjs.com/package/@nmd03/vulniverse"><img alt="npm" src="https://img.shields.io/npm/v/@nmd03/vulniverse"></a>
   <a href="LICENSE"><img alt="License: BSD 2-Clause" src="https://img.shields.io/badge/license-BSD%202--Clause-blue"></a>
 </p>
 
@@ -117,7 +118,7 @@ credits and all the rest. It's the vulnerability editor of
 |---|---|
 | **Try it now** | The [live demo](https://vulnerability-lookup.github.io/vulniverse/) runs entirely in your browser. |
 | **Run it yourself** | Follow the quick start [for yourself](https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/single-user/) or [for your team](https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/team/), or [build it from source](https://vulnerability-lookup.github.io/vulniverse/docs/development/from-source/). |
-| **Embed it** | Add [`<vulniverse-editor>`](https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/embed/) to your application, as [Vulnerability-Lookup does](https://vulnerability-lookup.github.io/vulniverse/docs/embedding/vl/). |
+| **Embed it** | Add [`<vulniverse-editor>`](https://vulnerability-lookup.github.io/vulniverse/docs/quickstart/embed/) to your application, as [Vulnerability-Lookup does](https://vulnerability-lookup.github.io/vulniverse/docs/embedding/vl/), installed from npm as [`@nmd03/vulniverse`](https://www.npmjs.com/package/@nmd03/vulniverse). |
 
 Configuration, production setup and the architecture are described in the
 [documentation](https://vulnerability-lookup.github.io/vulniverse/docs/).
