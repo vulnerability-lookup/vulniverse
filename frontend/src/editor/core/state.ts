@@ -87,11 +87,13 @@ export function useEditorState() {
   function replaceRecord(
     loaded: LoadedRecord,
   ): void {
+    // JSON copies: a repository may hand back the object it was given,
+    // a Vue proxy, which structuredClone can't copy.
     record.value =
-      structuredClone(loaded.record);
+      JSON.parse(JSON.stringify(loaded.record));
 
     originalRecord.value =
-      structuredClone(loaded.record);
+      JSON.parse(JSON.stringify(loaded.record));
 
     identifier.value = loaded.identifier;
     vulnerabilityId.value = loaded.vulnerabilityId === undefined

@@ -95,6 +95,8 @@ The first stable release, after 0.1.0-alpha.2.
 - Sessions end on password or 2FA reset and on deactivation.
 - A Patch2Vuln job started before a new record's first save is no longer
   lost.
+- Saving works with a repository that returns the record it was given
+  (it failed with a `structuredClone` error).
 - Read-only fields look disabled; the record tree jumps to GCVE
   extensions correctly.
 

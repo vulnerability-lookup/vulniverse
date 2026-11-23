@@ -101,3 +101,32 @@ describe("a repository set after the editor started", () => {
     expect(state.record.value?.title).toBe("Typed already");
   });
 });
+
+describe("saving", () => {
+  it("accepts a repository that returns the record it was given", async () => {
+    const state = useEditorState();
+    const createRecord = vi.fn<(record: object, profile: string, isDraft: boolean) => Promise<LoadedRecord>>(async (record, profile, isDraft) =>
+      ({ identifier: "1", record, profile, isDraft }) as unknown as LoadedRecord);
+    const onError = vi.fn<(error: Error) => void>();
+    const controller = useEditorController({
+      state,
+      repository: ref({ createRecord } as unknown as EditorRepository),
+      mode: ref("create"),
+      recordId: ref(undefined),
+      profile: ref("gcve-bcp-05-1.7"),
+      onReady: () => {},
+      onLoaded: () => {},
+      onDeleted: () => {},
+      onError,
+      onDirtyChange: () => {},
+    });
+    await controller.load();
+    (state.record.value as Record<string, unknown>).title = "Edited";
+
+    await controller.save(true);
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(state.identifier.value).toBe("1");
+    expect(state.record.value).toMatchObject({ title: "Edited" });
+  });
+});
