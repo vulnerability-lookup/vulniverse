@@ -8,6 +8,8 @@ incompatibly in a new major version.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-24
+
 The first stable release, after 0.1.0-alpha.2.
 
 ### Upgrading from 0.1.0-alpha.2
@@ -110,7 +112,7 @@ The first stable release, after 0.1.0-alpha.2.
 ## [0.1.0-alpha.4]
 
 A preview of 1.0 for testing, with everything listed under
-[Unreleased](#unreleased) at the time of its release:
+1.0.0 at the time of its release:
 
 ```bash
 npm install @nmd03/vulniverse@alpha
@@ -128,7 +130,8 @@ that returns the record it was given; use 0.1.0-alpha.4.
 
 ## [0.1.0-alpha.1]
 
-[Unreleased]: https://github.com/vulnerability-lookup/vulniverse/compare/v0.1.0-alpha.2...HEAD
+[Unreleased]: https://github.com/vulnerability-lookup/vulniverse/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/vulnerability-lookup/vulniverse/compare/v0.1.0-alpha.2...v1.0.0
 [0.1.0-alpha.4]: https://github.com/vulnerability-lookup/vulniverse/compare/v0.1.0-alpha.2...v0.1.0-alpha.4
 [0.1.0-alpha.2]: https://github.com/vulnerability-lookup/vulniverse/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/vulnerability-lookup/vulniverse/releases/tag/v0.1.0-alpha.1
