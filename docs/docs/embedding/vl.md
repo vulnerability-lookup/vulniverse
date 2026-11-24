@@ -21,13 +21,28 @@ in Vulniverse:
 
 | File | What it is |
 | --- | --- |
-| `website/web/static/vulniverse/vulniverse-editor.js` | The built custom element — copied in from `frontend/dist/element/vulniverse-editor.js` after `npm run build:element` (see [Build from source](../development/from-source.md)). |
+| `package.json`, `tools/copy_frontend_assets.py` | The editor itself, as the npm package `@nmd03/vulniverse` (pinned to an exact version). `npm ci` installs it and copies `vulniverse-editor.js` to `website/web/static/npm_components/@nmd03/vulniverse/dist/`, where the template and panels import it from. |
 | `website/web/static/vulniverse/repository.js` | VL's own `EditorRepository` implementation, `VulnerabilityLookupRepository`. |
 | `website/web/static/vulniverse/gcve-id.js` | Reads and writes a record's GCVE ID: `x_gcve[].vulnId` in the CNA container, with the legacy `cveMetadata.vulnId` as a fallback. Shared by the repository and both VL panels. |
 | `website/web/static/vulniverse/gcve-reservation-panel.js`, `cna-publication-panel.js`, `view-vulnerability-module.js` | VL-authored `EditorPanel`/`EditorAction` implementations — see [Custom panels and actions](#custom-panels-and-actions) below. |
 | `website/web/templates/vulniverse/index.html` | The page template that imports all of the above and constructs the `<vulniverse-editor>` element. |
 | `website/web/views/vulnerability_editor.py` | The Flask blueprint whose views render that template. |
 | `website/web/api/v1/vulniverse_templates.py`, `vulniverse_record_quality.py`, `patch2vuln.py` | VL's own backend routes for the Templates, Record Quality, and Patch2Vuln panels respectively (`website/web/services/patch2vuln_service.py` and `website/lib/patch2vuln_access.py` back the last one). |
+
+## Updating the editor
+
+In the `vulnerability-lookup` checkout:
+
+```bash
+npm install --save-exact @nmd03/vulniverse@1.0.1   # the new version
+python3 tools/copy_frontend_assets.py               # npm install <package> skips postinstall
+poetry run pytest -q tests/test_static_assets.py && npm test
+```
+
+Reload the editor page, check that it loads, saves and reserves a GCVE
+ID, then commit `package.json` and `package-lock.json`. Servers pick the
+new version up with their usual update (`npm ci --omit=dev`, or
+`poetry run update`).
 
 ## Where and how it's mounted
 
