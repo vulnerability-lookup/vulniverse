@@ -93,7 +93,10 @@ jobs:
             Automatically rebuilt from the latest commit on `main`
             (${{ github.sha }}). Not a versioned release — for a
             stable, pinned version, use a tagged release instead.
-          files: frontend/dist/element/vulniverse-editor.js
+          files: |
+            frontend/dist/element/vulniverse-editor.js
+            frontend/dist/element/vulniverse-editor.js.map
+            frontend/dist/element/vulniverse-editor.d.ts
 
       - name: Publish versioned release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -101,7 +104,10 @@ jobs:
         with:
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
-          files: frontend/dist/element/vulniverse-editor.js
+          files: |
+            frontend/dist/element/vulniverse-editor.js
+            frontend/dist/element/vulniverse-editor.js.map
+            frontend/dist/element/vulniverse-editor.d.ts
 
   # Publishes packages/editor to npm with provenance. Authentication:
   # npm trusted publishing (register this repository and this workflow
