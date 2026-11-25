@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { visualizer } from "rollup-plugin-visualizer";
 
@@ -30,6 +31,7 @@ export default defineConfig({
    */
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
+    __VULNIVERSE_VERSION__: JSON.stringify(JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")).version),
   },
 
   css: {

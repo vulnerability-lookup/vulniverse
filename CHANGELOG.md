@@ -8,6 +8,10 @@ incompatibly in a new major version.
 
 ## [Unreleased]
 
+### Added
+
+- The editor shows its version at the bottom of the sidebar, linking to its release notes, also when embedded. The npm package exports it as `version`.
+
 ## [1.0.0] - 2026-11-24
 
 The first stable release, after 0.1.0-alpha.2.

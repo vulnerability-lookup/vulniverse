@@ -3,6 +3,8 @@ import {
   ICONS,
 } from "../icons";
 
+const VERSION = __VULNIVERSE_VERSION__;
+
 interface NavigationItem {
   id: string;
   label: string;
@@ -109,5 +111,13 @@ defineEmits<{
         </button>
       </template>
     </template>
+
+    <a
+      v-if="!collapsed"
+      class="editor-sidebar-version small text-secondary"
+      :href="`https://github.com/vulnerability-lookup/vulniverse/releases/tag/v${VERSION}`"
+      target="_blank"
+      rel="noopener"
+    >Vulniverse {{ VERSION }}</a>
   </nav>
 </template>

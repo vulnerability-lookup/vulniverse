@@ -188,6 +188,10 @@ exported — it's a purely local computation over the already-loaded record
 with no repository dependency, and isn't currently offered as a reusable
 building block for embedding hosts.
 
+The package also exports `version`, the editor's version as a string
+(`"1.0.0"`), for example to show it in your application or log it with
+bug reports.
+
 ## Events
 
 | Event | `detail` | Fires when |

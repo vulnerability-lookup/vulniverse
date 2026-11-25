@@ -57,6 +57,8 @@ export {
   tutorialAction,
 } from "./editor/actions";
 
+export const version = __VULNIVERSE_VERSION__;
+
 export {
   cveProgramPanel,
   patch2vulnPanel,

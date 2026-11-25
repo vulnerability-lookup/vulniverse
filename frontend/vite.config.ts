@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
@@ -13,6 +14,10 @@ export default defineConfig(({ mode }) => ({
 
 
   base: mode === 'github-pages' ? '/vulniverse/' : '/',
+
+  define: {
+    __VULNIVERSE_VERSION__: JSON.stringify(JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version),
+  },
 
   resolve: {
     alias: {
