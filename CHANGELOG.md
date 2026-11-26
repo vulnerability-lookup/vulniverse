@@ -11,6 +11,15 @@ incompatibly in a new major version.
 ### Added
 
 - The editor shows its version at the bottom of the sidebar, linking to its release notes, also when embedded. The npm package exports it as `version`.
+- GCVE validation warns about records that break GCVE-BCP-05 1.8's identifier rules: more than one advisory entry, an entry whose `vulnId` differs from the advisory's, or several entries without an advisory.
+
+### Changed
+
+- A GCVE record without an advisory entry takes its identifier from its only entry, as GCVE-BCP-05 1.8 allows for standalone `update` and other non-advisory records. Before, such a record had no identifier.
+
+### Removed
+
+- The `deprecation` record type, which GCVE-BCP-05 1.9 no longer lists, is no longer suggested and no longer requires relationships.
 
 ## [1.0.0] - 2026-11-24
 

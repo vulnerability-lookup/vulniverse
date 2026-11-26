@@ -31,14 +31,14 @@ def extract_gcve_identifier(
     if not isinstance(extensions, list):
         return None
 
-    for extension in extensions:
-        if not isinstance(extension, dict):
-            continue
+    entries = [entry for entry in extensions if isinstance(entry, dict)]
+    advisories = [entry for entry in entries if entry.get("recordType") == "advisory"]
 
-        if extension.get("recordType") != "advisory":
-            continue
+    # BCP-05 1.8: the advisory's vulnId; without an advisory, the only entry's.
+    candidates = advisories or (entries if len(entries) == 1 else [])
 
-        vuln_id = extension.get("vulnId")
+    for entry in candidates:
+        vuln_id = entry.get("vulnId")
         if isinstance(vuln_id, str) and vuln_id.strip():
             return vuln_id
 

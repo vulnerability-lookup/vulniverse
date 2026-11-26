@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 
+from vulniverse_api.services.identifiers import extract_gcve_identifier
 from vulniverse_api.services.record_validation import validate_record
 
 
@@ -268,3 +269,76 @@ def test_cve_records_still_need_a_cve_id() -> None:
     errors = validate_record(record, "cve-5.2.0")
 
     assert ["cveMetadata", "cveId"] in error_paths(errors)
+
+
+def gcve_record_with_entries(*entries: dict[str, Any]) -> dict[str, Any]:
+    record = minimal_gcve_record()
+    record["containers"]["cna"]["x_gcve"] = [
+        {"relationships": [{"destId": "CVE-2026-00002", "type": "related"}], **entry}
+        for entry in entries
+    ]
+    return record
+
+
+@pytest.mark.parametrize(
+    ("entries", "expected_path"),
+    [
+        (
+            [
+                {"vulnId": "GCVE-0-2026-00001", "recordType": "advisory"},
+                {"vulnId": "GCVE-0-2026-00001", "recordType": "advisory"},
+            ],
+            ["containers", "cna", "x_gcve", 1, "recordType"],
+        ),
+        (
+            [
+                {"vulnId": "GCVE-0-2026-00001", "recordType": "advisory"},
+                {"vulnId": "GCVE-0-2026-00002", "recordType": "update"},
+            ],
+            ["containers", "cna", "x_gcve", 1, "vulnId"],
+        ),
+        (
+            [
+                {"vulnId": "GCVE-0-2026-00001", "recordType": "update"},
+                {"vulnId": "GCVE-0-2026-00001", "recordType": "analysis"},
+            ],
+            ["containers", "cna", "x_gcve"],
+        ),
+    ],
+    ids=["two advisories", "differing vulnId", "several entries without advisory"],
+)
+def test_bcp05_identifier_rules_warn(
+    entries: list[dict[str, Any]],
+    expected_path: list[Any],
+) -> None:
+    errors = validate_record(gcve_record_with_entries(*entries), "gcve-bcp-05-1.7")
+
+    assert [error["path"] for error in errors] == [expected_path]
+    assert errors[0]["severity"] == "warning"
+
+
+def test_bcp05_identifier_rules_accept_a_consistent_record() -> None:
+    record = gcve_record_with_entries(
+        {"vulnId": "GCVE-0-2026-00001", "recordType": "advisory"},
+        {"vulnId": "GCVE-0-2026-00001", "recordType": "update"},
+    )
+
+    assert validate_record(record, "gcve-bcp-05-1.7") == []
+
+
+def test_gcve_identifier_of_a_standalone_non_advisory_record() -> None:
+    standalone = gcve_record_with_entries(
+        {"vulnId": "GCVE-0-2026-00002", "recordType": "update"},
+    )
+    with_advisory = gcve_record_with_entries(
+        {"vulnId": "GCVE-0-2026-00002", "recordType": "update"},
+        {"vulnId": "GCVE-0-2026-00001", "recordType": "advisory"},
+    )
+    ambiguous = gcve_record_with_entries(
+        {"vulnId": "GCVE-0-2026-00002", "recordType": "update"},
+        {"vulnId": "GCVE-0-2026-00003", "recordType": "update"},
+    )
+
+    assert extract_gcve_identifier(standalone) == "GCVE-0-2026-00002"
+    assert extract_gcve_identifier(with_advisory) == "GCVE-0-2026-00001"
+    assert extract_gcve_identifier(ambiguous) is None

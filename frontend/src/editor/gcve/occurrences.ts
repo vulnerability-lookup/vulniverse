@@ -106,14 +106,14 @@ export function recordHasGcveId(
 export function getGcveVulnId(
   record: CveRecord,
 ): string | undefined {
-  const advisory = getGcveEntries(record).find(
-    (entry) =>
-      entry.recordType === "advisory" &&
-      typeof entry.vulnId === "string" &&
-      entry.vulnId.length > 0,
-  );
+  const entries = getGcveEntries(record);
+  const advisories = entries.filter((entry) => entry.recordType === "advisory");
+  // BCP-05 1.8: the advisory's vulnId; without an advisory, the only entry's.
+  const candidates = advisories.length ? advisories : entries.length === 1 ? entries : [];
 
-  return advisory?.vulnId;
+  return candidates.find(
+    (entry) => typeof entry.vulnId === "string" && entry.vulnId.length > 0,
+  )?.vulnId;
 }
 
 /**

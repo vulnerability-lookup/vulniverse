@@ -467,7 +467,6 @@ MANDATORY_RELATIONSHIP_RECORD_TYPES = {
     "comment",
     "statement",
     "remediation",
-    "deprecation",
     "detection",
     "translation",
 }
@@ -616,7 +615,61 @@ def validate_gcve_semantics(
                         }
                     )
 
+        errors.extend(identifier_warnings(path, value))
+
     return errors
+
+
+def identifier_warnings(
+    path: tuple[Any, ...],
+    entries: list[Any],
+) -> list[dict[str, Any]]:
+    """BCP-05 1.8's identifier rules for one x_gcve array. Warnings, so
+    records saved before these rules existed can still be saved."""
+    advisories = [
+        index
+        for index, entry in enumerate(entries)
+        if isinstance(entry, dict) and entry.get("recordType") == "advisory"
+    ]
+
+    def warning(at: tuple[Any, ...], message: str) -> dict[str, Any]:
+        return {
+            "path": [*at],
+            "schemaPath": [],
+            "message": message,
+            "validator": "gcve-bcp-05",
+            "severity": "warning",
+        }
+
+    if len(advisories) > 1:
+        return [
+            warning(
+                (*path, index, "recordType"),
+                "A record may contain only one advisory entry.",
+            )
+            for index in advisories[1:]
+        ]
+
+    if advisories:
+        record_id = entries[advisories[0]].get("vulnId")
+        return [
+            warning(
+                (*path, index, "vulnId"),
+                f"Every entry must use the advisory's vulnId {record_id!r}.",
+            )
+            for index, entry in enumerate(entries)
+            if isinstance(entry, dict) and entry.get("vulnId") != record_id
+        ]
+
+    if len(entries) > 1:
+        return [
+            warning(
+                path,
+                "A record without an advisory entry must contain exactly one entry.",
+            )
+        ]
+
+    return []
 
 
 # Dispatches on manifest.json's per-profile "semanticValidator" id,

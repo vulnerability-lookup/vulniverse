@@ -14,7 +14,6 @@ export const RECORD_TYPE_PRESETS = [
   "comment",
   "statement",
   "remediation",
-  "deprecation",
   "detection",
   "translation",
 ] as const;
