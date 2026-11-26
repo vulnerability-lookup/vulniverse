@@ -5,18 +5,6 @@
     "osv": "osv-1.9.2"
   },
   "profiles": {
-    "cve-5.0": {
-      "baseSchema": "upstream/cve/5.0/CVE_Record_Format_bundled.json",
-      "kind": "cve",
-      "sourceMetadata": "upstream/cve/5.0/SOURCE.json",
-      "version": "5.0"
-    },
-    "cve-5.1.1": {
-      "baseSchema": "upstream/cve/5.1.1/CVE_Record_Format_bundled.json",
-      "kind": "cve",
-      "sourceMetadata": "upstream/cve/5.1.1/SOURCE.json",
-      "version": "5.1.1"
-    },
     "cve-5.2.0": {
       "baseSchema": "upstream/cve/5.2.0/CVE_Record_Format_bundled.json",
       "editor": {
