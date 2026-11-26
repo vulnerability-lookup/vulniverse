@@ -118,6 +118,6 @@ defineEmits<{
       :href="`https://github.com/vulnerability-lookup/vulniverse/releases/tag/v${VERSION}`"
       target="_blank"
       rel="noopener"
-    >Vulniverse {{ VERSION }}</a>
+    >Vulniverse v{{ VERSION }}</a>
   </nav>
 </template>
