@@ -24,7 +24,7 @@ import {
   normalizeError,
 } from "./errors";
 
-import { createEmptyRecord } from "./record";
+import { createEmptyRecord, withGenerator } from "./record";
 
 import {
   DEFAULT_PROFILE_ID,
@@ -229,17 +229,22 @@ export function useEditorController(
       state.profile.value ??
       DEFAULT_PROFILE_ID;
 
+    const record =
+      !state.identifier.value || state.dirty.value
+        ? withGenerator(state.record.value)
+        : state.record.value;
+
     try {
       const saved =
         state.identifier.value
           ? await repository.value.updateRecord(
               state.identifier.value,
-              state.record.value,
+              record,
               currentProfile,
               isDraft,
             )
           : await repository.value.createRecord(
-              state.record.value,
+              record,
               currentProfile,
               isDraft,
             );
