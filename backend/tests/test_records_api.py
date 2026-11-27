@@ -700,3 +700,39 @@ def test_osv_record_x_gcve_is_checked_by_the_gcve_validator(client) -> None:
     assert response.status_code == 422
     paths = [error["path"] for error in response.get_json()["errors"]]
     assert ["database_specific", "x_gcve", 0, "vulnId"] in paths
+
+
+def minimal_euvd_record(euvd_id: str) -> dict[str, Any]:
+    return {
+        "id": euvd_id,
+        "title": "Buffer overflow in Widget",
+        "description": "A crafted packet overflows a buffer in Widget.",
+        "references": ["https://example.org/advisory/1"],
+        "affected": [{"vendor": "Acme", "product": "Widget"}],
+    }
+
+
+def test_euvd_record_is_published_with_its_id_as_identifier(client) -> None:
+    response = client.post(
+        "/api/v1/records",
+        json={
+            "record": minimal_euvd_record("EUVD-2026-1234"),
+            "profile": "euvd-1.0",
+            "isDraft": False,
+        },
+    )
+
+    assert response.status_code == 201, response.get_json()
+    assert response.get_json()["identifier"] == "EUVD-2026-1234"
+
+
+def test_euvd_record_that_breaks_the_schema_is_not_published(client) -> None:
+    document = minimal_euvd_record("EUVD-2026-1235")
+    document["affected"] = [{"vendor": "Acme"}]
+
+    response = client.post(
+        "/api/v1/records",
+        json={"record": document, "profile": "euvd-1.0", "isDraft": False},
+    )
+
+    assert response.status_code == 422

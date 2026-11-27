@@ -4,7 +4,7 @@ icon: lucide/refresh-cw
 
 # Manage schemas
 
-The Editor supports CVE, GCVE and OSV record editing. The relevant schemas are pulled from the official repositories ([CVE](https://github.com/CVEProject/cve-schema), [GCVE](https://github.com/gcve-eu/bcp-validator) and [OSV](https://github.com/ossf/osv-schema)). GCVE is just an extension to the CVE record schema by providing an extra x_gcve extension field which can be populated with additional data. OSV is a standalone format; its profile (`osv-1.9.2`) reuses the GCVE extension schema for GCVE data stored under `database_specific`. In addition to that there exists extension to the BCP-05 standard defining the GCVE record structure. As of today three extensions exist:
+The Editor supports CVE, GCVE, OSV and EUVD record editing. The relevant schemas are pulled from the official repositories ([CVE](https://github.com/CVEProject/cve-schema), [GCVE](https://github.com/gcve-eu/bcp-validator) and [OSV](https://github.com/ossf/osv-schema)). GCVE is just an extension to the CVE record schema by providing an extra x_gcve extension field which can be populated with additional data. OSV is a standalone format; its profile (`osv-1.9.2`) reuses the GCVE extension schema for GCVE data stored under `database_specific`. In addition to that there exists extension to the BCP-05 standard defining the GCVE record structure. As of today three extensions exist:
 
 - [**BCP-05-X-01**](https://gcve.eu/bcp/extension/gcve-bcp-05-x-01/): Standard for adding information about AI assisted annotations
 
@@ -16,19 +16,21 @@ The Editor supports CVE, GCVE and OSV record editing. The relevant schemas are p
 
     These BCP extensions do not have official schemas, only generic field definitions on the corresponding website. Therefore custom schemas based on these generic field definitions were created in `schemas/extensions`. Which extensions are included in the generated GCVE profile, and whether each is `published` or still `draft`, is defined in `schemas/extensions/gcve/registry.json`.
 
-The `schemas/manifest.json` file contains the definitions of all available profiles which can be used to build the editor UI and their corresponding schema files. `currentProfiles` names the profile in use for each format (`cve`, `gcve`, `osv`). Each profile entry can define, among other things:
+The `schemas/manifest.json` file contains the definitions of all available profiles which can be used to build the editor UI and their corresponding schema files. `currentProfiles` names the profile in use for each format (`cve`, `gcve`, `osv`, `euvd`). Each profile entry can define, among other things:
 
-- `kind` (`cve`, `gcve` or `osv`), `label` (the name shown in the UI) and `version`.
+- `kind` (`cve`, `gcve`, `osv` or `euvd`), `label` (the name shown in the UI) and `version`.
 - `baseSchema`/`baseProfile` (the upstream schema it builds on, and the profile it extends).
 - `extensionSchemas` (additional schemas merged in, e.g. the GCVE extension).
 - `schemaOverlay` (a patch applied on top of the base schema).
 - `semanticValidator` (a named validator run beyond plain JSON Schema).
-- `identifier.strategy` (how the backend reads the record's ID: `cve`, `gcve` or `osv`).
+- `identifier.strategy` (how the backend reads the record's ID: `cve`, `gcve`, `osv` or `euvd`).
 - `validation.notRequired` (dotted paths of fields the base schema requires but the profile doesn't, e.g. `cveMetadata.cveId` for GCVE records; a value that is present is still checked).
 - `validation.preferredRootBranch` (which root `oneOf` branch validation errors are reported against when it's unclear which one the record was aiming for, e.g. the published CVE variant).
 - an `editor` block controlling how the profile renders in the UI: `layout`, `layoutExtras`, `augmenters`, `variant` (which root `oneOf` variant of the schema the form is built from, e.g. `Published`) and `autoAdditionalPropertiesFrom` (a path whose properties not placed in the layout are still added to the form automatically, e.g. `containers.cna`).
 
 See the `gcve-bcp-05-1.7` entry in `schemas/manifest.json` for a profile using most of these.
+
+The EUVD profile (`euvd-1.0`) has no upstream schema: an EUVD record that ENISA writes for a vulnerability with no CVE is defined by Vulnerability-Lookup, which stores it, and its schema lives in `schemas/euvd/1.0/euvd-record.schema.json`. `scripts/update_schemas.py` leaves it alone.
 
 ## Pull Upstream Schema Files
 
@@ -67,6 +69,9 @@ python3 scripts/generate_editor_schemas.py --profile gcve-bcp-05-1.7 --strict
 ```
 ```bash
 python3 scripts/generate_editor_schemas.py --profile osv-1.9.2 --strict
+```
+```bash
+python3 scripts/generate_editor_schemas.py --profile euvd-1.0 --strict
 ```
 
 Without `--profile`, the script uses `currentProfiles.cve` from `schemas/manifest.json`.

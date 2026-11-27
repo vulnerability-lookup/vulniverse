@@ -10,6 +10,10 @@ import {
   osv192Profile,
 } from "./osv-1.9.2";
 
+import {
+  euvd10Profile,
+} from "./euvd-1.0";
+
 import type {
   EditorProfileDefinition,
 } from "./types";
@@ -24,6 +28,7 @@ export const EDITOR_PROFILES:
   cve52Profile,
   gcveBcp05Profile,
   osv192Profile,
+  euvd10Profile,
 ];
 
 

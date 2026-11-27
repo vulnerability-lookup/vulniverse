@@ -1,0 +1,70 @@
+{
+  "sections": [
+    {
+      "id": "identification",
+      "label": "Identification",
+      "paths": [
+        "id",
+        "title"
+      ]
+    },
+    {
+      "id": "description",
+      "label": "Description",
+      "paths": [
+        "description"
+      ]
+    },
+    {
+      "id": "severity",
+      "label": "Severity",
+      "paths": [
+        "base_score",
+        "base_score_version",
+        "base_score_vector"
+      ]
+    },
+    {
+      "id": "references",
+      "label": "References",
+      "paths": [
+        "references"
+      ]
+    },
+    {
+      "id": "affected",
+      "label": "Affected vendors and products",
+      "paths": [
+        "affected"
+      ]
+    }
+  ],
+  "hiddenPaths": [],
+  "controlOptions": {
+    "id": {
+      "label": "EUVD ID",
+      "readonly": true,
+      "width": "short"
+    },
+    "title": {
+      "wrap": true
+    },
+    "description": {
+      "multi": true
+    },
+    "base_score": {
+      "width": "short"
+    },
+    "base_score_version": {
+      "width": "short"
+    },
+    "references": {
+      "showSortButtons": true
+    },
+    "affected": {
+      "detail": "GENERATED",
+      "showSortButtons": true,
+      "elementLabelProp": "product"
+    }
+  }
+}

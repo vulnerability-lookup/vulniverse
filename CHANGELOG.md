@@ -8,6 +8,18 @@ incompatibly in a new major version.
 
 ## [Unreleased]
 
+### Added
+
+- **EUVD 1.0** records (`euvd-1.0`): a record of the European Vulnerability
+  Database that ENISA writes itself, for a vulnerability with no CVE, with
+  its title, description, CVSS score, references and affected vendors and
+  products. Its schema is `schemas/euvd/1.0/euvd-record.schema.json`; the
+  EUVD reserves the record's identifier when it is first saved, so a new
+  record has none. Vulnerability-Lookup edits these records with this
+  profile in its administration area; the standalone app does not offer it
+  for new records, since it cannot reserve an EUVD ID (a profile can now
+  say so with `standalone: false`).
+
 ## [1.0.0] - 2026-11-24
 
 The first stable release, after 0.1.0-alpha.2.

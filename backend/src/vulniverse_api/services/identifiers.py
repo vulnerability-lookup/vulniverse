@@ -52,6 +52,14 @@ def extract_osv_identifier(
     return value if isinstance(value, str) and value else None
 
 
+def extract_euvd_identifier(
+    document: dict[str, Any],
+) -> str | None:
+    # Reserved by the EUVD when the record is created, so a new one has none.
+    value = document.get("id")
+    return value if isinstance(value, str) and value else None
+
+
 IDENTIFIER_STRATEGIES: dict[
     str,
     Callable[[dict[str, Any]], str | None],
@@ -59,6 +67,7 @@ IDENTIFIER_STRATEGIES: dict[
     "cve": extract_cve_identifier,
     "gcve": extract_gcve_identifier,
     "osv": extract_osv_identifier,
+    "euvd": extract_euvd_identifier,
 }
 
 

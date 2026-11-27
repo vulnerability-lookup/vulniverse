@@ -11,7 +11,7 @@ import {
 } from "@/repositories/SandboxRepository";
 
 import {
-  SUPPORTED_PROFILES,
+  STANDALONE_PROFILES,
 } from "@/editor/profiles";
 
 // Only actions that run entirely in the browser: there is no backend here.
@@ -57,7 +57,7 @@ function handleError(
 
     <div class="row g-3">
       <div
-        v-for="profile in SUPPORTED_PROFILES"
+        v-for="profile in STANDALONE_PROFILES"
         :key="profile.id"
         class="col-md-6"
       >

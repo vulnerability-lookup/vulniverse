@@ -61,4 +61,12 @@ export interface EditorProfileDefinition {
   rejection?: ProfileRejection;
 
   features?: EditorProfileFeatures;
+
+  /**
+   * False for a profile whose records only a host can create, because
+   * the host issues their identifiers (EUVD: Vulnerability-Lookup
+   * reserves the record's EUVD ID). The standalone app does not offer
+   * such a profile for new records. Absent means true.
+   */
+  standalone?: boolean;
 }

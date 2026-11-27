@@ -30,3 +30,14 @@ export const SUPPORTED_PROFILES =
       description,
     }),
   );
+
+
+/** The profiles the standalone app offers for new records: not the ones
+ * whose identifiers only a host can issue (see `standalone`). */
+export const STANDALONE_PROFILES =
+  SUPPORTED_PROFILES.filter(
+    ({ id }) =>
+      EDITOR_PROFILES.find(
+        (profile) => profile.id === id,
+      )?.standalone !== false,
+  );
