@@ -150,6 +150,27 @@ the fields you want and click **Apply selected fields**; they replace the
 current values, while identifiers and publication data are kept. Always
 review the result before publishing.
 
+#### Several commits at once
+
+In the standalone app, **Patch2Vuln** in the top bar analyses up to 50
+commits in one batch, one record per commit. Give the batch a name, choose
+the record format and paste the GitHub commit URLs, one per line. The
+batch belongs to your organisation: your colleagues see it too.
+
+The batch page lists each commit with the title Patch2Vuln generated and
+updates itself while analyses run.
+
+- **Review** opens the generated record in the editor as a new record.
+  Nothing is stored until you save it; then the batch shows
+  **Open record**.
+- **Dismiss** marks a commit you don't want a record for; **Restore**
+  undoes it.
+- **Delete batch** cancels the analyses still running. Records already
+  created stay.
+
+Results are kept in Vulniverse once an analysis has finished, so a batch
+can be reviewed over several days even though Patch2Vuln deletes them.
+
 ### Vulnerability-Lookup and CVE Program
 
 These two panels publish the record to a Vulnerability-Lookup instance or

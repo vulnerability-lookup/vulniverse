@@ -27,6 +27,7 @@ const route = useRoute();
 // 16×16 line icons (stroke paths), like the editor's.
 const ICONS = {
   records: "M4 1.5h5.5L13 5v9.5H4ZM9.5 1.5V5H13M6.5 8.5h4M6.5 11h4",
+  batches: "M8 1.5 14.5 5 8 8.5 1.5 5ZM1.5 8 8 11.5 14.5 8M1.5 11 8 14.5 14.5 11",
   members: "M6 7.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.5 14c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M11 7a2 2 0 1 0 0-4M12 10c1.5.3 2.5 1.6 2.5 3.5",
   organisation: "M2.5 14.5V3.5l6-2v13M8.5 6l5 1.5v7M1.5 14.5h13M4.5 5.5h2M4.5 8h2M4.5 10.5h2M10.5 9.5h1M10.5 12h1",
   admin: "M8 1.5l5.5 2v4c0 3.5-2.4 6-5.5 7-3.1-1-5.5-3.5-5.5-7v-4L8 1.5ZM8 6v3M8 11v.01",
@@ -154,6 +155,20 @@ async function onLogout(): Promise<void> {
           aria-hidden="true"
         ><path :d="ICONS.records" /></svg>
         <span>Records</span>
+      </RouterLink>
+
+      <RouterLink
+        v-if="panelFlags.patch2vuln ?? true"
+        to="/patch2vuln"
+        class="app-header-link"
+        title="Analyse several fix commits at once"
+      >
+        <svg
+          class="app-header-svg"
+          viewBox="0 0 16 16"
+          aria-hidden="true"
+        ><path :d="ICONS.batches" /></svg>
+        <span>Patch2Vuln</span>
       </RouterLink>
 
       <RouterLink

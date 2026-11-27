@@ -192,6 +192,54 @@ def submit_job(
     }
 
 
+def submit_bulk_jobs(sources: list[str]) -> list[dict[str, Any]]:
+    """Queue one patch2vuln job per commit URL, all or none (patch2vuln
+    refuses the whole batch when its queue lacks room for it).
+
+    Returns [{"jobId": ..., "status": ...}] in the order of `sources`.
+    """
+    config = get_patch2vuln_config()
+
+    if not config.enabled:
+        raise RuntimeError("Patch2Vuln is disabled")
+
+    if not sources:
+        raise ValueError("No commit URLs provided")
+
+    body = _build_job_body(sources, [], {}, config)
+
+    try:
+        response = httpx.post(
+            f"{config.api_url}{JOBS_PATH}/bulk",
+            json=body,
+            headers=_auth_headers(config),
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+    except httpx.TimeoutException as exc:
+        raise RuntimeError("Patch2Vuln did not respond in time") from exc
+    except httpx.HTTPError as exc:
+        raise RuntimeError("Could not reach the Patch2Vuln service") from exc
+
+    if response.status_code != 202:
+        raise RuntimeError(_error_message(response))
+
+    jobs = response.json().get("jobs")
+
+    if (
+        not isinstance(jobs, list)
+        or len(jobs) != len(sources)
+        or not all(
+            isinstance(job, dict) and isinstance(job.get("id"), str) for job in jobs
+        )
+    ):
+        raise RuntimeError("Patch2Vuln did not return a job for every commit")
+
+    return [
+        {"jobId": job["id"], "status": STATUS_MAP.get(job.get("status"), "queued")}
+        for job in jobs
+    ]
+
+
 def get_job_status(job_id: str) -> dict[str, Any]:
     """Poll a patch2vuln job's status. Returns {"status": ...}."""
     config = get_patch2vuln_config()

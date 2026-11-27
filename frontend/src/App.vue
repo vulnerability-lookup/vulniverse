@@ -10,5 +10,12 @@ const isGithubPages =
 
 <template>
   <AppHeader v-if="!isGithubPages" />
-  <RouterView />
+  <!-- A new record page starts over when its query (a Patch2Vuln
+       candidate) changes; other pages keep their instance. -->
+  <RouterView v-slot="{ Component, route }">
+    <component
+      :is="Component"
+      :key="route.name === 'editor-new' ? route.fullPath : route.name"
+    />
+  </RouterView>
 </template>

@@ -18,6 +18,12 @@ import EditorPage from
 import NewRecordPage from
   "@/pages/NewRecordPage.vue";
 
+import Patch2VulnBatchesPage from
+  "@/pages/Patch2VulnBatchesPage.vue";
+
+import Patch2VulnBatchPage from
+  "@/pages/Patch2VulnBatchPage.vue";
+
 import TwoFactorSetupPage from
   "@/pages/TwoFactorSetupPage.vue";
 
@@ -123,6 +129,16 @@ export const router = createRouter({
       name: "admin-organisations",
       component: AdminOrganisationsPage,
       meta: { adminOnly: true },
+    },
+    {
+      path: "/patch2vuln",
+      name: "patch2vuln-batches",
+      component: Patch2VulnBatchesPage,
+    },
+    {
+      path: "/patch2vuln/:batchId(\\d+)",
+      name: "patch2vuln-batch",
+      component: Patch2VulnBatchPage,
     },
     {
       path: "/editor/new",

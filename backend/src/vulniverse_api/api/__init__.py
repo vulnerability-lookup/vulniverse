@@ -138,6 +138,7 @@ from . import (  # noqa: F401
     invitations,
     organisations,
     patch2vuln,
+    patch2vuln_batches,
     publish,
     record_quality,
     records,

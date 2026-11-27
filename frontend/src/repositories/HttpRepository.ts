@@ -16,6 +16,7 @@ import type {
   CpeSearchParams,
   Patch2VulnJob,
   Patch2VulnInput,
+  Patch2VulnResult,
   BackgroundJobEvent,
 } from "@/editor/contracts";
 
@@ -49,6 +50,48 @@ export interface RecordSummary {
   updatedAt: string;
   createdBy: string | null;
   organisation: { id: number; name: string };
+}
+
+/*
+ * Patch2Vuln batches (pages/Patch2Vuln*.vue): app-level too, the
+ * embeddable element only ever sees one record.
+ */
+export interface Patch2VulnBatchSummary {
+  id: number;
+  name: string;
+  profile: string;
+  createdAt: string;
+  createdBy: string | null;
+  total: number;
+  /** Queued or running. */
+  open: number;
+  completed: number;
+  /** Turned into a record, or dismissed. */
+  reviewed: number;
+}
+
+export type CandidateStatus =
+  | "queued" | "running" | "completed" | "failed" | "canceled" | "expired";
+
+export interface Patch2VulnCandidate {
+  id: number;
+  commitUrl: string;
+  status: CandidateStatus;
+  title: string | null;
+  dismissed: boolean;
+  recordId: number | null;
+}
+
+export interface Patch2VulnBatch extends Patch2VulnBatchSummary {
+  candidates: Patch2VulnCandidate[];
+  /** Patch2Vuln couldn't be reached; statuses are the last known ones. */
+  refreshError: string | null;
+}
+
+export interface Patch2VulnCandidateResult extends Patch2VulnCandidate {
+  batchId: number;
+  profile: string;
+  result: Patch2VulnResult;
 }
 
 /** The backend addresses records by database id; the editor contract
@@ -249,6 +292,12 @@ export class HttpRepository
    */
   private readonly versions = new Map<string, number>();
 
+  /*
+   * The Patch2Vuln candidate the next new record is created from: sent
+   * with that createRecord, so the backend links the two.
+   */
+  candidateId: number | null = null;
+
   constructor(
     private readonly apiRoot = "/api/v1",
   ) { }
@@ -265,6 +314,45 @@ export class HttpRepository
     );
 
     return result.records;
+  }
+
+  async listPatch2VulnBatches(): Promise<Patch2VulnBatchSummary[]> {
+    return (await this.request<{ batches: Patch2VulnBatchSummary[] }>(
+      "/patch2vuln/batches",
+    )).batches;
+  }
+
+  createPatch2VulnBatch(
+    name: string,
+    profile: string,
+    commitUrls: string[],
+  ): Promise<Patch2VulnBatchSummary> {
+    return this.request("/patch2vuln/batches", {
+      method: "POST",
+      body: JSON.stringify({ name, profile, commitUrls }),
+    });
+  }
+
+  getPatch2VulnBatch(id: number): Promise<Patch2VulnBatch> {
+    return this.request(`/patch2vuln/batches/${id}`);
+  }
+
+  async deletePatch2VulnBatch(id: number): Promise<void> {
+    await this.request(`/patch2vuln/batches/${id}`, { method: "DELETE" });
+  }
+
+  getPatch2VulnCandidate(id: number): Promise<Patch2VulnCandidateResult> {
+    return this.request(`/patch2vuln/candidates/${id}`);
+  }
+
+  setPatch2VulnCandidateDismissed(
+    id: number,
+    dismissed: boolean,
+  ): Promise<Patch2VulnCandidate> {
+    return this.request(`/patch2vuln/candidates/${id}/dismiss`, {
+      method: "POST",
+      body: JSON.stringify({ dismissed }),
+    });
   }
 
   async getCapabilities(): Promise<AppCapabilities> {
@@ -310,7 +398,7 @@ export class HttpRepository
     profile: string,
     isDraft: boolean,
   ): Promise<LoadedRecord> {
-    return this.remember(await this.request<RecordResponse>(
+    const saved = this.remember(await this.request<RecordResponse>(
       "/records",
       {
         method: "POST",
@@ -318,9 +406,15 @@ export class HttpRepository
           record,
           profile,
           isDraft,
+          ...(this.candidateId === null ? {} : { candidateId: this.candidateId }),
         }),
       },
     ));
+
+    // Linked now; later records from this page are unrelated.
+    this.candidateId = null;
+
+    return saved;
   }
 
   async updateRecord(

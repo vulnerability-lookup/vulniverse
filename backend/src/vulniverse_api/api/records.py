@@ -23,7 +23,7 @@ from ..auth.organisations import (
     current_organisation,
 )
 from ..extensions import db
-from ..models import CnaPublication, VulnerabilityRecord
+from ..models import CnaPublication, Patch2VulnCandidate, VulnerabilityRecord
 from ..services.identifiers import extract_identifier, normalize_id_case
 from ..services.profiles import known_profiles
 from ..services.record_validation import validate_record
@@ -265,6 +265,14 @@ def create_record() -> ApiResponse:
     if error is not None:
         return error
 
+    candidate: Patch2VulnCandidate | None = None
+    candidate_id = (request.get_json(silent=True) or {}).get("candidateId")
+    if candidate_id is not None:
+        found = review_candidate(candidate_id, organisation.id)
+        if isinstance(found, tuple):
+            return found
+        candidate = found
+
     record = VulnerabilityRecord(
         identifier=identifier,
         profile=data.profile,
@@ -274,10 +282,37 @@ def create_record() -> ApiResponse:
         created_by_id=current_user.id,
     )
     db.session.add(record)
+    if candidate is not None:
+        # In the same commit, so a candidate never gets two records.
+        db.session.flush()
+        candidate.record_id = record.id
+        candidate.dismissed = False
     error = commit_or_conflict()
     if error is not None:
         return error
     return record_response(record), 201
+
+
+def review_candidate(
+    candidate_id: Any,
+    organisation_id: int,
+) -> Patch2VulnCandidate | ApiResponse:
+    """The Patch2Vuln candidate a new record is created from: one of the
+    organisation's, without a record yet."""
+    # bool is an int subclass; True isn't an id.
+    if not isinstance(candidate_id, int) or isinstance(candidate_id, bool):
+        return {"message": "candidateId must be an integer."}, 400
+
+    candidate = db.session.get(Patch2VulnCandidate, candidate_id)
+    if candidate is None or candidate.batch.organisation_id != organisation_id:
+        return {"message": "Candidate not found."}, 404
+    if candidate.record_id is not None:
+        return {
+            "message": "A record was already created from this candidate.",
+            "recordId": candidate.record_id,
+        }, 409
+
+    return candidate
 
 
 CHANGED_MEANWHILE: ApiResponse = (
@@ -389,6 +424,11 @@ def delete_record(record_id: int) -> ApiResponse:
         return {"message": "You cannot modify this record."}, 403
 
     CnaPublication.query.filter_by(record_id=record.id).delete(
+        synchronize_session=False,
+    )
+    # Its candidate can be reviewed again.
+    Patch2VulnCandidate.query.filter_by(record_id=record.id).update(
+        {"record_id": None},
         synchronize_session=False,
     )
     db.session.delete(record)

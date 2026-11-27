@@ -57,3 +57,17 @@ describe("HttpRepository record versions", () => {
     expect(publish?.body).toEqual({ version: 4 });
   });
 });
+
+describe("HttpRepository Patch2Vuln candidates", () => {
+  it("links only the next new record to the candidate", async () => {
+    const calls = stubFetch(response(1), response(1));
+    const repository = new HttpRepository("/api/v1");
+    repository.candidateId = 12;
+
+    await repository.createRecord({}, "cve-5.2.0", true);
+    await repository.createRecord({}, "cve-5.2.0", true);
+
+    const creates = calls.filter((call) => call.url === "/api/v1/records" && call.body);
+    expect(creates.map((call) => call.body?.candidateId)).toEqual([12, undefined]);
+  });
+});

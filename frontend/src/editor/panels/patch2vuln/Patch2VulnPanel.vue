@@ -26,8 +26,11 @@ import {
 } from "../../core/context";
 
 import {
-  mergeGcveExtensions,
-} from "../../gcve";
+  applyCveFields as copyCveFields,
+  applyOsvFields as copyOsvFields,
+  CVE_FIELDS,
+  OSV_FIELDS,
+} from "./apply";
 
 import {
   recallJob,
@@ -184,62 +187,13 @@ const isRunning = computed(
 );
 
 
-// Supported CNA fields for selective merging.
-const CVE_FIELDS = [
-  { id: "title", label: "Title" },
-  { id: "descriptions", label: "Descriptions" },
-  { id: "affected", label: "Affected products" },
-  { id: "problemTypes", label: "CWE classifications" },
-  { id: "metrics", label: "CVSS metrics" },
-  { id: "solutions", label: "Solutions" },
-  { id: "references", label: "References" },
-  { id: "impacts", label: "Impacts / CAPEC" },
-  { id: "credits", label: "Credits" },
-  { id: "cpeApplicability", label: "CPE applicability" },
-  { id: "x_gcve", label: "GCVE metadata / AI provenance" },
-] as const;
-
-// Top-level OSV fields. id, schema_version, modified, published and
-// withdrawn are never offered: they belong to this record, not to the
-// generated one.
-const OSV_FIELDS = [
-  { id: "summary", label: "Summary" },
-  { id: "details", label: "Details" },
-  { id: "aliases", label: "Aliases" },
-  { id: "affected", label: "Affected packages" },
-  { id: "severity", label: "Severity (CVSS)" },
-  { id: "references", label: "References" },
-  { id: "credits", label: "Credits" },
-  { id: "database_specific", label: "Database specific (CWE, CAPEC, SSVC, GCVE)" },
-] as const;
-
 const fields = computed<readonly { id: string; label: string }[]>(
   () => isOsv.value ? OSV_FIELDS : CVE_FIELDS,
 );
 
-const PROTECTED_FIELDS = new Set([
-  "providerMetadata",
-  "datePublic",
-  "dateUpdated",
-  "dateAssigned",
-  "rejectedReasons",
-  "replacedBy",
-]);
-
 const selectedFields = ref<string[]>(
   fields.value.map((field) => field.id),
 );
-
-// handle gcve extensions
-function mergeGeneratedGcve(
-  current: CveRecord,
-  generated: CveRecord,
-): boolean {
-  return mergeGcveExtensions(
-    current,
-    generated.containers?.cna?.x_gcve ?? [],
-  );
-}
 
 // Handle uploaded files.
 function onFileChange(event: Event): void {
@@ -564,46 +518,7 @@ function applyCveFields(): number | null {
     return null;
   }
 
-  current.containers ??= {};
-  current.containers.cna ??= {};
-
-  const source = generated.containers.cna;
-  const target = current.containers.cna;
-
-  let count = 0;
-
-  for (const field of selectedFields.value) {
-    // Handle GCVE metadata independently.
-    if (field === "x_gcve") {
-      if (mergeGeneratedGcve(current, generated)) {
-        count++;
-      }
-
-      continue;
-    }
-
-    // Do not overwrite provider or lifecycle metadata.
-    if (PROTECTED_FIELDS.has(field)) {
-      continue;
-    }
-
-    if (!Object.prototype.hasOwnProperty.call(source, field)) {
-      continue;
-    }
-
-    const value = source[field];
-
-    if (value === undefined) {
-      continue;
-    }
-
-    // Works with Vue proxies and creates missing fields.
-    target[field] = JSON.parse(JSON.stringify(value));
-
-    count++;
-  }
-
-  return count;
+  return copyCveFields(current, generated, selectedFields.value);
 }
 
 
@@ -616,21 +531,11 @@ function applyOsvFields(): number | null {
     return null;
   }
 
-  const target = props.context.record as Record<string, unknown>;
-
-  let count = 0;
-
-  for (const field of selectedFields.value) {
-    if (generated[field] === undefined) {
-      continue;
-    }
-
-    target[field] = JSON.parse(JSON.stringify(generated[field]));
-
-    count++;
-  }
-
-  return count;
+  return copyOsvFields(
+    props.context.record as Record<string, unknown>,
+    generated,
+    selectedFields.value,
+  );
 }
 
 
