@@ -22,6 +22,7 @@ incompatibly in a new major version.
 
 ### Changed
 
+- The Patch2Vuln panel checks the commit URLs as you type: it names the lines that aren't GitHub commit URLs and counts the patches against the limit of 5, instead of failing after **Analyze patches**.
 - Record Quality scores the record in the browser, updating with every edit, so it works in every host without a repository method. The scores are the same as before. The Recalculate button is gone.
 - A GCVE record without an advisory entry takes its identifier from its only entry, as GCVE-BCP-05 1.8 allows for standalone `update` and other non-advisory records. Before, such a record had no identifier.
 

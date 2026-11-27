@@ -38,6 +38,8 @@ import {
 } from "./job-storage";
 
 import {
+  githubCommit,
+  MAX_PATCH_INPUTS,
   repositoryOfCommitUrl,
 } from "./commit-url";
 
@@ -58,6 +60,19 @@ const supported = computed(() =>
 
 // Input state
 const commitUrls = ref("");
+
+// Checked as typed, with the backends' rules, instead of after submitting.
+const urlLines = computed(() => commitUrls.value.split("\n").map((url) => url.trim()));
+const inputProblem = computed(() => {
+  const invalid = urlLines.value.flatMap((url, index) => url && !githubCommit(url) ? [index + 1] : []);
+  const inputs = urlLines.value.filter(Boolean).length + files.value.length;
+
+  if (invalid.length === 1) return `Line ${invalid[0]} is not a GitHub commit URL.`;
+  if (invalid.length > 1) return `Lines ${invalid.join(", ")} are not GitHub commit URLs.`;
+  if (inputs > MAX_PATCH_INPUTS) return `${inputs} patches; at most ${MAX_PATCH_INPUTS} per analysis.`;
+
+  return null;
+});
 const files = ref<File[]>([]);
 
 const vendor = ref("");
@@ -619,12 +634,26 @@ onBeforeUnmount(() => {
         <textarea
           v-model="commitUrls"
           class="form-control"
+          :class="{ 'is-invalid': inputProblem }"
           rows="3"
           placeholder="https://github.com/owner/repo/commit/..."
+          aria-describedby="patch2vuln-commits-help patch2vuln-input-problem"
+          :aria-invalid="inputProblem !== null"
           :disabled="isRunning"
         />
 
-        <div class="form-text">
+        <div
+          v-if="inputProblem"
+          id="patch2vuln-input-problem"
+          class="invalid-feedback"
+        >
+          ⚠ {{ inputProblem }}
+        </div>
+
+        <div
+          id="patch2vuln-commits-help"
+          class="form-text"
+        >
           One URL per line. Multiple commits must relate
           to the same vulnerability.
         </div>
@@ -811,6 +840,7 @@ onBeforeUnmount(() => {
         class="btn btn-primary"
         :disabled="
           isRunning ||
+          inputProblem !== null ||
           (!commitUrls.trim() && files.length === 0)
         "
         @click="submit"
