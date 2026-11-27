@@ -182,8 +182,9 @@ scratch:
 | `vulnerabilityLookupPanel` | `getCnaPublication` + the publish actions |
 | `recordQualityPanel` | none, it scores in the browser |
 | `patch2vulnPanel` | `submitPatch2VulnJob` + `getPatch2VulnJob` |
+| `mlGatewayPanel` | `classifySeverity` + `classifyAttackTechniques` |
 
-A sixth built-in, `recordStatsPanel`, exists internally
+A seventh built-in, `recordStatsPanel`, exists internally
 (`frontend/src/editor/panels/record-stats/`) but is deliberately **not**
 exported — it's a purely local computation over the already-loaded record
 with no repository dependency, and isn't currently offered as a reusable

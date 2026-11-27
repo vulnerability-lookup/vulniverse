@@ -277,6 +277,25 @@ export interface Patch2VulnJob {
   error?: string;
 }
 
+// ML-Gateway (github.com/vulnerability-lookup/ML-Gateway) suggestions.
+export interface SeverityPrediction {
+  // The model's label, e.g. "High"; not a CVSS score.
+  severity: string;
+  // 0..1
+  confidence: number;
+  model?: string | null;
+}
+
+export interface AttackTechniquePrediction {
+  // A MITRE ATT&CK technique ID, e.g. "T1190".
+  id: string;
+  name: string;
+  // 0..1, scored per technique (they don't add up to 1).
+  score: number;
+  // The model's own pick (score >= 0.5).
+  predicted: boolean;
+}
+
 // Jobs
 export type BackgroundJobStatus =
   | "queued"
@@ -479,6 +498,20 @@ export interface EditorRepository {
     onStatus: (event: BackgroundJobEvent) => void,
     onDisconnect?: () => void,
   ): () => void;
+
+  /**
+   * ML-Gateway suggestions for a description: the ML panel is offered
+   * only when both are present. The host calls the gateway server-side
+   * (its endpoints are unauthenticated and not meant to be public).
+   */
+  classifySeverity?(
+    description: string,
+  ): Promise<SeverityPrediction>;
+
+  classifyAttackTechniques?(
+    description: string,
+    topK: number,
+  ): Promise<{ techniques: AttackTechniquePrediction[]; model?: string | null }>;
 
   /**
    * Optional: which draft/publish-style buttons the editor header

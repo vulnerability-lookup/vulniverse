@@ -293,6 +293,42 @@ in the background. With it, the panel gets live updates instead: call
 `onStatus({ jobId, status, error? })` on every change and `onDisconnect()`
 if the connection drops, and return a function that stops it.
 
+## ML suggestions
+
+For the `mlGatewayPanel`: severity and MITRE ATT&CK suggestions for the
+record's English description, from an
+[ML-Gateway](https://github.com/vulnerability-lookup/ML-Gateway). Both
+methods are needed. Call the gateway from your server, not from the
+browser: its endpoints have no authentication. Vulnerability-Lookup's
+`/api/vlai/severity-classification` and `/api/vlai/attack-techniques`
+already do that.
+
+| Method | Returns |
+| --- | --- |
+| `classifySeverity(description)` | `SeverityPrediction` |
+| `classifyAttackTechniques(description, topK)` | `{ techniques: AttackTechniquePrediction[]; model? }` |
+
+```ts
+interface SeverityPrediction {
+  severity: string;            // the model's label, e.g. "High"
+  confidence: number;          // 0 to 1
+  model?: string | null;
+}
+
+interface AttackTechniquePrediction {
+  id: string;                  // e.g. "T1190"
+  name: string;
+  score: number;               // 0 to 1, per technique
+  predicted: boolean;          // the model's own pick (score >= 0.5)
+}
+```
+
+The panel adds the techniques the user ticks to
+`containers.cna.taxonomyMappings`, under `taxonomyName: "ATT&CK"`, each
+with `relationshipName: "maps to"` and the technique's name as
+`relationshipValue` (its ID when the name is empty). The severity is
+only shown.
+
 ## Examples to start from
 
 - **A minimal repository** that keeps one record in the browser: the

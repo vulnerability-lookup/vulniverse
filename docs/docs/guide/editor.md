@@ -180,6 +180,25 @@ Patch2Vuln generated, and updates itself while analyses run.
 Results are kept in Vulniverse once an analysis has finished, so a batch
 can be reviewed over several days even though Patch2Vuln deletes them.
 
+### ML suggestions
+
+**ML suggestions** asks machine-learning models about the record's
+English description. Click **Classify** to get:
+
+- **Severity:** the severity the model suggests (Low, Medium, High or
+  Critical) and how confident it is, next to the record's own CVSS
+  severity if it has one. It's a hint only and isn't added to the record.
+- **MITRE ATT&CK techniques:** the techniques the model ranks highest,
+  each with its score and a link to its ATT&CK page. The ones the model
+  picks are ticked. **Add to record** adds the ticked ones to the record's
+  ATT&CK mapping (`taxonomyMappings`), each as "maps to" with the
+  technique's name; techniques already there are kept.
+
+The models only read English and can be wrong, so check the suggestions
+before using them. If you change the description afterwards, the panel
+says so; click **Classify again**. The panel appears only when the server
+has an ML gateway configured.
+
 ### Vulnerability-Lookup and CVE Program
 
 These two panels publish the record to a Vulnerability-Lookup instance or

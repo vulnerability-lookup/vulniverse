@@ -22,6 +22,8 @@ export const ICONS = {
   quality: "M8 14.5A6.5 6.5 0 1 0 8 1.5a6.5 6.5 0 0 0 0 13ZM5.5 8.2l1.7 1.7 3.3-3.4",
   // Git branch.
   patch: "M5 2.5V9M5 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM11 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM11 7c0 2.5-2 3-6 4",
+  // Four-point sparkle.
+  sparkle: "M8 1.5c.6 3.4 1.6 5.4 5.5 6.5-3.9 1.1-4.9 3.1-5.5 6.5-.6-3.4-1.6-5.4-5.5-6.5 3.9-1.1 4.9-3.1 5.5-6.5Z",
   // Bar chart.
   stats: "M2.5 13.5h11M4.5 11V8M8 11V4M11.5 11V6.5",
   // A window: for a host panel without an icon of its own.

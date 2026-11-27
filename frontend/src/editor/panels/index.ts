@@ -23,6 +23,10 @@ import {
   patch2vulnPanel,
 } from "./patch2vuln";
 
+import {
+  mlGatewayPanel,
+} from "./ml-gateway";
+
 export const BUILTIN_PANELS:
   EditorPanel[] = [
     templatesPanel,
@@ -31,6 +35,7 @@ export const BUILTIN_PANELS:
     cveProgramPanel,
     recordQualityPanel,
     patch2vulnPanel,
+    mlGatewayPanel,
   ];
 
 
@@ -53,4 +58,8 @@ export {
 
 export {
   patch2vulnPanel,
+};
+
+export {
+  mlGatewayPanel,
 };

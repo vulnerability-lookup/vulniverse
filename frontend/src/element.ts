@@ -61,6 +61,7 @@ export const version = __VULNIVERSE_VERSION__;
 
 export {
   cveProgramPanel,
+  mlGatewayPanel,
   patch2vulnPanel,
   recordQualityPanel,
   templatesPanel,

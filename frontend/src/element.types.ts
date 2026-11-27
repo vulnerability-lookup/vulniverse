@@ -18,6 +18,7 @@ import type {
 } from "./editor/core/theme";
 
 export type {
+  AttackTechniquePrediction,
   EditorAction,
   EditorContext,
   EditorDocument,
@@ -25,6 +26,7 @@ export type {
   EditorRepository,
   LifecycleTransition,
   LoadedRecord,
+  SeverityPrediction,
   ValidationError,
   ValidationResult,
 } from "./editor/contracts";
@@ -55,6 +57,8 @@ export declare const templatesPanel: EditorPanel;
 export declare const recordQualityPanel: EditorPanel;
 /** Drafts fields from a patch; needs the Patch2Vuln methods. */
 export declare const patch2vulnPanel: EditorPanel;
+/** ML-Gateway severity and ATT&CK suggestions; needs the classify methods. */
+export declare const mlGatewayPanel: EditorPanel;
 /** Reserve and publish with Vulnerability-Lookup; needs the CNA methods. */
 export declare const vulnerabilityLookupPanel: EditorPanel;
 /** Publish to the CVE Program; needs the CNA methods. */

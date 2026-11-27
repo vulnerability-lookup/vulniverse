@@ -13,10 +13,12 @@ import type {
   CpeVendorSuggestion,
   CpeProductSuggestion,
   CpeSearchParams,
+  AttackTechniquePrediction,
   Patch2VulnContext,
   Patch2VulnJob,
   Patch2VulnInput,
   Patch2VulnResult,
+  SeverityPrediction,
   BackgroundJobEvent,
 } from "@/editor/contracts";
 
@@ -428,6 +430,31 @@ export class HttpRepository
     );
   }
 
+
+  async classifySeverity(
+    description: string,
+  ): Promise<SeverityPrediction> {
+    return this.request<SeverityPrediction>(
+      "/ml-gateway/severity",
+      {
+        method: "POST",
+        body: JSON.stringify({ description }),
+      },
+    );
+  }
+
+  async classifyAttackTechniques(
+    description: string,
+    topK: number,
+  ): Promise<{ techniques: AttackTechniquePrediction[]; model?: string | null }> {
+    return this.request(
+      "/ml-gateway/attack-techniques",
+      {
+        method: "POST",
+        body: JSON.stringify({ description, topK }),
+      },
+    );
+  }
 
   async submitPatch2VulnJob(
     input: Patch2VulnInput,
