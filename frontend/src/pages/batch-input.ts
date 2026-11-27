@@ -60,3 +60,15 @@ export function parseBatchInput(text: string): BatchLine[] {
 
   return [...lines.values()];
 }
+
+/** The owner and repository of every commit, when they're all from one;
+ * null for none or several. */
+export function sharedRepository(lines: BatchLine[]): { owner: string; repo: string } | null {
+  const repositories = new Set(lines.flatMap((line) => line.commits.map((commit) => commit.repository)));
+
+  if (repositories.size !== 1) return null;
+
+  const [owner = "", repo = ""] = [...repositories][0]!.split("/");
+
+  return { owner, repo };
+}

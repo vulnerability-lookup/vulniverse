@@ -829,7 +829,8 @@ def test_submit_bulk_jobs_sends_single_urls_and_groups(
     monkeypatch.setattr(patch2vuln.httpx, "post", fake_post)
 
     jobs = patch2vuln.submit_bulk_jobs(
-        [["https://a/1.patch"], ["https://a/2.patch", "https://a/3.patch"]]
+        [["https://a/1.patch"], ["https://a/2.patch", "https://a/3.patch"]],
+        {"vendor": "Acme", "fixedVersion": "1.1"},
     )
 
     assert captured["url"] == "https://patch2vuln.example.org/api/v1/jobs/bulk"
@@ -838,6 +839,9 @@ def test_submit_bulk_jobs_sends_single_urls_and_groups(
         ["https://a/2.patch", "https://a/3.patch"],
     ]
     assert captured["json"]["patches"] == []
+    # Every job of the batch gets the same context, in patch2vuln's names.
+    assert captured["json"]["vendor"] == "Acme"
+    assert captured["json"]["fixed_version"] == "1.1"
     assert jobs == [
         {"jobId": "job-1", "status": "queued"},
         {"jobId": "job-2", "status": "queued"},

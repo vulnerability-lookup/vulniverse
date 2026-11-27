@@ -192,10 +192,14 @@ def submit_job(
     }
 
 
-def submit_bulk_jobs(groups: list[list[str]]) -> list[dict[str, Any]]:
+def submit_bulk_jobs(
+    groups: list[list[str]],
+    context: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
     """Queue one patch2vuln job per group of commit URLs (the commits of
     one vulnerability), all or none: patch2vuln refuses the whole batch
-    when its queue lacks room for it.
+    when its queue lacks room for it. `context` (as for submit_job)
+    applies to every job.
 
     Returns [{"jobId": ..., "status": ...}] in the order of `groups`.
     """
@@ -207,7 +211,7 @@ def submit_bulk_jobs(groups: list[list[str]]) -> list[dict[str, Any]]:
     if not groups or not all(groups):
         raise ValueError("No commit URLs provided")
 
-    body = _build_job_body([], [], {}, config)
+    body = _build_job_body([], [], context or {}, config)
     # An entry is a URL, or a list of related URLs analysed together.
     body["urls"] = [group[0] if len(group) == 1 else group for group in groups]
 

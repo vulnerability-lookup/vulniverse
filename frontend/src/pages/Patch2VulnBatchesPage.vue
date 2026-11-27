@@ -2,7 +2,9 @@
 import {
   computed,
   onMounted,
+  reactive,
   ref,
+  watch,
 } from "vue";
 
 import {
@@ -26,6 +28,7 @@ import {
   MAX_COMMITS_PER_VULNERABILITY,
   MAX_VULNERABILITIES,
   parseBatchInput,
+  sharedRepository,
 } from "./batch-input";
 
 import type {
@@ -42,6 +45,20 @@ const loadError = ref<string | null>(null);
 const name = ref("");
 const profile = ref(DEFAULT_PROFILE_ID);
 const commitUrls = ref("");
+
+// The Patch2Vuln panel's optional fields; Patch2Vuln applies them to
+// every vulnerability of the batch.
+const context = reactive({
+  vendor: "",
+  product: "",
+  affectedVersion: "",
+  fixedVersion: "",
+  versionType: "",
+  packageUrl: "",
+  osvEcosystem: "",
+  prompt: "",
+});
+const isOsv = computed(() => profile.value.startsWith("osv-"));
 const submitting = ref(false);
 const submitError = ref<string | null>(null);
 
@@ -73,6 +90,26 @@ const tooMany = computed(() => lines.value.length > MAX_VULNERABILITIES);
 const canSubmit = computed(() =>
   lines.value.length > 0 && !tooMany.value && lines.value.every((line) => !line.error));
 
+// Vendor and product follow the commits while they all come from one
+// repository, as in the panel, until the user types their own; with
+// several repositories they'd be wrong for some, so they're cleared.
+const filled = reactive({ vendor: "", product: "" });
+const autofilled = computed(() => (
+  (context.vendor !== "" && context.vendor === filled.vendor)
+  || (context.product !== "" && context.product === filled.product)
+));
+
+watch(lines, (current) => {
+  const shared = sharedRepository(current);
+
+  if (context.vendor === filled.vendor) {
+    context.vendor = filled.vendor = shared?.owner ?? "";
+  }
+  if (context.product === filled.product) {
+    context.product = filled.product = shared?.repo ?? "";
+  }
+});
+
 function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
@@ -91,6 +128,7 @@ async function submit(): Promise<void> {
       name.value.trim(),
       profile.value,
       lines.value.map((line) => line.commits.map((commit) => commit.url)),
+      { ...context, osvEcosystem: isOsv.value ? context.osvEcosystem : "" },
     );
 
     await router.push(`/patch2vuln/${batch.id}`);
@@ -217,6 +255,157 @@ onMounted(loadBatches);
               </ol>
             </div>
           </div>
+
+          <details class="col-12">
+            <summary class="fw-semibold">
+              Additional context <span class="text-secondary fw-normal">(optional)</span>
+              <span
+                v-if="autofilled"
+                class="text-secondary fw-normal ms-1"
+              >· vendor and product filled in</span>
+            </summary>
+
+            <p class="form-text mt-1">
+              The same values go with every vulnerability of the batch, as
+              in the Patch2Vuln panel. Leave fields empty that differ
+              between them, such as vendor and product for commits from
+              different projects.
+            </p>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label
+                  for="batch-vendor"
+                  class="form-label"
+                >Vendor</label>
+                <input
+                  id="batch-vendor"
+                  v-model="context.vendor"
+                  class="form-control"
+                  maxlength="200"
+                  :aria-describedby="autofilled ? 'batch-autofilled' : undefined"
+                >
+              </div>
+
+              <div class="col-md-6">
+                <label
+                  for="batch-product"
+                  class="form-label"
+                >Product</label>
+                <input
+                  id="batch-product"
+                  v-model="context.product"
+                  class="form-control"
+                  maxlength="200"
+                  :aria-describedby="autofilled ? 'batch-autofilled' : undefined"
+                >
+              </div>
+
+              <div
+                v-if="autofilled"
+                id="batch-autofilled"
+                class="col-12 form-text mt-1"
+              >
+                Filled in from the commit URLs, which all come from one
+                repository. Change them if the real names differ.
+              </div>
+
+              <div class="col-md-6">
+                <label
+                  for="batch-affected-version"
+                  class="form-label"
+                >Affected version</label>
+                <input
+                  id="batch-affected-version"
+                  v-model="context.affectedVersion"
+                  class="form-control"
+                  maxlength="200"
+                >
+              </div>
+
+              <div class="col-md-6">
+                <label
+                  for="batch-fixed-version"
+                  class="form-label"
+                >Fixed version</label>
+                <input
+                  id="batch-fixed-version"
+                  v-model="context.fixedVersion"
+                  class="form-control"
+                  maxlength="200"
+                >
+              </div>
+
+              <div class="col-md-6">
+                <label
+                  for="batch-package-url"
+                  class="form-label"
+                >Package URL</label>
+                <input
+                  id="batch-package-url"
+                  v-model="context.packageUrl"
+                  class="form-control"
+                  maxlength="200"
+                  placeholder="e.g. pkg:pypi/widget"
+                >
+              </div>
+
+              <div class="col-md-6">
+                <label
+                  for="batch-version-type"
+                  class="form-label"
+                >Version type</label>
+                <select
+                  id="batch-version-type"
+                  v-model="context.versionType"
+                  class="form-select"
+                >
+                  <option value="">Automatic</option>
+                  <option value="semver">SemVer</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+
+              <div
+                v-if="isOsv"
+                class="col-md-6"
+              >
+                <label
+                  for="batch-osv-ecosystem"
+                  class="form-label"
+                >OSV ecosystem</label>
+                <input
+                  id="batch-osv-ecosystem"
+                  v-model="context.osvEcosystem"
+                  class="form-control"
+                  maxlength="200"
+                  placeholder="e.g. PyPI, npm, Go, Debian"
+                >
+              </div>
+
+              <div class="col-12">
+                <label
+                  for="batch-prompt"
+                  class="form-label"
+                >Additional instructions</label>
+                <textarea
+                  id="batch-prompt"
+                  v-model="context.prompt"
+                  class="form-control"
+                  rows="3"
+                  maxlength="16000"
+                  placeholder="e.g. Focus on the authentication impact."
+                  aria-describedby="batch-prompt-help"
+                />
+                <div
+                  id="batch-prompt-help"
+                  class="form-text"
+                >
+                  Added to the model's instructions for every analysis.
+                </div>
+              </div>
+            </div>
+          </details>
         </div>
 
         <div

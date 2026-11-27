@@ -13,6 +13,7 @@ import type {
   CpeVendorSuggestion,
   CpeProductSuggestion,
   CpeSearchParams,
+  Patch2VulnContext,
   Patch2VulnJob,
   Patch2VulnInput,
   Patch2VulnResult,
@@ -283,14 +284,17 @@ export class HttpRepository
     )).batches;
   }
 
+  /** `commitUrls`: one list of commit URLs per vulnerability.
+   * `context`: the panel's optional fields, for every vulnerability. */
   createPatch2VulnBatch(
     name: string,
     profile: string,
     commitUrls: string[][],
+    context: Patch2VulnContext = {},
   ): Promise<Patch2VulnBatchSummary> {
     return this.request("/patch2vuln/batches", {
       method: "POST",
-      body: JSON.stringify({ name, profile, commitUrls }),
+      body: JSON.stringify({ name, profile, commitUrls, context }),
     });
   }
 

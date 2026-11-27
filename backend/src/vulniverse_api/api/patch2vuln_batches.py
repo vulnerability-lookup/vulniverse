@@ -25,7 +25,7 @@ from ..services.patch2vuln import (
 )
 from ..services.profiles import known_profiles
 from . import api_bp, require_panel
-from .patch2vuln import MAX_INPUTS, normalize_commit_url
+from .patch2vuln import MAX_INPUTS, normalize_commit_url, read_analysis_context
 
 type ApiResponse = tuple[dict[str, Any], int]
 
@@ -208,8 +208,16 @@ def create_patch2vuln_batch() -> ApiResponse:
             "message": f"A batch can have at most {MAX_BATCH_SIZE} vulnerabilities."
         }, 400
 
+    # Optional, the panel's fields; Patch2Vuln applies them to every job.
+    options = payload.get("context", {})
+    if not isinstance(options, dict):
+        return {"message": "context must be an object."}, 400
+    context = read_analysis_context(options)
+    if isinstance(context, tuple):
+        return context
+
     try:
-        jobs = submit_bulk_jobs(groups)
+        jobs = submit_bulk_jobs(groups, context)
     except ValueError as exc:
         return {"message": str(exc)}, 400
     except RuntimeError as exc:

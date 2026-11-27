@@ -159,8 +159,12 @@ vulnerability. When several commits fix the same vulnerability, put them
 on the same line, separated by spaces (up to 5); they're analysed
 together. Below the field, a preview lists the vulnerabilities as they
 will be analysed and marks lines that can't be, such as URLs that aren't
-GitHub commits. The batch belongs to your organisation: your colleagues
-see it too.
+GitHub commits. **Additional context** takes the same optional fields as
+the panel (vendor, product, versions, package URL, instructions); they go
+with every vulnerability of the batch, so leave empty what differs
+between them. When all commits come from one repository, vendor and
+product are filled in from it, as in the panel. The batch belongs to your organisation: your colleagues see
+it too.
 
 The batch page lists each vulnerability with its commits and the title
 Patch2Vuln generated, and updates itself while analyses run.

@@ -26,10 +26,14 @@ class FakePatch2Vuln:
         self.statuses: dict[str, str] = {}
         self.submitted: list[list[list[str]]] = []
         self.canceled: list[str] = []
+        self.contexts: list[dict[str, str] | None] = []
         self.unreachable = False
 
-    def submit_bulk_jobs(self, groups: list[list[str]]) -> list[dict[str, Any]]:
+    def submit_bulk_jobs(
+        self, groups: list[list[str]], context: dict[str, str] | None = None
+    ) -> list[dict[str, Any]]:
         self.submitted.append(groups)
+        self.contexts.append(context)
         jobs = []
         for _group in groups:
             job_id = f"job-{len(self.statuses) + 1}"
@@ -120,6 +124,58 @@ def test_commits_of_one_vulnerability_are_analysed_together(
         f"{OTHER_COMMIT}.patch",
         f"{COMMIT}.patch",
     ]
+
+
+def test_the_analysis_context_applies_to_the_whole_batch(
+    client: FlaskClient, patch2vuln: FakePatch2Vuln
+) -> None:
+    response = client.post(
+        "/api/v1/patch2vuln/batches",
+        json={
+            "name": "Widget fixes",
+            "profile": "cve-5.2.0",
+            "commitUrls": [COMMIT, OTHER_COMMIT],
+            "context": {
+                "vendor": " Acme ",
+                "product": "Widget",
+                "versionType": "semver",
+                "fixedVersion": "",
+                "prompt": "Focus on authentication.",
+            },
+        },
+    )
+
+    assert response.status_code == 201
+    assert patch2vuln.contexts == [
+        {
+            "vendor": "Acme",
+            "product": "Widget",
+            "versionType": "semver",
+            "prompt": "Focus on authentication.",
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    "context",
+    [{"vendor": "x" * 201}, {"vendor": 5}, {"prompt": "a\x00b"}, ["vendor"]],
+    ids=["too long", "not a string", "null character", "not an object"],
+)
+def test_an_invalid_analysis_context_queues_nothing(
+    client: FlaskClient, patch2vuln: FakePatch2Vuln, context: Any
+) -> None:
+    response = client.post(
+        "/api/v1/patch2vuln/batches",
+        json={
+            "name": "Bad",
+            "profile": "cve-5.2.0",
+            "commitUrls": [COMMIT],
+            "context": context,
+        },
+    )
+
+    assert response.status_code == 400
+    assert patch2vuln.submitted == []
 
 
 @pytest.mark.parametrize(

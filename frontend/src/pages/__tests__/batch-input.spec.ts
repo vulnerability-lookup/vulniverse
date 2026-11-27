@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseBatchInput } from "../batch-input";
+import { parseBatchInput, sharedRepository } from "../batch-input";
 
 const commit = (sha: string, repo = "acme/widget") => `https://github.com/${repo}/commit/${sha}`;
 
@@ -26,5 +26,18 @@ describe("parseBatchInput", () => {
 
     expect(invalid?.error).toBe("Not a GitHub commit URL: https://example.com/x");
     expect(crowded?.error).toBe("6 commits; at most 5 per vulnerability");
+  });
+});
+
+describe("sharedRepository", () => {
+  it("is the repository of every commit when they all come from one", () => {
+    const lines = parseBatchInput(`${commit("aaaaaaa")}\n${commit("bbbbbbb")} ${commit("ccccccc")}`);
+
+    expect(sharedRepository(lines)).toEqual({ owner: "acme", repo: "widget" });
+  });
+
+  it("is null for commits from several repositories, or none", () => {
+    expect(sharedRepository(parseBatchInput(`${commit("aaaaaaa")}\n${commit("bbbbbbb", "acme/gadget")}`))).toBeNull();
+    expect(sharedRepository(parseBatchInput("https://example.com/x"))).toBeNull();
   });
 });

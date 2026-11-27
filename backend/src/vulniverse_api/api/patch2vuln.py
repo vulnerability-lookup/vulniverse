@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
+from typing import Any
 from urllib.parse import urlsplit
 
 from flask import Response, current_app, request
@@ -101,6 +103,51 @@ def _decode_job_token(token: str) -> str:
 PROMPT_MAX_LENGTH = 16_000
 
 
+CONTEXT_FIELDS = (
+    "vendor",
+    "product",
+    "affectedVersion",
+    "fixedVersion",
+    "versionType",
+    "packageUrl",
+    "osvEcosystem",
+)
+
+
+def read_analysis_context(
+    values: Mapping[str, Any],
+) -> dict[str, str] | tuple[dict[str, str], int]:
+    """The optional analyst context of a job (or of every job of a
+    batch): the panel's form fields, or a batch's JSON object. Empty
+    values are left out."""
+    context = {}
+
+    for field in (*CONTEXT_FIELDS, "prompt"):
+        value = values.get(field, "")
+
+        if not isinstance(value, str):
+            return {"message": f"{field} must be a string"}, 400
+
+        value = value.strip()
+
+        # Free-text guidance for the model; patch2vuln appends it to its
+        # own instructions ("Additional analyst instructions"). Its limits.
+        if field == "prompt":
+            if len(value) > PROMPT_MAX_LENGTH:
+                return {
+                    "message": f"prompt is longer than {PROMPT_MAX_LENGTH} characters"
+                }, 400
+            if "\x00" in value:
+                return {"message": "prompt contains a null character"}, 400
+        elif len(value) > 200:
+            return {"message": f"{field} is too long"}, 400
+
+        if value:
+            context[field] = value
+
+    return context
+
+
 @api_bp.post("/patch2vuln/jobs")
 @require_panel("patch2vuln")
 def create_patch2vuln_job():
@@ -160,37 +207,9 @@ def create_patch2vuln_job():
 
         patches.append(content)
 
-    context = {}
-
-    for field in (
-        "vendor",
-        "product",
-        "affectedVersion",
-        "fixedVersion",
-        "versionType",
-        "packageUrl",
-        "osvEcosystem",
-    ):
-        value = request.form.get(field, "").strip()
-
-        if len(value) > 200:
-            return {"message": f"{field} is too long"}, 400
-
-        if value:
-            context[field] = value
-
-    # Free-text guidance for the model; patch2vuln appends it to its own
-    # instructions ("Additional analyst instructions"). Its limits.
-    prompt = request.form.get("prompt", "").strip()
-
-    if len(prompt) > PROMPT_MAX_LENGTH:
-        return {"message": f"prompt is longer than {PROMPT_MAX_LENGTH} characters"}, 400
-
-    if "\x00" in prompt:
-        return {"message": "prompt contains a null character"}, 400
-
-    if prompt:
-        context["prompt"] = prompt
+    context = read_analysis_context(request.form)
+    if isinstance(context, tuple):
+        return context
 
     try:
         job = submit_job(sources, patches, context)
