@@ -102,7 +102,9 @@ constraints of the CNA API's shape through into the adapter:
   are listed after its errors, each prefixed `Warning:`; a valid record
   reports nothing.
 - `getReferenceList`, `searchCpeVendors`/`searchCpeProducts`/`searchCpes`,
-  `listTemplates`+CRUD, and `scoreRecordQuality` are all implemented. The
+  `listTemplates`+CRUD, and `scoreRecordQuality` are all implemented
+  (`scoreRecordQuality` is no longer called from Vulniverse 1.1 on, see
+  below). The
   CWE/CAPEC/CPE lookups are gated behind the `features` the repository
   was constructed with (see [Configuring panels, actions, and
   features](#configuring-panels-actions-and-features) below). CWE/CAPEC
@@ -133,7 +135,7 @@ purpose-built for its backend, and Vulniverse's built-ins reused as-is:
 | `createViewVulnerabilityModule({viewUrlBase})` | VL-authored (`view-vulnerability-module.js`) | `EditorAction` | A link to the published record's VL page — no repository method |
 | `downloadAction`, `tutorialAction` | Reused from `vulniverse-editor.js` | `EditorAction` | Nothing — the record as JSON/HTML/PDF, and a guided tour |
 | `templatesPanel` | Reused from `vulniverse-editor.js` | `EditorPanel` | `listTemplates` + CRUD (implemented, see above) |
-| `recordQualityPanel` | Reused from `vulniverse-editor.js` | `EditorPanel` | `scoreRecordQuality` (implemented) |
+| `recordQualityPanel` | Reused from `vulniverse-editor.js` | `EditorPanel` | Nothing from Vulniverse 1.1 on: it scores in the browser, so `vulniverse_record_quality.py` and `scoreRecordQuality` are unused and can go. Before 1.1, `scoreRecordQuality` |
 | `patch2vulnPanel` | Reused from `vulniverse-editor.js` | `EditorPanel` | `submitPatch2VulnJob` + `getPatch2VulnJob` (implemented) |
 
 `createGcveReservationPanel` and `createCnaPublicationPanel` also take an

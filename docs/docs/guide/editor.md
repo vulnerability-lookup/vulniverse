@@ -131,9 +131,9 @@ Templates belong to one profile.
 ![Record Quality](../images/screenshots/quality-dark.webp#only-dark)
 
 **Record Quality** scores the record from 0 to 100, with a grade and the
-points per area and per check. It scores again while you edit;
-**Recalculate** forces it. The method mirrors Vulnerability-Lookup's
-assigner scorecard.
+points per area and per check. It scores in the browser and updates
+with every edit. The method is Vulnerability-Lookup's assigner
+scorecard.
 
 ### Patch2Vuln
 

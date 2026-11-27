@@ -51,7 +51,7 @@ export declare const tutorialAction: EditorAction;
 
 /** Saved field values; needs the repository's template methods. */
 export declare const templatesPanel: EditorPanel;
-/** A completeness score; needs `scoreRecordQuality`. */
+/** A completeness score, computed in the browser; needs no repository method. */
 export declare const recordQualityPanel: EditorPanel;
 /** Drafts fields from a patch; needs the Patch2Vuln methods. */
 export declare const patch2vulnPanel: EditorPanel;

@@ -220,11 +220,12 @@ The panels understand three more cases, thrown as `EditorRepositoryError`:
 
 ## Record quality
 
-For the `recordQualityPanel`.
+The `recordQualityPanel` needs no method: since 1.1 it scores the record
+in the browser. `scoreRecordQuality(record, profile)`, which it used
+before, is deprecated and no longer called; it stays in the type
+definitions until 2.0, so existing repositories keep type-checking.
 
-| Method | Returns |
-| --- | --- |
-| `scoreRecordQuality(record, profile)` | `RecordQualityScore` |
+The panel's score has this shape (exported as `RecordQualityScore`):
 
 ```ts
 interface RecordQualityScore {

@@ -1,0 +1,4385 @@
+[
+ {
+  "name": "empty record",
+  "record": {},
+  "expected": {
+   "score": 0.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "no containers object",
+  "record": {
+   "containers": []
+  },
+  "expected": {
+   "score": 0.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "full record",
+  "record": {
+   "containers": {
+    "cna": {
+     "title": "Heap overflow in widget",
+     "descriptions": [
+      {
+       "lang": "en",
+       "value": "A heap-based buffer overflow in the widget parser allows a remote attacker to execute arbitrary code by sending a crafted request with an oversized header field to the HTTP endpoint of the server."
+      }
+     ],
+     "problemTypes": [
+      {
+       "descriptions": [
+        {
+         "lang": "en",
+         "cweId": "CWE-122",
+         "description": "CWE-122",
+         "type": "CWE"
+        }
+       ]
+      }
+     ],
+     "affected": [
+      {
+       "vendor": "Acme",
+       "product": "Widget",
+       "versions": [
+        {
+         "version": "1.0",
+         "lessThan": "1.4",
+         "status": "affected"
+        }
+       ],
+       "cpes": [
+        "cpe:2.3:a:acme:widget:*:*:*:*:*:*:*:*"
+       ]
+      }
+     ],
+     "metrics": [
+      {
+       "cvssV4_0": {
+        "vectorString": "CVSS:4.0/AV:N"
+       }
+      },
+      {
+       "other": {
+        "type": "ssvc",
+        "content": {}
+       }
+      }
+     ],
+     "impacts": [
+      {
+       "capecId": "CAPEC-100"
+      }
+     ],
+     "references": [
+      {
+       "url": "https://example.com/fix",
+       "tags": [
+        "patch"
+       ]
+      }
+     ],
+     "solutions": [
+      {
+       "lang": "en",
+       "value": "Upgrade."
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 97.0,
+   "grade": "A",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 22.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 25.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 25.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 25.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.7,
+     "points": 7.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 1.0,
+     "points": 5.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 1.0,
+     "points": 10.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 1.0,
+     "points": 10.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 1.0,
+     "points": 8.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 1.0,
+     "points": 7.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 1.0,
+     "points": 15.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 1.0,
+     "points": 5.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 1.0,
+     "points": 5.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 1.0,
+     "points": 7.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 1.0,
+     "points": 5.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 1.0,
+     "points": 8.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 1.0,
+     "points": 5.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "description 40 chars",
+  "record": {
+   "containers": {
+    "cna": {
+     "descriptions": [
+      {
+       "lang": "en",
+       "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 4.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 4.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.4,
+     "points": 4.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "description 80 chars, en-US",
+  "record": {
+   "containers": {
+    "cna": {
+     "descriptions": [
+      {
+       "lang": "en-US",
+       "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 7.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 7.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.7,
+     "points": 7.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "description 39 chars",
+  "record": {
+   "containers": {
+    "cna": {
+     "descriptions": [
+      {
+       "lang": "en",
+       "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 0.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "first non-English description is skipped",
+  "record": {
+   "containers": {
+    "cna": {
+     "descriptions": [
+      {
+       "lang": "de",
+       "value": "A heap-based buffer overflow in the widget parser allows a remote attacker to execute arbitrary code by sending a crafted request with an oversized header field to the HTTP endpoint of the server."
+      },
+      {
+       "lang": "EN",
+       "value": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 4.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 4.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.4,
+     "points": 4.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "placeholder description",
+  "record": {
+   "containers": {
+    "cna": {
+     "descriptions": [
+      {
+       "lang": "en",
+       "value": "** RESERVED ** A heap-based buffer overflow in the widget parser allows a remote attacker to execute arbitrary code by sending a crafted request with an oversized header field to the HTTP endpoint of the server."
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 0.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "placeholder-like word inside",
+  "record": {
+   "containers": {
+    "cna": {
+     "descriptions": [
+      {
+       "lang": "en",
+       "value": "Reservedness xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 4.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 4.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.4,
+     "points": 4.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "astral characters count once",
+  "record": {
+   "containers": {
+    "cna": {
+     "descriptions": [
+      {
+       "lang": "en",
+       "value": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 4.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 4.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.4,
+     "points": 4.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "placeholder title",
+  "record": {
+   "containers": {
+    "cna": {
+     "title": " N/A "
+    }
+   }
+  },
+  "expected": {
+   "score": 0.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "lowercase cwe",
+  "record": {
+   "containers": {
+    "cna": {
+     "problemTypes": [
+      {
+       "descriptions": [
+        {
+         "cweId": " cwe-79 "
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 10.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 10.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 1.0,
+     "points": 10.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "problem text only",
+  "record": {
+   "containers": {
+    "cna": {
+     "problemTypes": [
+      {
+       "descriptions": [
+        {
+         "description": "Cross-site scripting"
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 2.5,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 2.5,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.25,
+     "points": 2.5
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "problem text unknown",
+  "record": {
+   "containers": {
+    "cna": {
+     "problemTypes": [
+      {
+       "descriptions": [
+        {
+         "description": "unknown"
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 0.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "vendor only, default status",
+  "record": {
+   "containers": {
+    "cna": {
+     "affected": [
+      {
+       "vendor": "Acme",
+       "product": "n/a",
+       "defaultStatus": "affected"
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 9.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 9.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.5,
+     "points": 5.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.5,
+     "points": 4.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "single objects instead of arrays",
+  "record": {
+   "containers": {
+    "cna": {
+     "affected": {
+      "vendor": "Acme",
+      "product": "Widget",
+      "versions": {
+       "lessThanOrEqual": "2.0"
+      }
+     },
+     "metrics": {
+      "cvssV3_1": {
+       "vectorString": "CVSS:3.1/AV:N"
+      }
+     },
+     "references": {
+      "url": "https://example.com",
+      "tags": [
+       "vendor-advisory"
+      ]
+     }
+    }
+   }
+  },
+  "expected": {
+   "score": 49.8,
+   "grade": "D",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 18.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 15.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 16.8,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 1.0,
+     "points": 10.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 1.0,
+     "points": 8.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 1.0,
+     "points": 15.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 1.0,
+     "points": 7.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 1.0,
+     "points": 5.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.6,
+     "points": 4.8
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "cpe applicability",
+  "record": {
+   "containers": {
+    "cna": {
+     "cpeApplicability": [
+      {
+       "nodes": [
+        {
+         "cpeMatch": [
+          {
+           "criteria": "cpe:2.3:a:acme:widget:*"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 7.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 7.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 1.0,
+     "points": 7.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "cvss v2 only",
+  "record": {
+   "containers": {
+    "cna": {
+     "metrics": [
+      {
+       "cvssV2_0": {
+        "vectorString": "AV:N/AC:L"
+       }
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 7.5,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 7.5,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.5,
+     "points": 7.5
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "other rating with empty content",
+  "record": {
+   "containers": {
+    "cna": {
+     "metrics": [
+      {
+       "other": {
+        "type": "",
+        "content": {}
+       }
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 0.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "other rating with content",
+  "record": {
+   "containers": {
+    "cna": {
+     "metrics": [
+      {
+       "other": {
+        "type": "",
+        "content": {
+         "text": "High"
+        }
+       }
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 15.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 15.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 1.0,
+     "points": 15.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "other rating type only",
+  "record": {
+   "containers": {
+    "cna": {
+     "metrics": [
+      {
+       "other": {
+        "type": "vendor-severity"
+       }
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 15.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 15.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 1.0,
+     "points": 15.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "impact description only",
+  "record": {
+   "containers": {
+    "cna": {
+     "impacts": [
+      {
+       "descriptions": [
+        {
+         "lang": "en",
+         "value": "Code execution"
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 5.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 5.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 1.0,
+     "points": 5.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "impact with empty descriptions",
+  "record": {
+   "containers": {
+    "cna": {
+     "impacts": [
+      {
+       "descriptions": []
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 0.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 0.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "references without tags",
+  "record": {
+   "containers": {
+    "cna": {
+     "references": [
+      {
+       "url": "https://example.com"
+      },
+      {
+       "url": "unknown"
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 7.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 7.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 1.0,
+     "points": 7.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "mitigation tag",
+  "record": {
+   "containers": {
+    "cna": {
+     "references": [
+      {
+       "url": "https://example.com",
+       "tags": [
+        " Mitigation "
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 16.8,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 16.8,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 1.0,
+     "points": 7.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 1.0,
+     "points": 5.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.6,
+     "points": 4.8
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "patch inside a longer tag",
+  "record": {
+   "containers": {
+    "cna": {
+     "references": [
+      {
+       "url": "https://example.com",
+       "tags": [
+        "x_patch-info"
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 20.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 20.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 1.0,
+     "points": 7.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 1.0,
+     "points": 5.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 1.0,
+     "points": 8.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "workarounds only",
+  "record": {
+   "containers": {
+    "cna": {
+     "workarounds": [
+      {
+       "lang": "en",
+       "value": "Disable it."
+      }
+     ]
+    }
+   }
+  },
+  "expected": {
+   "score": 5.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 5.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 1.0,
+     "points": 5.0
+    }
+   ]
+  }
+ },
+ {
+  "name": "junk values",
+  "record": {
+   "containers": {
+    "cna": {
+     "title": 5,
+     "descriptions": "text",
+     "affected": [
+      1,
+      null,
+      {
+       "vendor": null
+      }
+     ],
+     "references": [
+      {
+       "url": 7,
+       "tags": [
+        1,
+        "Patch"
+       ]
+      }
+     ],
+     "solutions": []
+    }
+   }
+  },
+  "expected": {
+   "score": 13.0,
+   "grade": "E",
+   "methodologyVersion": 1,
+   "methodologySince": "2026-09-29",
+   "pillars": [
+    {
+     "name": "describe",
+     "label": "Describe: can a reader tell what the vulnerability is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "scope",
+     "label": "Scope: can a reader tell whether they are affected?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "assess",
+     "label": "Assess: can a reader tell how bad it is?",
+     "score": 0.0,
+     "maximum": 25
+    },
+    {
+     "name": "act",
+     "label": "Act: can a reader tell what to do about it?",
+     "score": 13.0,
+     "maximum": 25
+    }
+   ],
+   "checks": [
+    {
+     "name": "description",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "English description quality: full credit from 200 characters, 0.7 from 80, 0.4 from 40.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "title",
+     "pillar": "describe",
+     "weight": 5,
+     "rule": "A non-placeholder title is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cwe",
+     "pillar": "describe",
+     "weight": 10,
+     "rule": "A CWE identifier is present in problemTypes; a meaningful free-text problem type receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "affected",
+     "pillar": "scope",
+     "weight": 10,
+     "rule": "An affected entry identifies vendor and product; identifying only one receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "versions",
+     "pillar": "scope",
+     "weight": 8,
+     "rule": "Affected versions or version bounds are stated; defaultStatus alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "cpe",
+     "pillar": "scope",
+     "weight": 7,
+     "rule": "A CPE is stated in affected data or cpeApplicability.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "severity",
+     "pillar": "assess",
+     "weight": 15,
+     "rule": "A CVSS v3/v4 vector, SSVC decision, or other vendor severity statement is present; CVSS v2 alone receives partial credit.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "modern_severity",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "A CVSS v4 vector or SSVC decision is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "impacts",
+     "pillar": "assess",
+     "weight": 5,
+     "rule": "An impact description or CAPEC identifier is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "references",
+     "pillar": "act",
+     "weight": 7,
+     "rule": "At least one reference URL is present.",
+     "credit": 0.0,
+     "points": 0.0
+    },
+    {
+     "name": "reference_tags",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one reference carries tags.",
+     "credit": 1.0,
+     "points": 5.0
+    },
+    {
+     "name": "remediation",
+     "pillar": "act",
+     "weight": 8,
+     "rule": "A patch reference receives full credit; vendor-advisory, mitigation, or release-notes receives partial credit.",
+     "credit": 1.0,
+     "points": 8.0
+    },
+    {
+     "name": "solutions",
+     "pillar": "act",
+     "weight": 5,
+     "rule": "At least one solution or workaround is present.",
+     "credit": 0.0,
+     "points": 0.0
+    }
+   ]
+  }
+ }
+]

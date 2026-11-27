@@ -14,11 +14,18 @@ import {
   SUPPORTED_PROFILES,
 } from "@/editor/profiles";
 
-// Only actions that run entirely in the browser: there is no backend here.
+// Only actions and panels that run entirely in the browser: there is no
+// backend here.
 import {
   downloadAction,
   tutorialAction,
 } from "@/editor/actions";
+
+import {
+  recordQualityPanel,
+} from "@/editor/panels";
+
+const panels = [recordQualityPanel];
 
 // One SandboxRepository instance per page load — everything it holds
 // is in memory only, so there's nothing to reset between mounts
@@ -96,7 +103,7 @@ function handleError(
         :repository="repository"
         mode="create"
         :profile="selectedProfile"
-        :panels="[]"
+        :panels="panels"
         :actions="[downloadAction, tutorialAction]"
         @error="handleError"
       />

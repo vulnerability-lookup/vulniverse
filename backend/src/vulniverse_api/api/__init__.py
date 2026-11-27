@@ -140,7 +140,6 @@ from . import (  # noqa: F401
     patch2vuln,
     patch2vuln_batches,
     publish,
-    record_quality,
     records,
     reference_data,
     templates,

@@ -283,7 +283,7 @@ import {
   downloadAction,        // Download as JSON, HTML page or PDF
   tutorialAction,        // a short guided tour
   templatesPanel,        // needs listTemplates, saveTemplate, updateTemplate, deleteTemplate
-  recordQualityPanel,    // needs scoreRecordQuality
+  recordQualityPanel,    // needs nothing, scores in the browser
   patch2vulnPanel,       // needs submitPatch2VulnJob, getPatch2VulnJob
   vulnerabilityLookupPanel, // needs getCnaPublication and the publish methods
   cveProgramPanel,       // same, for the CVE Program

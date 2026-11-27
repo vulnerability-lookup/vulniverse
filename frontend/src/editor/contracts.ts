@@ -448,7 +448,11 @@ export interface EditorRepository {
   ): Promise<{ publication: CnaPublication; record: CveRecord | null }>;
 
 
-  // Scoreboard
+  /**
+   * @deprecated Ignored since 1.1: the Record Quality panel scores the
+   * record in the browser. Kept so existing repositories still type-check;
+   * removed in 2.0.
+   */
   scoreRecordQuality?(
     record: EditorDocument,
     profile: string,

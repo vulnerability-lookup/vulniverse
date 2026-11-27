@@ -180,7 +180,7 @@ scratch:
 | `templatesPanel` | `listTemplates` + CRUD |
 | `cveProgramPanel` | `getCnaPublication` + the publish actions |
 | `vulnerabilityLookupPanel` | `getCnaPublication` + the publish actions |
-| `recordQualityPanel` | `scoreRecordQuality` |
+| `recordQualityPanel` | none, it scores in the browser |
 | `patch2vulnPanel` | `submitPatch2VulnJob` + `getPatch2VulnJob` |
 
 A sixth built-in, `recordStatsPanel`, exists internally

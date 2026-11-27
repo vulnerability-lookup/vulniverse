@@ -8,6 +8,11 @@ incompatibly in a new major version.
 
 ## [Unreleased]
 
+### Upgrading from 1.0.0
+
+- **Servers:** back up the database and run the migrations (`flask --app vulniverse_api db upgrade`) for the Patch2Vuln batches.
+- **Hosts implementing `scoreRecordQuality`:** the Record Quality panel no longer calls it and scores the record itself, with Vulnerability-Lookup's assigner-scorecard methodology v1. Nothing breaks: the method still type-checks and can be removed, together with the endpoint behind it, whenever convenient. If your method used its own rules or weights, the panel now shows a different score; leave `recordQualityPanel` out and add your own panel with your scorer instead.
+
 ### Added
 
 - The editor shows its version at the bottom of the sidebar, linking to its release notes, also when embedded. The npm package exports it as `version`.
@@ -17,10 +22,16 @@ incompatibly in a new major version.
 
 ### Changed
 
+- Record Quality scores the record in the browser, updating with every edit, so it works in every host without a repository method. The scores are the same as before. The Recalculate button is gone.
 - A GCVE record without an advisory entry takes its identifier from its only entry, as GCVE-BCP-05 1.8 allows for standalone `update` and other non-advisory records. Before, such a record had no identifier.
+
+### Deprecated
+
+- `scoreRecordQuality` in the repository interface: no longer called, removed in 2.0.
 
 ### Removed
 
+- The backend's `/api/v1/record-quality` endpoint; the panel no longer uses it.
 - The `deprecation` record type, which GCVE-BCP-05 1.9 no longer lists, is no longer suggested and no longer requires relationships.
 
 ## [1.0.0] - 2026-11-24
