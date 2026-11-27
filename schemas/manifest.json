@@ -1,6 +1,7 @@
 {
   "currentProfiles": {
     "cve": "cve-5.2.0",
+    "euvd": "euvd-1.0",
     "gcve": "gcve-bcp-05-1.7",
     "osv": "osv-1.9.2"
   },
@@ -36,6 +37,18 @@
         }
       },
       "version": "5.2.0"
+    },
+    "euvd-1.0": {
+      "baseSchema": "euvd/1.0/euvd-record.schema.json",
+      "editor": {
+        "layout": "editor/euvd.layout.json"
+      },
+      "identifier": {
+        "strategy": "euvd"
+      },
+      "kind": "euvd",
+      "label": "EUVD 1.0",
+      "version": "1.0"
     },
     "gcve-bcp-05-1.7": {
       "baseProfile": "cve-5.2.0",

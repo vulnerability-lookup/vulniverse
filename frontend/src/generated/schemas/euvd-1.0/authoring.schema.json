@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vulniverse.invalid/schemas/euvd-1.0/authoring.schema.json",
+  "title": "Vulniverse EUVD 1.0 authoring schema",
+  "description": "A record of the European Vulnerability Database (EUVD) that ENISA writes itself, for a vulnerability with no CVE, as Vulnerability-Lookup stores it. The EUVD identifier is reserved by the EUVD when the record is created.",
+  "type": "object",
+  "required": [
+    "title"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "title": "EUVD ID",
+      "description": "Reserved by the EUVD when the record is first saved.",
+      "pattern": "^EUVD-[0-9]{4}-[0-9]{4,}$"
+    },
+    "title": {
+      "type": "string",
+      "title": "Title",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "description": "Required for publication.",
+      "maxLength": 6000
+    },
+    "base_score": {
+      "type": "number",
+      "title": "CVSS base score",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "base_score_version": {
+      "type": "string",
+      "title": "CVSS version",
+      "enum": [
+        "4.0",
+        "3.1",
+        "3.0",
+        "2.0"
+      ]
+    },
+    "base_score_vector": {
+      "type": "string",
+      "title": "CVSS vector",
+      "maxLength": 256
+    },
+    "references": {
+      "type": "array",
+      "title": "References",
+      "description": "At least one is required for publication.",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "title": "URL",
+        "format": "uri",
+        "pattern": "^https?://"
+      }
+    },
+    "affected": {
+      "type": "array",
+      "title": "Affected vendors and products",
+      "description": "At least one is required for publication.",
+      "items": {
+        "type": "object",
+        "title": "Affected product",
+        "required": [
+          "vendor",
+          "product"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "vendor": {
+            "type": "string",
+            "title": "Vendor",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "product": {
+            "type": "string",
+            "title": "Product",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "version": {
+            "type": "string",
+            "title": "Affected versions",
+            "maxLength": 200
+          }
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "base_score": [
+      "base_score_version"
+    ],
+    "base_score_version": [
+      "base_score"
+    ],
+    "base_score_vector": [
+      "base_score"
+    ]
+  },
+  "allOf": [
+    {
+      "$comment": "A CVSS 4.0 vector starts with CVSS:4.0/, as Vulnerability-Lookup requires; a 2.0 vector has no prefix.",
+      "if": {
+        "properties": {
+          "base_score_version": {
+            "const": "4.0"
+          }
+        },
+        "required": [
+          "base_score_version"
+        ]
+      },
+      "then": {
+        "properties": {
+          "base_score_vector": {
+            "pattern": "^CVSS:4\\.0/"
+          }
+        }
+      }
+    },
+    {
+      "$comment": "A CVSS 3.1 vector starts with CVSS:3.1/, as Vulnerability-Lookup requires; a 2.0 vector has no prefix.",
+      "if": {
+        "properties": {
+          "base_score_version": {
+            "const": "3.1"
+          }
+        },
+        "required": [
+          "base_score_version"
+        ]
+      },
+      "then": {
+        "properties": {
+          "base_score_vector": {
+            "pattern": "^CVSS:3\\.1/"
+          }
+        }
+      }
+    },
+    {
+      "$comment": "A CVSS 3.0 vector starts with CVSS:3.0/, as Vulnerability-Lookup requires; a 2.0 vector has no prefix.",
+      "if": {
+        "properties": {
+          "base_score_version": {
+            "const": "3.0"
+          }
+        },
+        "required": [
+          "base_score_version"
+        ]
+      },
+      "then": {
+        "properties": {
+          "base_score_vector": {
+            "pattern": "^CVSS:3\\.0/"
+          }
+        }
+      }
+    }
+  ]
+}

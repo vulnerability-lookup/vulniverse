@@ -16,7 +16,7 @@ import {
 } from "@/repositories/HttpRepository";
 
 import {
-  SUPPORTED_PROFILES,
+  STANDALONE_PROFILES,
 } from "@/editor/profiles";
 
 import {
@@ -89,7 +89,7 @@ function handleError(
 
     <div class="row g-3">
       <div
-        v-for="profile in SUPPORTED_PROFILES"
+        v-for="profile in STANDALONE_PROFILES"
         :key="profile.id"
         class="col-md-6"
       >

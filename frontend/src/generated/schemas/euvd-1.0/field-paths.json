@@ -1,0 +1,47 @@
+[
+  {
+    "path": "id",
+    "title": "EUVD ID",
+    "type": "string"
+  },
+  {
+    "path": "title",
+    "title": "Title",
+    "type": "string"
+  },
+  {
+    "path": "description",
+    "title": "Description",
+    "type": "string"
+  },
+  {
+    "path": "base_score",
+    "title": "CVSS base score",
+    "type": "number"
+  },
+  {
+    "path": "base_score_version",
+    "title": "CVSS version",
+    "type": "string"
+  },
+  {
+    "path": "base_score_vector",
+    "title": "CVSS vector",
+    "type": "string"
+  },
+  {
+    "path": "affected[].vendor",
+    "title": "Vendor",
+    "type": "string"
+  },
+  {
+    "path": "affected[].product",
+    "title": "Product",
+    "type": "string"
+  },
+  {
+    "path": "affected[].version",
+    "title": "Affected versions",
+    "type": "string"
+  }
+]

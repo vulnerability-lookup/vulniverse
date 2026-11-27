@@ -1,0 +1,105 @@
+{
+  "type": "Categorization",
+  "elements": [
+    {
+      "type": "Category",
+      "id": "identification",
+      "label": "Identification",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/id",
+          "label": "EUVD ID",
+          "options": {
+            "readonly": true,
+            "width": "short"
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/title",
+          "label": "Title",
+          "options": {
+            "wrap": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "description",
+      "label": "Description",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/description",
+          "label": "Description",
+          "options": {
+            "multi": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "severity",
+      "label": "Severity",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/base_score",
+          "label": "CVSS base score",
+          "options": {
+            "width": "short"
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/base_score_version",
+          "label": "CVSS version",
+          "options": {
+            "width": "short"
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/base_score_vector",
+          "label": "CVSS vector"
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "references",
+      "label": "References",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/references",
+          "label": "References",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Category",
+      "id": "affected",
+      "label": "Affected vendors and products",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/affected",
+          "label": "Affected vendors and products",
+          "options": {
+            "detail": "GENERATED",
+            "showSortButtons": true,
+            "elementLabelProp": "product"
+          }
+        }
+      ]
+    }
+  ]
+}
