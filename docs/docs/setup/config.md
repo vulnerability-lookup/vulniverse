@@ -156,6 +156,11 @@ api_url = "https://patch2vuln.example.org"
 # models = ["qwen3.8:27b"]
 timeout_seconds = 300
 
+[panels.ml-gateway]
+enabled = true
+api_url = "http://ml-gateway:8000"
+timeout_seconds = 30
+
 [actions]
 "download" = true
 "tutorial" = true
@@ -170,6 +175,14 @@ for reaching an external
 [Patch2Vuln](https://github.com/gcve-eu/gcve-lab-patch2vuln) web service
 instance — see the comments in `config/vulniverse.toml.sample` for the
 full set. `models` takes up to 4 model names.
+
+`[panels.ml-gateway]` connects the **ML suggestions** panel to an
+[ML-Gateway](https://github.com/vulnerability-lookup/ML-Gateway)
+instance, for severity and MITRE ATT&CK suggestions. It's off unless
+`enabled = true` and `api_url` are both set. The gateway's endpoints have
+no authentication, so run it on a private address: the backend calls it
+for logged-in users and the browser never reaches it. `timeout_seconds`
+defaults to 30.
 
 Set the Patch2Vuln token through the `PATCH2VULN_API_TOKEN` environment
 variable (e.g. in `backend/.env`) rather than `api_token`, so the secret

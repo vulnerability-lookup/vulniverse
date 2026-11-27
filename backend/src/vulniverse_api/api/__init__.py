@@ -7,6 +7,7 @@ from flask_login import current_user, logout_user
 
 from ..app_config import load_app_config
 from ..services import two_factor
+from ..services.ml_gateway import get_ml_gateway_config
 from ..services.profiles import load_manifest
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -125,7 +126,12 @@ def capabilities() -> dict:
             "cpeProposals": False,
             **app_config["features"],
         },
-        "panels": app_config["panels"],
+        "panels": {
+            **app_config["panels"],
+            # Unlike other panels it needs a gateway to talk to, so it's
+            # only on once one is configured, not by default.
+            "ml-gateway": get_ml_gateway_config().enabled,
+        },
         "actions": app_config["actions"],
     }
 
@@ -136,6 +142,7 @@ from . import (  # noqa: F401
     cna_credentials,
     cpe_search,
     invitations,
+    ml_gateway,
     organisations,
     patch2vuln,
     patch2vuln_batches,

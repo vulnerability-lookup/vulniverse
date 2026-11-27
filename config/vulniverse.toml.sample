@@ -65,6 +65,17 @@ api_url = "https://patch2vuln.example.org"
 # models = ["qwen3.8:27b"]
 timeout_seconds = 300
 
+[panels.ml-gateway]
+# Suggests a severity and MITRE ATT&CK techniques for the record's
+# English description, using an ML-Gateway instance
+# (github.com/vulnerability-lookup/ML-Gateway). Off unless enabled with
+# an api_url. The gateway's endpoints are unauthenticated, so keep it on
+# a private address: Vulniverse calls it from the server, never from the
+# browser.
+enabled = false
+# api_url = "http://ml-gateway:8000"
+timeout_seconds = 30
+
 
 [actions]
 # Which header-button actions the standalone app shows, keyed by
