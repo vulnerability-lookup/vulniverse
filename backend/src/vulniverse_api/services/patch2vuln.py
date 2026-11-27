@@ -192,21 +192,24 @@ def submit_job(
     }
 
 
-def submit_bulk_jobs(sources: list[str]) -> list[dict[str, Any]]:
-    """Queue one patch2vuln job per commit URL, all or none (patch2vuln
-    refuses the whole batch when its queue lacks room for it).
+def submit_bulk_jobs(groups: list[list[str]]) -> list[dict[str, Any]]:
+    """Queue one patch2vuln job per group of commit URLs (the commits of
+    one vulnerability), all or none: patch2vuln refuses the whole batch
+    when its queue lacks room for it.
 
-    Returns [{"jobId": ..., "status": ...}] in the order of `sources`.
+    Returns [{"jobId": ..., "status": ...}] in the order of `groups`.
     """
     config = get_patch2vuln_config()
 
     if not config.enabled:
         raise RuntimeError("Patch2Vuln is disabled")
 
-    if not sources:
+    if not groups or not all(groups):
         raise ValueError("No commit URLs provided")
 
-    body = _build_job_body(sources, [], {}, config)
+    body = _build_job_body([], [], {}, config)
+    # An entry is a URL, or a list of related URLs analysed together.
+    body["urls"] = [group[0] if len(group) == 1 else group for group in groups]
 
     try:
         response = httpx.post(
@@ -227,7 +230,7 @@ def submit_bulk_jobs(sources: list[str]) -> list[dict[str, Any]]:
 
     if (
         not isinstance(jobs, list)
-        or len(jobs) != len(sources)
+        or len(jobs) != len(groups)
         or not all(
             isinstance(job, dict) and isinstance(job.get("id"), str) for job in jobs
         )

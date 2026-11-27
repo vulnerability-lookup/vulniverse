@@ -24,17 +24,17 @@ class FakePatch2Vuln:
 
     def __init__(self) -> None:
         self.statuses: dict[str, str] = {}
-        self.submitted: list[list[str]] = []
+        self.submitted: list[list[list[str]]] = []
         self.canceled: list[str] = []
         self.unreachable = False
 
-    def submit_bulk_jobs(self, sources: list[str]) -> list[dict[str, Any]]:
-        self.submitted.append(sources)
+    def submit_bulk_jobs(self, groups: list[list[str]]) -> list[dict[str, Any]]:
+        self.submitted.append(groups)
         jobs = []
-        for source in sources:
+        for _group in groups:
             job_id = f"job-{len(self.statuses) + 1}"
             self.statuses[job_id] = "queued"
-            jobs.append({"jobId": job_id, "status": "queued", "source": source})
+            jobs.append({"jobId": job_id, "status": "queued"})
         return jobs
 
     def get_job_status(self, job_id: str) -> dict[str, Any]:
@@ -81,7 +81,7 @@ def patch2vuln(monkeypatch: pytest.MonkeyPatch) -> FakePatch2Vuln:
     return fake
 
 
-def create_batch(client: FlaskClient, *urls: str) -> dict[str, Any]:
+def create_batch(client: FlaskClient, *urls: str | list[str]) -> dict[str, Any]:
     response = client.post(
         "/api/v1/patch2vuln/batches",
         json={"name": "Widget fixes", "profile": "cve-5.2.0", "commitUrls": list(urls)},
@@ -95,9 +95,58 @@ def test_a_batch_queues_one_job_per_commit(
 ) -> None:
     batch = create_batch(client, COMMIT, OTHER_COMMIT, COMMIT, "  ")
 
-    assert patch2vuln.submitted == [[f"{COMMIT}.patch", f"{OTHER_COMMIT}.patch"]]
+    assert patch2vuln.submitted == [[[f"{COMMIT}.patch"], [f"{OTHER_COMMIT}.patch"]]]
     assert batch["total"] == 2
     assert batch["open"] == 2
+
+
+def test_commits_of_one_vulnerability_are_analysed_together(
+    client: FlaskClient, patch2vuln: FakePatch2Vuln
+) -> None:
+    batch = create_batch(
+        client,
+        COMMIT,
+        [OTHER_COMMIT, COMMIT, OTHER_COMMIT, " "],
+        [OTHER_COMMIT, COMMIT],
+    )
+
+    # Repeats within a group are dropped, and so is a repeated group.
+    assert patch2vuln.submitted == [
+        [[f"{COMMIT}.patch"], [f"{OTHER_COMMIT}.patch", f"{COMMIT}.patch"]]
+    ]
+    assert batch["total"] == 2
+    detail = client.get(f"/api/v1/patch2vuln/batches/{batch['id']}").get_json()
+    assert detail["candidates"][1]["commitUrls"] == [
+        f"{OTHER_COMMIT}.patch",
+        f"{COMMIT}.patch",
+    ]
+
+
+@pytest.mark.parametrize(
+    "commit_urls",
+    [
+        [[f"https://github.com/acme/widget/commit/{index:07x}" for index in range(6)]],
+        [[COMMIT, 7]],
+        [{"url": COMMIT}],
+        COMMIT,
+    ],
+    ids=[
+        "too many commits for one vulnerability",
+        "not a URL",
+        "an object",
+        "not a list",
+    ],
+)
+def test_invalid_commit_groups_queue_nothing(
+    client: FlaskClient, patch2vuln: FakePatch2Vuln, commit_urls: Any
+) -> None:
+    response = client.post(
+        "/api/v1/patch2vuln/batches",
+        json={"name": "Bad", "profile": "cve-5.2.0", "commitUrls": commit_urls},
+    )
+
+    assert response.status_code == 400
+    assert patch2vuln.submitted == []
 
 
 def test_invalid_commit_urls_queue_nothing(

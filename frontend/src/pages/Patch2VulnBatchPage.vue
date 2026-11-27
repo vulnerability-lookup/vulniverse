@@ -140,7 +140,7 @@ onBeforeUnmount(() => {
         <div>
           <h1 class="mb-0">{{ batch.name }}</h1>
           <p class="text-secondary mb-0">
-            {{ batch.total }} commits · {{ batch.completed }} analysed ·
+            {{ batch.total }} {{ batch.total === 1 ? "vulnerability" : "vulnerabilities" }} · {{ batch.completed }} analysed ·
             {{ batch.reviewed }} reviewed
             <template v-if="isOpen"> · {{ batch.open }} still analysing</template>
           </p>
@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
         <table class="table align-middle">
           <thead>
             <tr>
-              <th scope="col">Commit</th>
+              <th scope="col">Commits</th>
               <th scope="col">Generated title</th>
               <th scope="col">Status</th>
               <th scope="col">
@@ -191,11 +191,13 @@ onBeforeUnmount(() => {
             >
               <td>
                 <a
-                  :href="candidate.commitUrl.replace(/\.patch$/, '')"
+                  v-for="url in candidate.commitUrls"
+                  :key="url"
+                  :href="url.replace(/\.patch$/, '')"
                   target="_blank"
                   rel="noopener"
-                  class="font-monospace small"
-                >{{ commitLabel(candidate.commitUrl) }}</a>
+                  class="d-block font-monospace small"
+                >{{ commitLabel(url) }}</a>
               </td>
               <td>{{ candidate.title ?? "—" }}</td>
               <td>

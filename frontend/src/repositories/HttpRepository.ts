@@ -74,7 +74,7 @@ export type CandidateStatus =
 
 export interface Patch2VulnCandidate {
   id: number;
-  commitUrl: string;
+  commitUrls: string[];
   status: CandidateStatus;
   title: string | null;
   dismissed: boolean;
@@ -286,7 +286,7 @@ export class HttpRepository
   createPatch2VulnBatch(
     name: string,
     profile: string,
-    commitUrls: string[],
+    commitUrls: string[][],
   ): Promise<Patch2VulnBatchSummary> {
     return this.request("/patch2vuln/batches", {
       method: "POST",

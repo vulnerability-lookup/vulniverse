@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  computed,
   onMounted,
   ref,
 } from "vue";
@@ -20,6 +21,16 @@ import {
   DEFAULT_PROFILE_ID,
   SUPPORTED_PROFILES,
 } from "@/editor/profiles";
+
+import {
+  MAX_COMMITS_PER_VULNERABILITY,
+  MAX_VULNERABILITIES,
+  parseBatchInput,
+} from "./batch-input";
+
+import type {
+  BatchLine,
+} from "./batch-input";
 
 const router = useRouter();
 const repository = new HttpRepository("/api/v1");
@@ -55,6 +66,22 @@ async function loadBatches(): Promise<void> {
   }
 }
 
+// What will be analysed, as the user types.
+const lines = computed(() => parseBatchInput(commitUrls.value));
+const commitCount = computed(() => lines.value.reduce((sum, line) => sum + line.commits.length, 0));
+const tooMany = computed(() => lines.value.length > MAX_VULNERABILITIES);
+const canSubmit = computed(() =>
+  lines.value.length > 0 && !tooMany.value && lines.value.every((line) => !line.error));
+
+function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+// The line's repositories once each, then its commits.
+function repositories(line: BatchLine): string {
+  return [...new Set(line.commits.map((commit) => commit.repository))].join(", ");
+}
+
 async function submit(): Promise<void> {
   submitting.value = true;
   submitError.value = null;
@@ -63,7 +90,7 @@ async function submit(): Promise<void> {
     const batch = await repository.createPatch2VulnBatch(
       name.value.trim(),
       profile.value,
-      commitUrls.value.split("\n").map((line) => line.trim()).filter(Boolean),
+      lines.value.map((line) => line.commits.map((commit) => commit.url)),
     );
 
     await router.push(`/patch2vuln/${batch.id}`);
@@ -137,15 +164,57 @@ onMounted(loadBatches);
               v-model="commitUrls"
               class="form-control font-monospace"
               rows="6"
+              wrap="off"
               required
-              aria-describedby="batch-urls-help"
+              aria-describedby="batch-urls-help batch-urls-preview"
               placeholder="https://github.com/owner/repo/commit/…"
             />
             <div
               id="batch-urls-help"
               class="form-text"
             >
-              One per line, up to 50. Each commit is analysed separately.
+              One line per vulnerability, up to {{ MAX_VULNERABILITIES }} lines.
+              Several commits fixing the same vulnerability go on one line,
+              separated by spaces (up to {{ MAX_COMMITS_PER_VULNERABILITY }});
+              they're analysed together.
+            </div>
+
+            <div
+              v-if="lines.length"
+              id="batch-urls-preview"
+              class="mt-2"
+              aria-live="polite"
+            >
+              <div class="small fw-semibold">
+                {{ plural(lines.length, "vulnerability", "vulnerabilities") }},
+                {{ plural(commitCount, "commit", "commits") }}
+                <span
+                  v-if="tooMany"
+                  class="text-danger"
+                >· at most {{ MAX_VULNERABILITIES }} per batch</span>
+              </div>
+
+              <ol class="batch-preview small mb-0">
+                <li
+                  v-for="(line, index) in lines"
+                  :key="index"
+                >
+                  <span
+                    v-if="line.error"
+                    class="text-danger"
+                  >⚠ {{ line.error }}</span>
+                  <template v-else>
+                    <span>{{ repositories(line) }}</span>
+                    <span class="font-monospace text-secondary ms-2">
+                      {{ line.commits.map((commit) => commit.sha.slice(0, 7)).join(" · ") }}
+                    </span>
+                    <span
+                      v-if="line.commits.length > 1"
+                      class="badge text-bg-secondary ms-2"
+                    >{{ line.commits.length }} commits, analysed together</span>
+                  </template>
+                </li>
+              </ol>
             </div>
           </div>
         </div>
@@ -161,9 +230,11 @@ onMounted(loadBatches);
         <button
           type="submit"
           class="btn btn-primary mt-3"
-          :disabled="submitting"
+          :disabled="submitting || !canSubmit"
         >
-          {{ submitting ? "Submitting…" : "Analyse" }}
+          {{ submitting ? "Submitting…" : lines.length
+            ? `Analyse ${plural(lines.length, "vulnerability", "vulnerabilities")}`
+            : "Analyse" }}
         </button>
       </div>
     </form>
@@ -224,3 +295,12 @@ onMounted(loadBatches);
     </div>
   </main>
 </template>
+
+<style scoped>
+/* A long batch scrolls inside the form instead of stretching the page. */
+.batch-preview {
+  max-height: 16rem;
+  overflow-y: auto;
+  padding-left: 2rem;
+}
+</style>

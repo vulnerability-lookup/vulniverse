@@ -802,3 +802,57 @@ def test_get_patch2vuln_config_env_token_overrides_toml(
     assert config.api_token == "from-env"
 
     patch2vuln.get_patch2vuln_config.cache_clear()
+
+
+# --- submit_bulk_jobs ---------------------------------------------------
+
+
+def test_submit_bulk_jobs_sends_single_urls_and_groups(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(patch2vuln, "get_patch2vuln_config", enabled_config)
+    captured: dict[str, Any] = {}
+
+    def fake_post(url: str, *, json: Any, headers: Any, timeout: Any) -> FakeResponse:
+        captured["url"] = url
+        captured["json"] = json
+        return FakeResponse(
+            202,
+            {
+                "jobs": [
+                    {"id": "job-1", "status": "queued"},
+                    {"id": "job-2", "status": "queued"},
+                ]
+            },
+        )
+
+    monkeypatch.setattr(patch2vuln.httpx, "post", fake_post)
+
+    jobs = patch2vuln.submit_bulk_jobs(
+        [["https://a/1.patch"], ["https://a/2.patch", "https://a/3.patch"]]
+    )
+
+    assert captured["url"] == "https://patch2vuln.example.org/api/v1/jobs/bulk"
+    assert captured["json"]["urls"] == [
+        "https://a/1.patch",
+        ["https://a/2.patch", "https://a/3.patch"],
+    ]
+    assert captured["json"]["patches"] == []
+    assert jobs == [
+        {"jobId": "job-1", "status": "queued"},
+        {"jobId": "job-2", "status": "queued"},
+    ]
+
+
+def test_submit_bulk_jobs_needs_a_job_per_group(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(patch2vuln, "get_patch2vuln_config", enabled_config)
+    monkeypatch.setattr(
+        patch2vuln.httpx,
+        "post",
+        lambda *args, **kwargs: FakeResponse(202, {"jobs": [{"id": "job-1"}]}),
+    )
+
+    with pytest.raises(RuntimeError):
+        patch2vuln.submit_bulk_jobs([["https://a/1.patch"], ["https://a/2.patch"]])

@@ -97,9 +97,10 @@ class Patch2VulnCandidate(
         nullable=False,
     )
 
-    # Patch2Vuln forgets a job's input once it has run.
-    commit_url: Mapped[str] = mapped_column(
-        String(512),
+    # The commits analysed together for one vulnerability (Patch2Vuln
+    # forgets a job's input once it has run).
+    commit_urls: Mapped[list[str]] = mapped_column(
+        JSON,
         nullable=False,
     )
 

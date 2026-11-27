@@ -25,7 +25,7 @@ from ..services.patch2vuln import (
 )
 from ..services.profiles import known_profiles
 from . import api_bp, require_panel
-from .patch2vuln import normalize_commit_url
+from .patch2vuln import MAX_INPUTS, normalize_commit_url
 
 type ApiResponse = tuple[dict[str, Any], int]
 
@@ -72,7 +72,7 @@ def candidate_title(candidate: Patch2VulnCandidate) -> str | None:
 def candidate_response(candidate: Patch2VulnCandidate) -> dict[str, Any]:
     return {
         "id": candidate.id,
-        "commitUrl": candidate.commit_url,
+        "commitUrls": candidate.commit_urls,
         "status": candidate.status,
         "title": candidate_title(candidate),
         "dismissed": candidate.dismissed,
@@ -127,6 +127,38 @@ def refresh(batch: Patch2VulnBatch) -> str | None:
     return None
 
 
+def commit_groups(value: Any) -> list[list[str]] | ApiResponse:
+    """The batch's commits, one group per vulnerability: each entry of
+    `value` is a commit URL, or a list of the URLs of one vulnerability's
+    commits. Normalized, without empty entries or repeated groups."""
+    if not isinstance(value, list):
+        return {"message": "commitUrls must be an array."}, 400
+
+    groups: dict[tuple[str, ...], None] = {}
+
+    for entry in value:
+        urls = [entry] if isinstance(entry, str) else entry
+        if not isinstance(urls, list) or not all(isinstance(url, str) for url in urls):
+            return {
+                "message": "Each commitUrls entry must be a URL or an array of URLs."
+            }, 400
+
+        try:
+            group = [normalize_commit_url(url) for url in urls if url.strip()]
+        except ValueError as exc:
+            return {"message": str(exc)}, 400
+
+        # The same commit twice in a group, or the same group twice,
+        # would only be analysed twice.
+        group = list(dict.fromkeys(group))
+        if len(group) > MAX_INPUTS:
+            return {"message": f"At most {MAX_INPUTS} commits per vulnerability."}, 400
+        if group:
+            groups[tuple(group)] = None
+
+    return [list(group) for group in groups]
+
+
 @api_bp.get("/patch2vuln/batches")
 @require_panel("patch2vuln")
 def list_patch2vuln_batches() -> ApiResponse:
@@ -165,26 +197,19 @@ def create_patch2vuln_batch() -> ApiResponse:
         return {"message": "A name of up to 128 characters is required."}, 400
     if not isinstance(profile, str) or profile not in known_profiles():
         return {"message": f"Unknown profile: {profile!r}"}, 400
-    if not isinstance(commit_urls, list) or not all(
-        isinstance(url, str) for url in commit_urls
-    ):
-        return {"message": "commitUrls must be an array of strings."}, 400
+    groups = commit_groups(commit_urls)
+    if isinstance(groups, tuple):
+        return groups
 
-    try:
-        sources = [normalize_commit_url(url) for url in commit_urls if url.strip()]
-    except ValueError as exc:
-        return {"message": str(exc)}, 400
-
-    # The same commit twice would only be analysed twice.
-    sources = list(dict.fromkeys(sources))
-
-    if not sources:
+    if not groups:
         return {"message": "At least one commit URL is required."}, 400
-    if len(sources) > MAX_BATCH_SIZE:
-        return {"message": f"A batch can have at most {MAX_BATCH_SIZE} commits."}, 400
+    if len(groups) > MAX_BATCH_SIZE:
+        return {
+            "message": f"A batch can have at most {MAX_BATCH_SIZE} vulnerabilities."
+        }, 400
 
     try:
-        jobs = submit_bulk_jobs(sources)
+        jobs = submit_bulk_jobs(groups)
     except ValueError as exc:
         return {"message": str(exc)}, 400
     except RuntimeError as exc:
@@ -198,12 +223,12 @@ def create_patch2vuln_batch() -> ApiResponse:
         candidates=[
             Patch2VulnCandidate(
                 position=position,
-                commit_url=source,
+                commit_urls=group,
                 job_id=job["jobId"],
                 status=job["status"],
                 dismissed=False,
             )
-            for position, (source, job) in enumerate(zip(sources, jobs, strict=True))
+            for position, (group, job) in enumerate(zip(groups, jobs, strict=True))
         ],
     )
     db.session.add(batch)

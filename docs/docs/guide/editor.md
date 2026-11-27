@@ -153,12 +153,17 @@ review the result before publishing.
 #### Several commits at once
 
 In the standalone app, **Patch2Vuln** in the top bar analyses up to 50
-commits in one batch, one record per commit. Give the batch a name, choose
-the record format and paste the GitHub commit URLs, one per line. The
-batch belongs to your organisation: your colleagues see it too.
+vulnerabilities in one batch, one record each. Give the batch a name,
+choose the record format and paste the GitHub commit URLs, one line per
+vulnerability. When several commits fix the same vulnerability, put them
+on the same line, separated by spaces (up to 5); they're analysed
+together. Below the field, a preview lists the vulnerabilities as they
+will be analysed and marks lines that can't be, such as URLs that aren't
+GitHub commits. The batch belongs to your organisation: your colleagues
+see it too.
 
-The batch page lists each commit with the title Patch2Vuln generated and
-updates itself while analyses run.
+The batch page lists each vulnerability with its commits and the title
+Patch2Vuln generated, and updates itself while analyses run.
 
 - **Review** opens the generated record in the editor as a new record.
   Nothing is stored until you save it; then the batch shows
