@@ -31,9 +31,7 @@ def upgrade():
     rows = connection.execute(sa.select(candidate.c.id, candidate.c.commit_url)).all()
     for row_id, url in rows:
         connection.execute(
-            candidate.update()
-            .where(candidate.c.id == row_id)
-            .values(commit_urls=[url])
+            candidate.update().where(candidate.c.id == row_id).values(commit_urls=[url])
         )
 
     with op.batch_alter_table("patch2vuln_candidate", schema=None) as batch_op:
@@ -43,7 +41,9 @@ def upgrade():
 
 def downgrade():
     with op.batch_alter_table("patch2vuln_candidate", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("commit_url", sa.String(length=512), nullable=True))
+        batch_op.add_column(
+            sa.Column("commit_url", sa.String(length=512), nullable=True)
+        )
 
     # Only the first commit of a group survives the downgrade.
     connection = op.get_bind()
