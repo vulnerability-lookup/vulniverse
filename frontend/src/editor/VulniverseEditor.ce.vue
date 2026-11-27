@@ -9,6 +9,7 @@ import {
 
 import type {
   EditorAction,
+  EditorDocument,
   EditorPanel,
   EditorRepository,
 } from "./contracts";
@@ -74,6 +75,8 @@ const props = withDefaults(
     mode?: "create" | "edit";
     recordId?: string;
     profile?: string;
+    // Create mode: the new record's content, e.g. a generated draft.
+    initialRecord?: EditorDocument;
     actions?: EditorAction[];
     panels?: EditorPanel[];
     // "auto" follows the page's data-bs-theme, else the system setting.
@@ -134,6 +137,9 @@ const controller =
 
     profile:
       toRef(props, "profile"),
+
+    initialRecord:
+      toRef(props, "initialRecord"),
 
     onReady() {
       emit("ready");

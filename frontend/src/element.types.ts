@@ -8,6 +8,7 @@
 
 import type {
   EditorAction,
+  EditorDocument,
   EditorPanel,
   EditorRepository,
 } from "./editor/contracts";
@@ -82,6 +83,12 @@ export interface VulniverseEditorElement extends HTMLElement {
   recordId?: string;
   /** The profile of a new record, e.g. `"gcve-bcp-05-1.7"` (the default). */
   profile?: string;
+  /**
+   * Create mode: the new record's content instead of an empty record,
+   * e.g. a generated draft. It is copied, and only saved when the user
+   * saves. Assigning another object starts a new record.
+   */
+  initialRecord?: EditorDocument;
   panels?: EditorPanel[];
   actions?: EditorAction[];
   /** `"auto"` (the default) follows the page, else `"light"` or `"dark"`. */

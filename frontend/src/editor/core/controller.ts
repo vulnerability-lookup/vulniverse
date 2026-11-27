@@ -12,6 +12,7 @@ import {
 } from "../contracts";
 
 import type {
+  EditorDocument,
   EditorRepository,
 } from "../contracts";
 
@@ -37,6 +38,8 @@ interface EditorControllerOptions {
   mode: Readonly<Ref<"create" | "edit">>;
   recordId: Readonly<Ref<string | undefined>>;
   profile: Readonly<Ref<string>>;
+  // A new record's starting content, instead of an empty one.
+  initialRecord?: Readonly<Ref<EditorDocument | undefined>>;
 
   onReady(): void;
   onLoaded(identifier: string): void;
@@ -108,8 +111,11 @@ export function useEditorController(
     if (mode.value === "create" && !identifier) {
       state.clear();
 
+      const empty = createEmptyRecord(profile.value);
+      const initial = options.initialRecord?.value;
+
       state.replaceRecord(
-        createEmptyRecord(profile.value),
+        initial ? { ...empty, record: initial } : empty,
       );
 
       options.onReady();
@@ -358,6 +364,18 @@ export function useEditorController(
       }
     },
   );
+
+  if (options.initialRecord) {
+    watch(
+      options.initialRecord,
+      async () => {
+        if (mode.value === "create") {
+          state.clear();
+          await load();
+        }
+      },
+    );
+  }
 
   watch(
     state.dirty,

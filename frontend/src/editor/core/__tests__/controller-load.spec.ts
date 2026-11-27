@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { ref } from "vue";
+import { nextTick, ref } from "vue";
 
-import type { EditorRepository, LoadedRecord } from "../../contracts";
+import type { EditorDocument, EditorRepository, LoadedRecord } from "../../contracts";
 import { useEditorController } from "../controller";
 import { useEditorState } from "../state";
 
@@ -128,5 +128,62 @@ describe("saving", () => {
     expect(onError).not.toHaveBeenCalled();
     expect(state.identifier.value).toBe("1");
     expect(state.record.value).toMatchObject({ title: "Edited" });
+  });
+});
+
+describe("create mode with an initial record", () => {
+  function editorWithInitialRecord() {
+    const state = useEditorState();
+    const initialRecord = ref<EditorDocument | undefined>({ title: "Generated" } as unknown as EditorDocument);
+    const createRecord = vi.fn<(record: object, profile: string, isDraft: boolean) => Promise<LoadedRecord>>(
+      async () => saved,
+    );
+    const controller = useEditorController({
+      state,
+      repository: ref({ createRecord, loadRecord: async () => saved } as unknown as EditorRepository),
+      mode: ref("create"),
+      recordId: ref(undefined),
+      profile: ref("gcve-bcp-05-1.7"),
+      initialRecord,
+      onReady: () => {},
+      onLoaded: () => {},
+      onDeleted: () => {},
+      onError: () => {},
+      onDirtyChange: () => {},
+    });
+    return { state, initialRecord, createRecord, controller };
+  }
+
+  it("starts from it, unchanged and without an identifier", async () => {
+    const { state, initialRecord, controller } = editorWithInitialRecord();
+
+    await controller.load();
+
+    expect(state.record.value).toEqual({ title: "Generated" });
+    expect(state.record.value).not.toBe(initialRecord.value);
+    expect(state.identifier.value).toBeFalsy();
+    expect(state.dirty.value).toBe(false);
+  });
+
+  it("creates the record on the first save", async () => {
+    const { createRecord, controller } = editorWithInitialRecord();
+    await controller.load();
+
+    await controller.save();
+
+    expect(createRecord).toHaveBeenCalledWith({ title: "Generated" }, "gcve-bcp-05-1.7", expect.anything());
+  });
+
+  it("starts a new record when another one is assigned, even after saving", async () => {
+    const { state, initialRecord, controller } = editorWithInitialRecord();
+    await controller.load();
+    await controller.save();
+
+    initialRecord.value = { title: "Next" } as unknown as EditorDocument;
+    await nextTick();
+    await nextTick();
+
+    expect(state.record.value).toEqual({ title: "Next" });
+    expect(state.identifier.value).toBeFalsy();
   });
 });
