@@ -68,13 +68,15 @@ def test_returns_403_when_not_configured(
 def test_capabilities_reports_the_panel_only_when_configured(
     client: FlaskClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    assert client.get("/api/v1/capabilities").json["panels"]["ml-gateway"] is True
+    assert client.get("/api/v1/capabilities").get_json()["panels"]["ml-gateway"] is True
 
     monkeypatch.setattr(
         api_module, "get_ml_gateway_config", lambda: _config(enabled=False)
     )
 
-    assert client.get("/api/v1/capabilities").json["panels"]["ml-gateway"] is False
+    assert (
+        client.get("/api/v1/capabilities").get_json()["panels"]["ml-gateway"] is False
+    )
 
 
 @pytest.mark.parametrize("body", [{}, {"description": "  "}, {"description": 3}])
@@ -157,7 +159,7 @@ def test_attack_techniques(
     response = client.post(ATTACK_URL, json={"description": "RCE", "topK": 5})
 
     assert response.status_code == 200
-    assert response.json["techniques"] == [
+    assert response.get_json()["techniques"] == [
         {
             "id": "T1190",
             "name": "Exploit Public-Facing Application",
@@ -197,4 +199,4 @@ def test_gateway_failures(
     response = client.post(SEVERITY_URL, json={"description": "x"})
 
     assert response.status_code == status
-    assert response.json["message"]
+    assert response.get_json()["message"]
